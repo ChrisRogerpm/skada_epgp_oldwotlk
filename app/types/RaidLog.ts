@@ -1,0 +1,36 @@
+export interface EncounterDamage {
+  Rank: number;
+  Character: string;
+  Class: string;
+  Talent: string;
+  Icon: string;
+  Amount: string;
+  DPS: string;
+}
+
+export interface RaidEncounterPayload {
+  name: string; // This corresponds to the boss name
+  date: string;
+  Damage: EncounterDamage[];
+}
+
+// Keeping the flattened RaidLog so our UI table doesn't have to drastically change
+export interface RaidLog extends EncounterDamage {
+  date: string;
+  raidInstance: string;
+  boss: string;
+}
+
+export interface FilterState {
+  date: string;
+  raidInstance: string;
+  boss: string;
+}
+
+export const RAID_INSTANCES = ["Icecrown Citadel"];
+export const BOSSES = [
+  "The Lich King",
+  "Professor Putricide",
+  "Festergut",
+  "Deathbringer Saurfang",
+];
