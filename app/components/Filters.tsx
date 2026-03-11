@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import { FilterState, RAID_INSTANCES, BOSSES } from "../types/RaidLog";
-import { Calendar, Map, Skull } from "lucide-react";
+import { Calendar, Map, Skull, Activity, Search } from "lucide-react";
 
 interface FiltersProps {
   filters: FilterState;
@@ -26,7 +26,7 @@ export default function Filters({ filters, setFilters }: FiltersProps) {
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 md:p-6 mb-8 shadow-2xl backdrop-blur-sm bg-opacity-70">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
         {/* Date Filter */}
         <div className="flex flex-col space-y-2">
           <label
@@ -65,7 +65,6 @@ export default function Filters({ filters, setFilters }: FiltersProps) {
             onChange={handleChange}
             className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all appearance-none cursor-pointer"
           >
-            <option value="">Todas las instancias</option>
             {RAID_INSTANCES.map((instance) => (
               <option key={instance} value={instance}>
                 {instance}
@@ -83,18 +82,47 @@ export default function Filters({ filters, setFilters }: FiltersProps) {
             name="boss"
             value={filters.boss}
             onChange={handleChange}
-            disabled={!filters.date}
-            className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all appearance-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all appearance-none cursor-pointer"
           >
-            <option value="" disabled>
-              Selecciona un jefe...
-            </option>
             {BOSSES.map((boss) => (
               <option key={boss} value={boss}>
                 {boss}
               </option>
             ))}
           </select>
+        </div>
+
+        {/* Metric */}
+        <div className="flex flex-col space-y-2">
+          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+            <Activity size={14} className="text-purple-400" /> Métrica
+          </label>
+          <select
+            name="metric"
+            value={filters.metric}
+            onChange={handleChange}
+            className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2.5 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all appearance-none cursor-pointer"
+          >
+            <option value="Damage">Daño (Damage)</option>
+            <option value="Healing">Sanación (Healing)</option>
+          </select>
+        </div>
+
+        {/* Search Filter */}
+        <div className="flex flex-col space-y-2">
+          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+            <Search size={14} className="text-amber-400" /> Buscar Personaje
+          </label>
+          <div className="relative w-full">
+            <input
+              type="text"
+              name="search"
+              value={filters.search}
+              onChange={handleChange}
+              placeholder="Ej: Thrall..."
+              className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-3 pr-8 py-2.5 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all placeholder-slate-600 outline-none"
+            />
+          </div>
         </div>
       </div>
     </div>

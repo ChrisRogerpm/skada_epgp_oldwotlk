@@ -10,8 +10,10 @@ export function useRaidLogs() {
 
   const [filters, setFilters] = useState<FilterState>({
     date: todayDate,
-    raidInstance: "",
-    boss: "",
+    raidInstance: "Icecrown Citadel",
+    boss: "The Lich King",
+    metric: "Damage",
+    search: "",
   });
 
   useEffect(() => {
@@ -32,14 +34,15 @@ export function useRaidLogs() {
         const data: RaidEncounterPayload[] = await response.json();
 
         // Flatten encounters → rows por jugador
-        const flattenedLogs: RaidLog[] = data.flatMap((encounter) =>
-          encounter.Damage.map((dmg) => ({
-            ...dmg,
+        const flattenedLogs: RaidLog[] = data.flatMap((encounter) => {
+          const listToMap = filters.metric === "Healing" && encounter.Healing ? encounter.Healing : encounter.Damage;
+          return listToMap.map((entry) => ({
+            ...entry,
             date: encounter.date,
             boss: encounter.name,
             raidInstance: "Icecrown Citadel",
-          })),
-        );
+          }));
+        });
 
         setLogs(flattenedLogs);
       } catch (err) {
@@ -50,7 +53,7 @@ export function useRaidLogs() {
     }
 
     fetchLogs();
-  }, [filters.date]);
+  }, [filters.date, filters.metric]);
 
   // Filtros locales: instancia y jefe (la fecha ya va directo a la API)
   const filteredLogs = logs.filter((log) => {
@@ -62,6 +65,12 @@ export function useRaidLogs() {
       return false;
     }
     if (filters.boss && filters.boss !== "all" && log.boss !== filters.boss) {
+      return false;
+    }
+    if (
+      filters.search &&
+      !log.Character.toLowerCase().includes(filters.search.toLowerCase())
+    ) {
       return false;
     }
     return true;

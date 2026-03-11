@@ -28,7 +28,7 @@ export default function SkadaPage() {
         {/* Content */}
         <section className="animate-in fade-in slide-in-from-bottom-4 duration-700">
           <Filters filters={filters} setFilters={setFilters} />
-          <LogsTable logs={logs} loading={loading} error={error} />
+          <LogsTable logs={logs} loading={loading} error={error} metric={filters.metric} />
         </section>
       </div>
     </main>

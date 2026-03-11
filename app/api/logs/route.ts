@@ -28,8 +28,8 @@ export async function GET(request: Request) {
     }
 
     const result = snapshot.docs.map((docSnap) => {
-      const { name, date: docDate, Damage } = docSnap.data();
-      return { name, date: docDate, Damage };
+      const { name, date: docDate, Damage, Healing } = docSnap.data();
+      return { name, date: docDate, Damage, Healing: Healing || [] };
     });
 
     return NextResponse.json(result);

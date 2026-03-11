@@ -5,13 +5,15 @@ export interface EncounterDamage {
   Talent: string;
   Icon: string;
   Amount: string;
-  DPS: string;
+  DPS?: string;
+  HPS?: string;
 }
 
 export interface RaidEncounterPayload {
   name: string; // This corresponds to the boss name
   date: string;
   Damage: EncounterDamage[];
+  Healing?: EncounterDamage[];
 }
 
 // Keeping the flattened RaidLog so our UI table doesn't have to drastically change
@@ -25,6 +27,8 @@ export interface FilterState {
   date: string;
   raidInstance: string;
   boss: string;
+  metric: "Damage" | "Healing";
+  search: string;
 }
 
 export const RAID_INSTANCES = ["Icecrown Citadel"];
