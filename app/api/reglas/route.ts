@@ -25,7 +25,7 @@ export async function GET() {
       ]);
     }
 
-    const docs = snapshot.docs.map(doc => ({
+    const docs = snapshot.docs.map((doc: any) => ({
       id: doc.id,
       ...doc.data()
     })) as Array<Record<string, any>>;

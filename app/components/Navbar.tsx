@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sword, BarChart2, ScrollText } from "lucide-react";
+import { Sword, BarChart2, ScrollText, Settings } from "lucide-react";
 import clsx from "clsx";
 
 const NAV_ITEMS = [
   { href: "/skada", label: "Skada", icon: Sword },
   { href: "/epgp", label: "Epgp", icon: BarChart2 },
   { href: "/reglas", label: "Reglas", icon: ScrollText },
+  { href: "/admin", label: "Admin", icon: Settings },
 ];
 
 export default function Navbar() {
