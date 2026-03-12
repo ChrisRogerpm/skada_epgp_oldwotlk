@@ -20,9 +20,16 @@ export async function GET() {
     // If they are not in a separate document, we might not have them easily.
     // For now, let's just return the roster.
     
+    const now = new Date();
+    const options: Intl.DateTimeFormatOptions = { timeZone: "America/Lima", year: 'numeric', month: '2-digit', day: '2-digit' };
+    const timeOptions: Intl.DateTimeFormatOptions = { timeZone: "America/Lima", hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+    
+    const limaDate = now.toLocaleDateString('en-GB', options).split('/').reverse().join('-'); // YYYY-MM-DD
+    const limaTime = now.toLocaleTimeString('en-GB', timeOptions);
+
     return NextResponse.json({ 
-      date: new Date().toISOString().split('T')[0], // Fallback date
-      hour: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), // Fallback hour
+      date: limaDate,
+      hour: limaTime,
       roster 
     });
   } catch (error) {
