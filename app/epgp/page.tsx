@@ -351,7 +351,9 @@ export default function EPGPPage() {
                       <td colSpan={5} className="px-4 py-16 text-center">
                         <div className="flex flex-col items-center justify-center gap-3">
                           <History size={32} className="text-slate-600" />
-                          <p className="text-lg font-semibold text-slate-300">No hay registros para este día</p>
+                          <p className="text-lg font-semibold text-slate-300">
+                            {selectedDate ? "No hay registros para este día" : "Seleccione una fecha para ver el historial"}
+                          </p>
                         </div>
                       </td>
                     </tr>

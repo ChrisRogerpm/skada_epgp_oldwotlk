@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "../../../lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
+import { getOrSetCache } from "../../../lib/cache";
 
 export async function GET(request: Request) {
   try {
@@ -19,22 +20,21 @@ export async function GET(request: Request) {
       fechaFilter = now.toLocaleDateString('es-PE', options);
     }
 
-    const epgpLogsCollection = collection(db, "epgp_logs");
-    
-    // Si la fecha es "all", traemos todo (para cuando el usuario quita el filtro)
-    // De lo contrario, filtramos por el campo 'fecha'
-    let q;
+    // Si la fecha es "all", no traemos nada para evitar consumo excesivo de lectura
     if (fechaFilter === "all") {
-      q = query(epgpLogsCollection);
-    } else {
-      q = query(epgpLogsCollection, where("fecha", "==", fechaFilter));
+      return NextResponse.json([]);
     }
 
-    const snapshot = await getDocs(q);
-    const result = snapshot.docs.map((docSnap) => ({
-      id: docSnap.id,
-      ...docSnap.data(),
-    }));
+    const cacheKey = `epgp_logs_${fechaFilter.replace(/\//g, "-")}`;
+    const result = await getOrSetCache(cacheKey, async () => {
+      const epgpLogsCollection = collection(db, "epgp_logs");
+      const q = query(epgpLogsCollection, where("fecha", "==", fechaFilter));
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+      }));
+    }, 15 * 60 * 1000); // 15 minutos de caché por cada fecha
 
     return NextResponse.json(result);
   } catch (error) {

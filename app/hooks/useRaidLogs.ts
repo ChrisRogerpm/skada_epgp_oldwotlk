@@ -11,7 +11,7 @@ export function useRaidLogs() {
   const [filters, setFilters] = useState<FilterState>({
     date: todayDate,
     raidInstance: "Icecrown Citadel",
-    boss: "The Lich King",
+    boss: "Lord Marrowgar",
     metric: "Damage",
     search: "",
   });

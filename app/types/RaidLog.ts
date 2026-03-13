@@ -33,8 +33,16 @@ export interface FilterState {
 
 export const RAID_INSTANCES = ["Icecrown Citadel"];
 export const BOSSES = [
-  "The Lich King",
-  "Professor Putricide",
-  "Festergut",
+  "Lord Marrowgar",
+  "Lady Deathwhisper",
+  "Gunship Battle",
   "Deathbringer Saurfang",
+  "Festergut",
+  "Rotface",
+  "Professor Putricide",
+  "Blood Prince Council",
+  "Blood-Queen Lana'thel",
+  "Valithria Dreamwalker",
+  "Sindragosa",
+  "The Lich King",
 ];
