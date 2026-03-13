@@ -1,30 +1,22 @@
 import { NextResponse } from "next/server";
-import { db } from "../../../lib/firebase";
-import { collection, getDocs, query } from "firebase/firestore";
+import { supabase } from "../../../lib/supabase";
 import { getOrSetCache } from "../../../lib/cache";
 
 export async function GET() {
   try {
     const roster = await getOrSetCache("epgp_roster", async () => {
-      const epgpCollection = collection(db, "epgp");
-      const snapshot = await getDocs(query(epgpCollection));
+      const { data, error } = await supabase
+        .from('epgp')
+        .select('*');
 
-      if (snapshot.empty) return [];
-
-      return snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      if (error) throw error;
+      return data || [];
     }, 10 * 60 * 1000); // 10 minutos de caché
 
     if (roster.length === 0) {
       return NextResponse.json({ date: "", hour: "", roster: [] });
     }
 
-    // In the JSON there was date and hour at root. 
-    // If they are not in a separate document, we might not have them easily.
-    // For now, let's just return the roster.
-    
     const now = new Date();
     const options: Intl.DateTimeFormatOptions = { timeZone: "America/Lima", year: 'numeric', month: '2-digit', day: '2-digit' };
     const timeOptions: Intl.DateTimeFormatOptions = { timeZone: "America/Lima", hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
@@ -38,9 +30,9 @@ export async function GET() {
       roster 
     });
   } catch (error) {
-    console.error("Error fetching from Firestore (epgp):", error);
+    console.error("Error fetching from Supabase (epgp):", error);
     return NextResponse.json(
-      { error: "Error fetching data from Firestore" },
+      { error: "Error fetching data from Supabase" },
       { status: 500 }
     );
   }

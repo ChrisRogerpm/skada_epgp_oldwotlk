@@ -6,14 +6,10 @@ import {
   FileText, Users, Trophy, Plus, X, Shield, TrendingUp, TrendingDown, Edit3, Search,
   ChevronDown, ChevronUp, Copy, LogOut, Lock, Mail, Trash2
 } from "lucide-react";
-import { db, auth } from "../../lib/firebase";
-import { doc, setDoc } from "firebase/firestore";
+import { supabase } from "../../lib/supabase";
 import { 
-  signInWithEmailAndPassword, 
-  onAuthStateChanged, 
-  signOut,
   User 
-} from "firebase/auth";
+} from "@supabase/supabase-js";
 import clsx from "clsx";
 
 export default function AdminPage() {
@@ -47,11 +43,17 @@ export default function AdminPage() {
 
   // Auth Observer
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
       setAuthLoading(false);
     });
-    return () => unsubscribe();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setAuthLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -66,20 +68,14 @@ export default function AdminPage() {
     setLoginError("");
     
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) throw error;
     } catch (error: any) {
-      // Evitamos que el error se propague y rompa el ciclo de vida
-      // Capturamos códigos específicos de Firebase para dar mensajes claros
-      const errorCode = error.code;
-      console.log("Login suppressed error:", errorCode);
-      
-      if (errorCode === "auth/invalid-credential" || errorCode === "auth/user-not-found" || errorCode === "auth/wrong-password") {
-        setLoginError("Credenciales incorrectas. Verifica tu email y contraseña.");
-      } else if (errorCode === "auth/too-many-requests") {
-        setLoginError("Demasiados intentos fallidos. Inténtalo más tarde.");
-      } else {
-        setLoginError("Error al intentar iniciar sesión. Por favor, reintenta.");
-      }
+      console.log("Login error:", error.message);
+      setLoginError(error.message || "Error al intentar iniciar sesión.");
     } finally {
       setIsLoggingIn(false);
     }
@@ -87,7 +83,7 @@ export default function AdminPage() {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      await supabase.auth.signOut();
     } catch (error) {
       console.error("Logout error:", error);
     }
@@ -117,14 +113,47 @@ export default function AdminPage() {
     setIsSaving(true);
     setStatus(null);
     try {
-      await setDoc(doc(db, "reglas", "Reglas de Loteo"), { "Reglas de Loteo": lootRules });
-      await setDoc(doc(db, "reglas", "Beneficios"), { "Beneficios": benefits });
-      await setDoc(doc(db, "reglas", "Perjuicios"), { "Perjuicios": penalties });
+      // 1. Borrar reglas anteriores para un guardado limpio (opcional pero recomendado para sync completo)
+      await supabase.from('reglas_loteo').delete().neq('id', -1);
+      await supabase.from('reglas_puntos').delete().neq('id', -1);
       
-      setStatus({ type: "success", message: "Reglas actualizadas correctamente en Firebase" });
+      // 2. Guardar reglas de loteo
+      const { error: lootError } = await supabase
+        .from('reglas_loteo')
+        .insert(lootRules.map((r, i) => ({ 
+          id: i + 1, 
+          raid: r.raid, 
+          items: r.items 
+        })));
+      
+      if (lootError) throw lootError;
+
+      // 3. Guardar puntos (beneficios y perjuicios)
+      const formattedPoints = [
+        ...benefits.map((b, i) => ({ 
+          id: i + 1, 
+          tipo: 'beneficio', 
+          category: b.category, 
+          items: b.items 
+        })),
+        ...penalties.map((p, i) => ({ 
+          id: benefits.length + i + 1, 
+          tipo: 'perjuicio', 
+          category: p.category, 
+          items: p.items 
+        }))
+      ];
+
+      const { error: pointsError } = await supabase
+        .from('reglas_puntos')
+        .insert(formattedPoints);
+
+      if (pointsError) throw pointsError;
+      
+      setStatus({ type: "success", message: "Reglas actualizadas minuciosamente en Supabase" });
       setTimeout(() => setStatus(null), 5000);
     } catch (error: any) {
-      console.error("Error saving rules:", error);
+      console.error("Error al guardar reglas:", error);
       setStatus({ type: "error", message: "Error al guardar: " + error.message });
     } finally {
       setIsSaving(false);

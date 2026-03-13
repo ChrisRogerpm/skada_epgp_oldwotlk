@@ -1,43 +1,45 @@
 import { NextResponse } from "next/server";
-import { db } from "../../../lib/firebase";
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  Query,
-  CollectionReference,
-  DocumentData,
-} from "firebase/firestore";
+import { supabase } from "../../../lib/supabase";
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const date = searchParams.get("date"); // opcional: ?date=2026-02-26
 
-    const skadaCollection = collection(db, "skada") as CollectionReference<DocumentData>;
+    let queryBuilder = supabase.from("skada").select("*");
 
-    const q: Query<DocumentData> = date
-      ? query(skadaCollection, where("date", "==", date))
-      : query(skadaCollection);
+    if (date) {
+      queryBuilder = queryBuilder.eq("date", date);
+    }
 
-    const snapshot = await getDocs(q);
+    const { data, error } = await queryBuilder;
 
-    if (snapshot.empty) {
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
       return NextResponse.json([]);
     }
 
-    const result = snapshot.docs.map((docSnap) => {
-      const { name, date: docDate, Damage, Healing } = docSnap.data();
-      return { name, date: docDate, Damage, Healing: Healing || [] };
+    // El frontend espera: { name (boss), date, Damage: [], Healing: [] }
+    const result = data.map((item) => {
+      const { name, date: docDate, data: response } = item;
+      return {
+        name,
+        date: docDate,
+        Damage: response.Damage || [],
+        Healing: response.Healing || [],
+      };
     });
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Error fetching from Firestore:", error);
+    console.error("Error fetching from Supabase (skada):", error);
     return NextResponse.json(
-      { error: "Error fetching data from Firestore" },
-      { status: 500 }
+      {
+        error: "Error fetching data from Supabase",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 },
     );
   }
 }

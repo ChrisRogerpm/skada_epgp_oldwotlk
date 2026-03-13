@@ -1,112 +1,93 @@
 import { NextResponse } from "next/server";
-import { db } from "../../../lib/firebase";
-import { collection, getDocs, query } from "firebase/firestore";
+import { supabase } from "../../../lib/supabase";
 
 export async function GET() {
+  console.log("Reglas API: Iniciando revisión de Beneficios y Perjuicios...");
   try {
-    // Intentar con varios nombres posibles de colección por si acaso
-    const collectionNames = ["reglas", "Reglas", "normativas", "Normativas"];
-    let snapshot: any = { empty: true };
-    
-    for (const name of collectionNames) {
-      const col = collection(db, name);
-      const snap = await getDocs(query(col));
-      if (!snap.empty) {
-        snapshot = snap;
-        break;
-      }
-    }
-    
-    if (snapshot.empty) {
-      return NextResponse.json([
-        { "Reglas de Loteo": [] },
-        { "Beneficios": [] },
-        { "Perjuicios": [] }
-      ]);
-    }
+    // 1. Obtener Loteo
+    const { data: lootRows, error: lootError } = await supabase
+      .from("reglas_loteo")
+      .select(
+        "raid, categoria_item, nombre_item, requisitos, valor_minimo, icon_url",
+      )
+      .order("raid", { ascending: true });
 
-    const docs = snapshot.docs.map((doc: any) => ({
-      id: doc.id,
-      ...doc.data()
-    })) as Array<Record<string, any>>;
+    if (lootError) console.error("Error Loteo:", lootError);
 
-    const formatOrder = ["Reglas de Loteo", "Beneficios", "Perjuicios"];
-    
-    const formattedRules = formatOrder.map(key => {
-      const lowerKey = key.toLowerCase();
-      const noSpaceLowerKey = lowerKey.replace(/ /g, "");
+    // 2. Obtener Puntos
+    const { data: pointsRows, error: pointsError } = await supabase
+      .from("reglas_puntos")
+      .select("tipo, categoria, descripcion, valor, icon_url");
+    // .order("category", { ascending: true });
 
-      // 1. Buscar si algún documento tiene una clave que coincida (case-insensitive)
-      for (const doc of docs) {
-        const foundKey = Object.keys(doc).find(k => {
-          const lk = k.toLowerCase();
-          return lk === lowerKey || lk === noSpaceLowerKey || (lk.includes("loteo") && lowerKey.includes("loteo"));
-        });
-        
-        if (foundKey && Array.isArray(doc[foundKey])) {
-          return { [key]: doc[foundKey] };
-        }
-      }
-      
-      // 2. Buscar si el ID del documento coincide con la sección
-      const docById = docs.find(d => {
-        const lId = d.id.toLowerCase();
-        return lId === lowerKey || lId === noSpaceLowerKey || (lId.includes("loteo") && lowerKey.includes("loteo"));
+    if (pointsError) console.error("Error Puntos:", pointsError);
+
+    // --- PROCESAR LOTEO (Ya funciona) ---
+    const lootMap: Record<string, any> = {};
+    (lootRows || []).forEach((row) => {
+      const raidName = row.raid || "Otras Reglas";
+      if (!lootMap[raidName]) lootMap[raidName] = { raid: raidName, items: [] };
+      lootMap[raidName].items.push({
+        category: row.categoria_item,
+        item: row.nombre_item,
+        requirement: Array.isArray(row.requisitos)
+          ? row.requisitos
+          : row.requisitos
+            ? [row.requisitos]
+            : [],
+        valueMin: row.valor_minimo,
+        icon:
+          row.icon_url ||
+          "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg",
       });
-
-      if (docById) {
-        const { id, ...rest } = docById;
-        // Priorizar campos que sean arrays
-        const data = rest[key] || rest.items || rest.data || Object.values(rest).find(v => Array.isArray(v));
-        if (Array.isArray(data)) {
-            // Si el ID es Loteo pero el contenido es un solo raid (no tiene campo raid en los items)
-            if (lowerKey.includes("loteo") && data.length > 0 && !data[0].raid && data[0].item) {
-                return { [key]: [{ raid: docById.raid || docById.id, items: data }] };
-            }
-            return { [key]: data };
-        }
-      }
-
-      // 3. Heurísticas por contenido de todos los documentos
-      if (lowerKey.includes("loteo")) {
-        const lootDocs = docs.filter(d => d.raid || (Array.isArray(d.items) && d.items[0]?.raid));
-        if (lootDocs.length > 0) {
-            // Si los documentos tienen el campo 'raid', ellos mismos son las reglas de raid
-            if (lootDocs[0].raid) return { [key]: lootDocs };
-            // Si es un documento contenedor con 'items' que tienen 'raid'
-            const container = lootDocs.find(d => Array.isArray(d.items));
-            if (container) return { [key]: container.items };
-        }
-      }
-
-      if (lowerKey.includes("bene") || lowerKey.includes("perj")) {
-        const searchStr = lowerKey.substring(0, 4);
-        const matchingDocs = docs.filter(d => 
-            d.id.toLowerCase().includes(searchStr) || 
-            Object.keys(d).some(k => k.toLowerCase().includes(searchStr))
-        );
-        if (matchingDocs.length > 0) {
-            const withItems = matchingDocs.find(d => Array.isArray(d.items));
-            if (withItems) return { [key]: withItems.items };
-            const withKey = matchingDocs.find(d => Array.isArray(d[key]) || Array.isArray(d[Object.keys(d).find(k => k.toLowerCase().includes(searchStr)) || ""]));
-            if (withKey) {
-                const k = Object.keys(withKey).find(k => k.toLowerCase().includes(searchStr)) || "";
-                return { [key]: withKey[k] };
-            }
-            return { [key]: matchingDocs };
-        }
-      }
-
-      return { [key]: [] };
     });
 
-    return NextResponse.json(formattedRules);
+    // --- PROCESAR PUNTOS (Beneficios y Perjuicios) ---
+    const processPoints = (rows: any[], target: string) => {
+      const categoriesMap: Record<string, any> = {};
 
-  } catch (error) {
-    console.error("Error fetching rules from Firestore:", error);
-    return NextResponse.json(
-      { error: "Error fetching data", details: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 }
+      rows.forEach((row) => {
+        const rowTipo = String(row.tipo || "").toLowerCase();
+        if (rowTipo !== target.toLowerCase()) return;
+
+        const catName = row.categoria || "General";
+        if (!categoriesMap[catName]) {
+          categoriesMap[catName] = { category: catName, items: [] };
+        }
+
+        // Caso A: La fila ya tiene un array de 'items' (Estructura anidada del Admin)
+        if (Array.isArray(row.items)) {
+          categoriesMap[catName].items.push(...row.items);
+        }
+        // Caso B: La fila es un ítem individual (Estructura plana)
+        else if (row.descripcion) {
+          categoriesMap[catName].items.push({
+            descripcion: row.descripcion,
+            valor: row.valor,
+            icon:
+              row.icon_url ||
+              "https://wow.zamimg.com/images/wow/icons/large/inv_misc_coin_02.jpg",
+          });
+        }
+      });
+
+      return Object.values(categoriesMap);
+    };
+
+    const beneficios = processPoints(pointsRows || [], "beneficio");
+    const perjuicios = processPoints(pointsRows || [], "perjuicio");
+    const result = [
+      { "Reglas de Loteo": Object.values(lootMap) },
+      { Beneficios: beneficios },
+      { Perjuicios: perjuicios },
+    ];
+
+    console.log(
+      `Reglas API: Beneficios (${beneficios.length}), Perjuicios (${perjuicios.length})`,
     );
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error("Error crítico:", error);
+    return NextResponse.json({ error: "Error de servidor" }, { status: 500 });
   }
 }

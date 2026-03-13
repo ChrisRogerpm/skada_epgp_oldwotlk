@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "../../../lib/firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { supabase } from "../../../lib/supabase";
 import { getOrSetCache } from "../../../lib/cache";
 
 export async function GET(request: Request) {
@@ -27,20 +26,20 @@ export async function GET(request: Request) {
 
     const cacheKey = `epgp_logs_${fechaFilter.replace(/\//g, "-")}`;
     const result = await getOrSetCache(cacheKey, async () => {
-      const epgpLogsCollection = collection(db, "epgp_logs");
-      const q = query(epgpLogsCollection, where("fecha", "==", fechaFilter));
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map((docSnap) => ({
-        id: docSnap.id,
-        ...docSnap.data(),
-      }));
+      const { data, error } = await supabase
+        .from('epgp_logs')
+        .select('*')
+        .eq('fecha', fechaFilter);
+
+      if (error) throw error;
+      return data || [];
     }, 15 * 60 * 1000); // 15 minutos de caché por cada fecha
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Error fetching from Firestore (epgp_logs):", error);
+    console.error("Error fetching from Supabase (epgp_logs):", error);
     return NextResponse.json(
-      { error: "Error fetching data from Firestore" },
+      { error: "Error fetching data from Supabase" },
       { status: 500 }
     );
   }

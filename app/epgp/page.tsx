@@ -341,7 +341,7 @@ export default function EPGPPage() {
                           </td>
                           <td className="px-4 py-2.5"><div className="flex items-center gap-2.5"><div className="relative w-6 h-6 rounded border border-slate-700 bg-slate-800 shrink-0 shadow-sm">{charInfo ? <img src={charInfo.icon} alt={charInfo.class} className="object-cover w-full h-full" /> : <Users size={14} className="text-slate-500 p-1" />}</div><span className={`font-semibold text-sm ${charInfo ? getClassColor(charInfo.class) : 'text-blue-300'}`}>{log.personaje}</span></div></td>
                           <td className="px-4 py-2.5"><span className="text-slate-300 text-sm">{log.descripcion}</span></td>
-                          <td className="px-4 py-2.5 text-center"><span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-900/80 text-slate-400 border border-slate-700/50 uppercase tracking-wider">{log["EP/GP"]}</span></td>
+                          <td className="px-4 py-2.5 text-center"><span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-900/80 text-slate-400 border border-slate-700/50 uppercase tracking-wider">EP</span></td>
                           <td className="px-4 py-2.5 text-right"><div className={`flex items-center justify-end gap-1.5 font-mono text-sm font-bold ${isPositive ? 'text-green-400' : 'text-red-400'}`}>{isPositive ? "+" : ""}{log.valor}</div></td>
                         </tr>
                       );
