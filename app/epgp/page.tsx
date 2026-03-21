@@ -137,7 +137,12 @@ export default function EPGPPage() {
 
   const processedRoster = useMemo(() => {
     let filtered = roster;
-    if (selectedClasses.size > 0) filtered = filtered.filter(member => selectedClasses.has(member.class.toUpperCase()));
+    if (selectedClasses.size > 0) {
+      filtered = filtered.filter(member => 
+        selectedClasses.has(member.class.toUpperCase()) || 
+        member.alters?.some(alt => selectedClasses.has(alt.class.toUpperCase()))
+      );
+    }
     if (searchTerm) {
       const lowerSearch = searchTerm.toLowerCase();
       filtered = filtered.filter(member => member.main.toLowerCase().includes(lowerSearch) || member.alters?.some(alt => alt.name.toLowerCase().includes(lowerSearch)));

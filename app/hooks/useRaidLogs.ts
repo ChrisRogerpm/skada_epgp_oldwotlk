@@ -6,7 +6,8 @@ export function useRaidLogs() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const todayDate = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
+  const now = new Date();
+  const todayDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`; // "YYYY-MM-DD" en TZ local
 
   const [filters, setFilters] = useState<FilterState>({
     date: todayDate,
