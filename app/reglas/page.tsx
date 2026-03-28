@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import Image from "next/image";
 import {
   ScrollText,
   Shield,
@@ -207,6 +208,13 @@ export default function RulesPage() {
       .filter((cat: any) => cat.items.length > 0);
   }, [data, searchTerm]);
 
+  useEffect(() => {
+    // Wowhead Tooltips Refresh
+    if (typeof window !== "undefined" && (window as any).$WowheadPower) {
+      setTimeout(() => (window as any).$WowheadPower.refreshLinks(), 100);
+    }
+  }, [activeTab, data, selectedCategory, searchTerm]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-4">
@@ -392,15 +400,16 @@ export default function RulesPage() {
 
                               <div className="flex gap-4 relative z-10">
                                 <a
-                                  href={`https://wotlk.ultimowow.com/?search=${encodeURIComponent(item.item)}`}
+                                  href={`https://www.wowhead.com/wotlk/search?q=${encodeURIComponent(item.item)}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="w-14 h-14 rounded-lg overflow-hidden border-2 border-slate-800 group-hover:border-emerald-500/40 transition-colors bg-slate-900 shrink-0 relative"
                                 >
-                                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img
-                                    src={item.icon}
+                                  <Image
+                                    src={item.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"}
                                     alt={item.item}
+                                    width={56}
+                                    height={56}
                                     className="w-full h-full object-cover"
                                   />
                                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
@@ -513,10 +522,12 @@ export default function RulesPage() {
                             <td className="px-3 py-3">
                               <div className="flex items-center gap-3">
                                 {item.icon && (
-                                  <div className="w-8 h-8 rounded border border-slate-700 overflow-hidden bg-slate-900 shrink-0">
-                                    <img
-                                      src={item.icon}
+                                  <div className="w-8 h-8 rounded border border-slate-700 overflow-hidden bg-slate-900 shrink-0 relative">
+                                    <Image
+                                      src={item.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"}
                                       alt="Icon"
+                                      width={32}
+                                      height={32}
                                       className="w-full h-full object-cover"
                                     />
                                   </div>
@@ -563,10 +574,12 @@ export default function RulesPage() {
                             <td className="px-3 py-3">
                               <div className="flex items-center gap-3">
                                 {item.icon && (
-                                  <div className="w-8 h-8 rounded border border-slate-700 overflow-hidden bg-slate-900 shrink-0">
-                                    <img
-                                      src={item.icon}
+                                  <div className="w-8 h-8 rounded border border-slate-700 overflow-hidden bg-slate-900 shrink-0 relative">
+                                    <Image
+                                      src={item.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"}
                                       alt="Icon"
+                                      width={32}
+                                      height={32}
                                       className="w-full h-full object-cover"
                                     />
                                   </div>

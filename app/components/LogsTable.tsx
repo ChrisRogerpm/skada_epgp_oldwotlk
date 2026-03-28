@@ -2,7 +2,7 @@
 
 import { RaidLog } from "../types/RaidLog";
 import LogRow from "./LogRow";
-import { Ghost, Loader2, Search } from "lucide-react";
+import { Ghost, Search, Download } from "lucide-react";
 
 interface LogsTableProps {
   logs: RaidLog[];
@@ -10,6 +10,34 @@ interface LogsTableProps {
   error: string | null;
   metric?: "Damage" | "Healing";
 }
+
+const SkeletonRow = ({ metric }: { metric: "Damage" | "Healing" }) => (
+  <tr className="border-b border-slate-800/50 animate-pulse">
+    <td className="py-2 px-4">
+      <div className="w-6 h-6 rounded-full bg-slate-800/50"></div>
+    </td>
+    <td className="py-2 px-4">
+      <div className="flex items-center space-x-2">
+        <div className="w-7 h-7 rounded-full bg-slate-800/50"></div>
+        <div className="space-y-2">
+          <div className="h-3 w-24 bg-slate-800/50 rounded"></div>
+          <div className="h-2 w-16 bg-slate-800/50 rounded"></div>
+        </div>
+      </div>
+    </td>
+    <td className="py-2 px-4">
+      <div className="h-4 w-16 bg-slate-800/50 rounded-md"></div>
+    </td>
+    <td className="py-2 px-4">
+      <div className="h-4 w-20 bg-slate-800/50 rounded"></div>
+    </td>
+    {metric === "Damage" && (
+      <td className="py-2 px-4">
+        <div className="h-4 w-16 bg-slate-800/50 rounded"></div>
+      </td>
+    )}
+  </tr>
+);
 
 export default function LogsTable({ logs, loading, error, metric = "Damage" }: LogsTableProps) {
   if (error) {
@@ -26,8 +54,68 @@ export default function LogsTable({ logs, loading, error, metric = "Damage" }: L
     );
   }
 
+  const handleExportCSV = () => {
+    if (logs.length === 0) return;
+    
+    const headers = ["Rango", "Personaje", "Clase", "Talento", "Cantidad", metric === "Damage" ? "DPS" : ""];
+    const csvContent = [
+      headers.filter(Boolean).join(","),
+      ...logs.map(log => {
+        const row = [
+          log.Rank,
+          `"${log.Character}"`,
+          log.Class,
+          `"${log.Talent || ''}"`,
+          `"${log.Amount}"`,
+          metric === "Damage" ? `"${log.DPS || ''}"` : ""
+        ];
+        return row.filter(val => val !== "").join(",");
+      })
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `logs_${metric.toLowerCase()}_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExportJSON = () => {
+    if (logs.length === 0) return;
+    const dataStr = JSON.stringify(logs, null, 2);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `logs_${metric.toLowerCase()}_${new Date().toISOString().split('T')[0]}.json`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="w-full bg-slate-900 border border-slate-800 rounded-xl shadow-2xl overflow-hidden backdrop-blur-sm bg-opacity-70 flex flex-col">
+      {/* Table Header with Actions */}
+      <div className="flex justify-end gap-2 p-3 bg-slate-950/50 border-b border-slate-800">
+        <button
+          onClick={handleExportJSON}
+          disabled={logs.length === 0 || loading}
+          className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-slate-300 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Download size={14} /> JSON
+        </button>
+        <button
+          onClick={handleExportCSV}
+          disabled={logs.length === 0 || loading}
+          className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-slate-300 bg-emerald-900/50 hover:bg-emerald-800/50 text-emerald-400 border border-emerald-800/50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Download size={14} /> CSV
+        </button>
+      </div>
+
       <div className="overflow-x-auto">
         <table className="w-full text-left whitespace-nowrap border-collapse">
           <thead className="bg-slate-950/80 border-b border-slate-800 text-slate-400 text-xs uppercase tracking-wider font-semibold">
@@ -41,19 +129,11 @@ export default function LogsTable({ logs, loading, error, metric = "Damage" }: L
           </thead>
           <tbody className="divide-y divide-slate-800/50 relative">
             {loading && (
-              <tr>
-                <td colSpan={5} className="h-64">
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/50 backdrop-blur-[2px] z-10">
-                    <Loader2
-                      size={32}
-                      className="text-emerald-500 animate-spin mb-4"
-                    />
-                    <p className="text-emerald-400 font-medium text-lg">
-                      Cargando registros de batalla...
-                    </p>
-                  </div>
-                </td>
-              </tr>
+              <>
+                {Array.from({ length: 10 }).map((_, i) => (
+                  <SkeletonRow key={`skeleton-${i}`} metric={metric} />
+                ))}
+              </>
             )}
 
             {!loading && logs.length === 0 ? (

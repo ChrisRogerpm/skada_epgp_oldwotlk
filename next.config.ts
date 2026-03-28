@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
         hostname: "wow.zamimg.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "wotlk.ultimowow.com",
+        pathname: "/**",
+      },
     ],
   },
 };

@@ -5,8 +5,10 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const date = searchParams.get("date"); // opcional: ?date=2026-02-26
+    const limit = parseInt(searchParams.get("limit") || "100", 10);
+    const offset = parseInt(searchParams.get("offset") || "0", 10);
 
-    let queryBuilder = supabase.from("skada").select("*");
+    let queryBuilder = supabase.from("skada").select("*").range(offset, offset + limit - 1);
 
     if (date) {
       queryBuilder = queryBuilder.eq("date", date);

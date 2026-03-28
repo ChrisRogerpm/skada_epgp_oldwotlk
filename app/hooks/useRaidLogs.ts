@@ -1,11 +1,10 @@
-import { useState, useEffect } from "react";
-import { RaidLog, FilterState, RaidEncounterPayload } from "../types/RaidLog";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useDebounce } from "use-debounce";
+import { RaidLog, FilterState } from "../types/RaidLog";
+import { LogsResponseSchema } from "../../lib/schemas";
 
 export function useRaidLogs() {
-  const [logs, setLogs] = useState<RaidLog[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
   const now = new Date();
   const todayDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`; // "YYYY-MM-DD" en TZ local
 
@@ -17,46 +16,43 @@ export function useRaidLogs() {
     search: "",
   });
 
-  useEffect(() => {
-    // No cargar nada hasta que se seleccione una fecha
-    if (!filters.date) {
-      setLogs([]);
-      return;
-    }
+  // Debounce the search input by 300ms
+  const [debouncedSearch] = useDebounce(filters.search, 300);
 
-    async function fetchLogs() {
-      try {
-        setLoading(true);
-        setError(null);
+  const { data: logs = [], isLoading, error } = useQuery({
+    queryKey: ["raidLogs", filters.date, filters.metric],
+    queryFn: async () => {
+      if (!filters.date) return [];
 
-        const response = await fetch(`/api/logs?date=${filters.date}`);
-        if (!response.ok) throw new Error("Failed to fetch logs");
+      const response = await fetch(`/api/logs?date=${filters.date}`);
+      if (!response.ok) throw new Error("Failed to fetch logs");
 
-        const data: RaidEncounterPayload[] = await response.json();
+      const rawData = await response.json();
+      
+      // Validar datos con Zod
+      const parsedData = LogsResponseSchema.parse(rawData);
 
-        // Flatten encounters → rows por jugador
-        const flattenedLogs: RaidLog[] = data.flatMap((encounter) => {
-          const listToMap = filters.metric === "Healing" && encounter.Healing ? encounter.Healing : encounter.Damage;
-          return listToMap.map((entry) => ({
-            ...entry,
-            date: encounter.date,
-            boss: encounter.name,
-            raidInstance: "Icecrown Citadel",
-          }));
-        });
+      // Flatten encounters → rows por jugador
+      const flattenedLogs: RaidLog[] = parsedData.flatMap((encounter) => {
+        const listToMap = (filters.metric === "Healing" ? encounter.Healing : encounter.Damage) || [];
+        return listToMap.map((entry) => ({
+          ...entry,
+          Amount: String(entry.Amount),
+          DPS: entry.DPS != null ? String(entry.DPS) : undefined,
+          Talent: entry.Talent ?? undefined,
+          Icon: entry.Icon ?? undefined,
+          date: encounter.date,
+          boss: encounter.name,
+          raidInstance: "Icecrown Citadel",
+        })) as RaidLog[];
+      });
 
-        setLogs(flattenedLogs);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Unknown error");
-      } finally {
-        setLoading(false);
-      }
-    }
+      return flattenedLogs;
+    },
+    enabled: !!filters.date,
+  });
 
-    fetchLogs();
-  }, [filters.date, filters.metric]);
-
-  // Filtros locales: instancia y jefe (la fecha ya va directo a la API)
+  // Filtros locales: instancia, jefe y búsqueda (debounced)
   const filteredLogs = logs.filter((log) => {
     if (
       filters.raidInstance &&
@@ -69,8 +65,8 @@ export function useRaidLogs() {
       return false;
     }
     if (
-      filters.search &&
-      !log.Character.toLowerCase().includes(filters.search.toLowerCase())
+      debouncedSearch &&
+      !log.Character.toLowerCase().includes(debouncedSearch.toLowerCase())
     ) {
       return false;
     }
@@ -79,8 +75,8 @@ export function useRaidLogs() {
 
   return {
     logs: filteredLogs,
-    loading,
-    error,
+    loading: isLoading,
+    error: error instanceof Error ? error.message : null,
     filters,
     setFilters,
   };

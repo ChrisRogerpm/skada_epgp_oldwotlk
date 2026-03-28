@@ -2,11 +2,11 @@ export interface EncounterDamage {
   Rank: number;
   Character: string;
   Class: string;
-  Talent: string;
-  Icon: string;
+  Talent?: string | null;
+  Icon?: string | null;
   Amount: string;
-  DPS?: string;
-  HPS?: string;
+  DPS?: string | null;
+  HPS?: string | null;
 }
 
 export interface RaidEncounterPayload {

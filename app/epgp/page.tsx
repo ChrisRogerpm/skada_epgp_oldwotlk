@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
+import Image from "next/image";
 import { 
   BarChart2, Users, Search, ChevronDown, ChevronUp, Calendar, Clock, 
   History, LayoutList, TrendingUp, TrendingDown, Loader2, Grid, List,
@@ -35,10 +36,21 @@ interface LogDetail { personaje: string; descripcion: string; valor: number; "EP
 
 const WOW_CLASSES = ["DEATHKNIGHT", "DRUID", "HUNTER", "MAGE", "PALADIN", "PRIEST", "ROGUE", "SHAMAN", "WARLOCK", "WARRIOR"];
 
+import CharacterHistoryModal from "../components/CharacterHistoryModal";
+
 export default function EPGPPage() {
   const [activeTab, setActiveTab] = useState<"roster" | "history">("roster");
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  
+  // Modal state
+  const [selectedMember, setSelectedMember] = useState<RosterMember | null>(null);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+
+  const openHistory = (member: RosterMember) => {
+    setSelectedMember(member);
+    setIsHistoryModalOpen(true);
+  };
   
   const [roster, setRoster] = useState<RosterMember[]>([]);
   const [historyLogs, setHistoryLogs] = useState<LogDetail[]>([]);
@@ -294,8 +306,25 @@ export default function EPGPPage() {
                       <React.Fragment key={member.main}>
                         <tr onClick={() => toggleRow(member.main)} className={`group cursor-pointer transition-colors ${member.main === myCharacter ? 'bg-blue-900/10' : 'hover:bg-slate-800/30'}`}>
                           <td className="px-4 py-3 flex items-center gap-3">
-                            <div className={`relative w-8 h-8 rounded border overflow-hidden bg-slate-800 ${member.main === myCharacter ? 'border-blue-400 shadow-sm' : 'border-slate-700'}`}><img src={member.icon || "/api/placeholder/32/32"} alt={member.class} className="object-cover w-full h-full" /></div>
-                            <span className={`font-semibold text-sm ${getClassColor(member.class)}`}>{member.main}</span>
+                            <div className={`relative w-8 h-8 rounded border overflow-hidden bg-slate-800 ${member.main === myCharacter ? 'border-blue-400 shadow-sm' : 'border-slate-700'}`}>
+                              <Image 
+                                src={member.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"} 
+                                alt={member.class} 
+                                width={32}
+                                height={32}
+                                className="object-cover w-full h-full" 
+                              />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className={`font-semibold text-sm ${getClassColor(member.class)}`}>{member.main}</span>
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); openHistory(member); }}
+                                className="ml-1 p-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20 hover:border-cyan-500/40 transition-all hover:scale-110 active:scale-95 shadow-sm"
+                                title="Ver bitácora detallada"
+                              >
+                                <History size={14} className="drop-shadow-[0_0_8px_rgba(34,211,238,0.4)]" />
+                              </button>
+                            </div>
                           </td>
                           <td className="px-4 py-3 text-center"><span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-900/80 text-slate-300 border border-slate-700/50 uppercase">{member.class}</span></td>
                           <td className="px-4 py-3 text-right font-mono font-bold text-slate-100">{member.amount.toLocaleString()}</td>
@@ -304,7 +333,15 @@ export default function EPGPPage() {
                         </tr>
                         {expandedRows.has(member.main) && member.alters && member.alters.length > 0 && (
                           <tr className={`border-b border-slate-800/50 ${member.main === myCharacter ? 'bg-blue-900/5' : 'bg-slate-900/80'}`}>
-                            <td colSpan={5} className="px-4 py-3"><div className="pl-12 grid grid-cols-2 sm:grid-cols-4 gap-2 animate-in fade-in slide-in-from-top-2 duration-200">{member.alters.map((alt) => (<div key={alt.name} className="flex items-center gap-2.5 bg-slate-950/60 p-2 rounded-lg border border-slate-800/60"><div className="w-6 h-6 rounded overflow-hidden border border-slate-700 bg-slate-800 shrink-0"><img src={alt.icon || "/api/placeholder/24/24"} alt={alt.class} className="object-cover w-full h-full" /></div><div className="flex flex-col min-w-0"><span className={`text-xs font-bold truncate ${getClassColor(alt.class)}`}>{alt.name}</span><span className="text-[9px] text-slate-500 font-semibold uppercase">{alt.class}</span></div></div>))}</div></td>
+                            <td colSpan={5} className="px-4 py-3"><div className="pl-12 grid grid-cols-2 sm:grid-cols-4 gap-2 animate-in fade-in slide-in-from-top-2 duration-200">{member.alters.map((alt) => (<div key={alt.name} className="flex items-center gap-2.5 bg-slate-950/60 p-2 rounded-lg border border-slate-800/60"><div className="w-6 h-6 rounded overflow-hidden border border-slate-700 bg-slate-800 shrink-0 relative">
+                              <Image 
+                                src={alt.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"} 
+                                alt={alt.class} 
+                                width={24}
+                                height={24}
+                                className="object-cover w-full h-full" 
+                              />
+                            </div><div className="flex flex-col min-w-0"><span className={`text-xs font-bold truncate ${getClassColor(alt.class)}`}>{alt.name}</span><span className="text-[9px] text-slate-500 font-semibold uppercase">{alt.class}</span></div></div>))}</div></td>
                           </tr>
                         )}
                       </React.Fragment>
@@ -344,7 +381,32 @@ export default function EPGPPage() {
                             {isMeOrMyAlter && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-r-full shadow-lg z-10"></div>}
                             <div className="flex flex-col leading-tight"><span className="text-slate-300 font-medium text-xs">{log.hour}</span><span className="text-slate-500 text-[9px]">{log.fecha}</span></div>
                           </td>
-                          <td className="px-4 py-2.5"><div className="flex items-center gap-2.5"><div className="relative w-6 h-6 rounded border border-slate-700 bg-slate-800 shrink-0 shadow-sm">{charInfo ? <img src={charInfo.icon} alt={charInfo.class} className="object-cover w-full h-full" /> : <Users size={14} className="text-slate-500 p-1" />}</div><span className={`font-semibold text-sm ${charInfo ? getClassColor(charInfo.class) : 'text-blue-300'}`}>{log.personaje}</span></div></td>
+                          <td className="px-4 py-2.5">
+                            <div className="flex items-center gap-2.5">
+                              <div className="relative w-6 h-6 rounded border border-slate-700 bg-slate-800 shrink-0 shadow-sm">
+                                {charInfo ? <Image src={charInfo.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"} alt={charInfo.class} width={24} height={24} className="object-cover w-full h-full" /> : <Users size={14} className="text-slate-500 p-1" />}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className={`font-semibold text-sm ${charInfo ? getClassColor(charInfo.class) : 'text-blue-300'}`}>{log.personaje}</span>
+                                <button 
+                                  onClick={(e) => { 
+                                    e.stopPropagation(); 
+                                    // Buscar al miembro para tener sus alters
+                                    const member = roster.find(r => 
+                                      r.main.toLowerCase() === log.personaje.toLowerCase() || 
+                                      r.alters?.some(a => a.name.toLowerCase() === log.personaje.toLowerCase())
+                                    );
+                                    if (member) openHistory(member);
+                                    else openHistory({ main: log.personaje, class: '', amount: 0, icon: '', alters: [] });
+                                  }}
+                                  className="ml-1 p-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20 hover:border-cyan-500/40 transition-all hover:scale-110 active:scale-95 shadow-sm"
+                                  title="Ver bitácora detallada"
+                                >
+                                  <History size={13} className="drop-shadow-[0_0_8px_rgba(34,211,238,0.4)]" />
+                                </button>
+                              </div>
+                            </div>
+                          </td>
                           <td className="px-4 py-2.5"><span className="text-slate-300 text-sm">{log.descripcion}</span></td>
                           <td className="px-4 py-2.5 text-center"><span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-900/80 text-slate-400 border border-slate-700/50 uppercase tracking-wider">EP</span></td>
                           <td className="px-4 py-2.5 text-right"><div className={`flex items-center justify-end gap-1.5 font-mono text-sm font-bold ${isPositive ? 'text-green-400' : 'text-red-400'}`}>{isPositive ? "+" : ""}{log.valor}</div></td>
@@ -369,6 +431,13 @@ export default function EPGPPage() {
           )}
         </div>
       </div>
+
+      <CharacterHistoryModal 
+        mainName={selectedMember?.main || ""} 
+        alters={selectedMember?.alters?.map(a => a.name) || []}
+        isOpen={isHistoryModalOpen} 
+        onClose={() => setIsHistoryModalOpen(false)} 
+      />
     </main>
   );
 }

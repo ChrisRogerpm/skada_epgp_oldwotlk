@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { 
   Settings, Database, Save, AlertCircle, CheckCircle2, Loader2,
   FileText, Users, Trophy, Plus, X, Shield, TrendingUp, TrendingDown, Edit3, Search,
@@ -14,6 +15,7 @@ import clsx from "clsx";
 
 export default function AdminPage() {
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   
   // Login states
@@ -45,26 +47,70 @@ export default function AdminPage() {
     { id: "skada", label: "Logs Skada", icon: FileText, color: "text-blue-400" },
   ];
 
+  const checkAdminRole = async (userId: string) => {
+    try {
+      console.log("Verificando rol para el usuario:", userId);
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .single();
+        
+      if (error) {
+        console.error("Error en Supabase al consultar tabla 'profiles':", error);
+        // Si la tabla no existe o hay error, podrías permitir el acceso temporalmente 
+        // para configurar la BD, pero por seguridad lanzamos el log.
+        return false;
+      }
+
+      if (!data) {
+        console.warn("No se encontró registro en la tabla 'profiles' para este usuario.");
+        return false;
+      }
+
+      console.log("Rol obtenido:", data.role);
+      return data.role === 'admin';
+    } catch (err) {
+      console.error("Excepción al verificar rol:", err);
+      return false;
+    }
+  };
+
   // Auth Observer
   useEffect(() => {
+    const checkAuth = async (session: any) => {
+      const currentUser = session?.user ?? null;
+      if (currentUser) {
+        const isUserAdmin = await checkAdminRole(currentUser.id);
+        if (isUserAdmin) {
+          setUser(currentUser);
+          setIsAdmin(true);
+        } else {
+          await supabase.auth.signOut();
+          setUser(null);
+          setIsAdmin(false);
+          setLoginError("Acceso denegado. No tienes permisos de administrador.");
+        }
+      } else {
+        setUser(null);
+        setIsAdmin(false);
+      }
+      setAuthLoading(false);
+    };
+
     // Single subscription to auth state
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-      setAuthLoading(false);
+      checkAuth(session);
       
       // Reset fetched ref if user logs out
-      if (!currentUser) {
+      if (!session?.user) {
         fetchedRef.current = false;
       }
     });
 
     // Check current session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setUser(session.user);
-      }
-      setAuthLoading(false);
+      checkAuth(session);
     });
 
     return () => subscription.unsubscribe();
@@ -72,12 +118,12 @@ export default function AdminPage() {
 
   // Optimized fetch rules effect
   useEffect(() => {
-    // Only fetch if we have a user, we are in the right section, 
+    // Only fetch if we have an admin user, we are in the right section, 
     // AND we haven't fetched successfully yet in this mount cycle
-    if (user && activeSection === "reglas" && !fetchedRef.current && !isLoading) {
+    if (isAdmin && activeSection === "reglas" && !fetchedRef.current && !isLoading) {
       fetchRules();
     }
-  }, [user?.id, activeSection]); // Use user.id instead of user object to avoid ref-change triggers
+  }, [isAdmin, activeSection]); // Trigger when isAdmin or activeSection changes
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,11 +131,20 @@ export default function AdminPage() {
     setLoginError("");
     
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       if (error) throw error;
+      
+      if (data.user) {
+        const isUserAdmin = await checkAdminRole(data.user.id);
+        if (!isUserAdmin) {
+          await supabase.auth.signOut();
+          throw new Error("Acceso denegado. Se requiere rol de administrador.");
+        }
+      }
+      
       // Reset ref on successful login to ensure fresh data
       fetchedRef.current = false;
     } catch (error: any) {
@@ -103,6 +158,8 @@ export default function AdminPage() {
     try {
       await supabase.auth.signOut();
       fetchedRef.current = false;
+      setUser(null);
+      setIsAdmin(false);
       setLootRules([]);
       setBenefits([]);
       setPenalties([]);
@@ -734,11 +791,12 @@ export default function AdminPage() {
                                           <div key={iIdx} className="bg-slate-950/60 border border-white/5 rounded-[1.5rem] p-6 grid grid-cols-1 md:grid-cols-12 gap-6 items-start group/item hover:border-white/10 hover:bg-slate-900/60 transition-all shadow-inner">
                                             <div className="md:col-span-1 flex justify-center">
                                               <div className="relative group/icon cursor-pointer">
-                                                <img 
-                                                  src={item.icon} 
+                                                <Image 
+                                                  src={item.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"} 
                                                   alt="icon" 
+                                                  width={56}
+                                                  height={56}
                                                   className="w-14 h-14 rounded-2xl border-2 border-slate-800 mx-auto object-cover bg-slate-900 group-hover/icon:border-emerald-500 transition-all shadow-2xl" 
-                                                  onError={(e) => {(e.target as HTMLImageElement).src = "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"}}
                                                 />
                                                 <div className="absolute -bottom-1 -right-1 bg-slate-900 rounded-lg p-1 border border-white/10 opacity-0 group-hover/item:opacity-100 transition-all scale-75 group-hover:scale-100">
                                                   <Edit3 size={12} className="text-emerald-400" />
@@ -876,11 +934,12 @@ export default function AdminPage() {
                                   <div key={iIdx} className="bg-slate-950/40 border border-white/5 rounded-2xl p-4 space-y-4 group/bene hover:bg-slate-900/60 transition-all">
                                     <div className="flex items-center gap-4">
                                       <div className="relative group/icon shrink-0">
-                                        <img 
-                                          src={item.icon} 
+                                        <Image 
+                                          src={item.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"} 
                                           alt="icon" 
+                                          width={48}
+                                          height={48}
                                           className="w-12 h-12 rounded-xl border border-white/10 object-cover bg-slate-900 shadow-lg group-hover/icon:border-emerald-500 transition-all" 
-                                          onError={(e) => {(e.target as HTMLImageElement).src = "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"}}
                                         />
                                       </div>
                                       <div className="flex-1 min-w-0 space-y-1.5">
@@ -983,11 +1042,12 @@ export default function AdminPage() {
                                   <div key={iIdx} className="bg-slate-950/40 border border-white/5 rounded-2xl p-4 space-y-4 group/perj hover:bg-slate-900/60 transition-all">
                                     <div className="flex items-center gap-4">
                                       <div className="relative group/icon shrink-0">
-                                        <img 
-                                          src={item.icon} 
+                                        <Image 
+                                          src={item.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"} 
                                           alt="icon" 
+                                          width={48}
+                                          height={48}
                                           className="w-12 h-12 rounded-xl border border-white/10 object-cover bg-slate-900 shadow-lg group-hover/icon:border-red-500 transition-all" 
-                                          onError={(e) => {(e.target as HTMLImageElement).src = "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"}}
                                         />
                                       </div>
                                       <div className="flex-1 min-w-0 space-y-1.5">

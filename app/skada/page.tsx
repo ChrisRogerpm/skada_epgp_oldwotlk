@@ -3,6 +3,7 @@
 import { useRaidLogs } from "../hooks/useRaidLogs";
 import Filters from "../components/Filters";
 import LogsTable from "../components/LogsTable";
+import LogsChart from "../components/LogsChart";
 import { Sword } from "lucide-react";
 
 export default function SkadaPage() {
@@ -28,6 +29,9 @@ export default function SkadaPage() {
         {/* Content */}
         <section className="animate-in fade-in slide-in-from-bottom-4 duration-700">
           <Filters filters={filters} setFilters={setFilters} />
+          {!loading && !error && logs.length > 0 && (
+            <LogsChart logs={logs} metric={filters.metric} />
+          )}
           <LogsTable logs={logs} loading={loading} error={error} metric={filters.metric} />
         </section>
       </div>
