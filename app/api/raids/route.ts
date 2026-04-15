@@ -33,10 +33,19 @@ export async function GET(request: Request) {
 
     if (participantsError) throw participantsError;
 
+    // 2.5 Fetch items won for these raids
+    const { data: raidItems, error: itemsError } = await supabase
+      .from("raid_items")
+      .select("*")
+      .in("id_raids", raidIds);
+
+    if (itemsError) throw itemsError;
+
     // 3. Group participants by raid_id
     const raidsWithParticipants = raids.map((raid) => ({
       ...raid,
       participants: (participants || []).filter((p) => p.raid_id === raid.id),
+      items: (raidItems || []).filter((i) => i.id_raids === raid.id),
     }));
 
     return NextResponse.json({

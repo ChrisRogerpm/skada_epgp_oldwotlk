@@ -6,6 +6,14 @@ export interface RaidParticipant {
   player_group: number;
 }
 
+export interface RaidItem {
+  id: number;
+  id_item: number;
+  id_raids: string;
+  personaje: string | null;
+  class: string | null;
+}
+
 export interface RaidInfo {
   id: string;
   raid_id_key: string;
@@ -14,6 +22,7 @@ export interface RaidInfo {
   boss_name: string;
   created_at: string;
   participants: RaidParticipant[];
+  items?: RaidItem[];
 }
 
 export interface RaidsByDateResponse {
