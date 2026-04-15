@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { FilterState, RAID_INSTANCES, BOSSES } from "../types/RaidLog";
+import { FilterState, RAID_INSTANCES, BOSSES, BOSSES_TRANSLATIONS } from "../types/RaidLog";
 import { Calendar, Map, Skull, Activity, Search } from "lucide-react";
 
 interface FiltersProps {
@@ -86,7 +86,7 @@ export default function Filters({ filters, setFilters }: FiltersProps) {
           >
             {BOSSES.map((boss) => (
               <option key={boss} value={boss}>
-                {boss}
+                {BOSSES_TRANSLATIONS[boss] || boss}
               </option>
             ))}
           </select>

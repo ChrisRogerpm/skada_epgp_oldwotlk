@@ -1,19 +1,17 @@
 import { NextResponse } from "next/server";
 import { supabase } from "../../../lib/supabase";
-import { getOrSetCache } from "../../../lib/cache";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const roster = await getOrSetCache("epgp_roster", async () => {
-      const { data, error } = await supabase
-        .from('epgp')
-        .select('*');
+    const { data: roster, error } = await supabase
+      .from('epgp')
+      .select('*');
 
-      if (error) throw error;
-      return data || [];
-    }, 10 * 60 * 1000); // 10 minutos de caché
+    if (error) throw error;
 
-    if (roster.length === 0) {
+    if (!roster || roster.length === 0) {
       return NextResponse.json({ date: "", hour: "", roster: [] });
     }
 

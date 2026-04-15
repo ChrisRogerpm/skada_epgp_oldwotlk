@@ -46,3 +46,18 @@ export const BOSSES = [
   "Sindragosa",
   "The Lich King",
 ];
+
+export const BOSSES_TRANSLATIONS: Record<string, string> = {
+  "Lord Marrowgar": "Lord Tuétano",
+  "Lady Deathwhisper": "Lady Susurramuerte",
+  "Gunship Battle": "Batalla de Naves de Guerra",
+  "Deathbringer Saurfang": "Libramorte Colmillosauro",
+  "Festergut": "Panzachancro",
+  "Rotface": "Carapútrea",
+  "Professor Putricide": "Profesor Putricidio",
+  "Blood Prince Council": "Consejo de los Príncipes de Sangre",
+  "Blood-Queen Lana'thel": "Reina de Sangre Lana'thel",
+  "Valithria Dreamwalker": "Valithria Caminasueños",
+  "Sindragosa": "Sindragosa",
+  "The Lich King": "El Rey Exánime",
+};
