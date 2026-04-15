@@ -18,6 +18,38 @@ export const CLASS_COLORS: Record<string, string> = {
 };
 
 /**
+ * Colores Hexadecimales de las clases
+ */
+export const CLASS_HEX: Record<string, string> = {
+  WARRIOR: "#C79C6E",
+  PALADIN: "#F58CBA",
+  HUNTER: "#ABD473",
+  ROGUE: "#FFF569",
+  PRIEST: "#FFFFFF",
+  DEATHKNIGHT: "#C41F3B",
+  SHAMAN: "#0070DE",
+  MAGE: "#69CCF0",
+  WARLOCK: "#9482C9",
+  DRUID: "#FF7D0A",
+};
+
+/**
+ * Iconos de clases (URLs de Wowhead/Blizzard)
+ */
+export const CLASS_ICONS: Record<string, string> = {
+  WARRIOR: "https://wow.zamimg.com/images/wow/icons/small/classicon_warrior.jpg",
+  PALADIN: "https://wow.zamimg.com/images/wow/icons/small/classicon_paladin.jpg",
+  HUNTER: "https://wow.zamimg.com/images/wow/icons/small/classicon_hunter.jpg",
+  ROGUE: "https://wow.zamimg.com/images/wow/icons/small/classicon_rogue.jpg",
+  PRIEST: "https://wow.zamimg.com/images/wow/icons/small/classicon_priest.jpg",
+  DEATHKNIGHT: "https://wow.zamimg.com/images/wow/icons/small/classicon_deathknight.jpg",
+  SHAMAN: "https://wow.zamimg.com/images/wow/icons/small/classicon_shaman.jpg",
+  MAGE: "https://wow.zamimg.com/images/wow/icons/small/classicon_mage.jpg",
+  WARLOCK: "https://wow.zamimg.com/images/wow/icons/small/classicon_warlock.jpg",
+  DRUID: "https://wow.zamimg.com/images/wow/icons/small/classicon_druid.jpg",
+};
+
+/**
  * URLs de iconos por defecto
  */
 export const DEFAULT_ICONS = {

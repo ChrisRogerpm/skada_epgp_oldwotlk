@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sword, BarChart2, ScrollText, Settings, UserX } from "lucide-react";
+import { Sword, BarChart2, ScrollText, Settings, UserX, Users } from "lucide-react";
 import clsx from "clsx";
 
 const NAV_ITEMS = [
   { href: "/skada", label: "Skada", icon: Sword },
+  { href: "/raids", label: "Raids", icon: Users },
   { href: "/epgp", label: "Epgp", icon: BarChart2 },
   { href: "/reglas", label: "Reglas", icon: ScrollText },
   { href: "/lista_negra", label: "Lista Negra", icon: UserX },
