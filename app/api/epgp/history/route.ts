@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { supabase } from "../../../../lib/supabase";
 import { z } from "zod";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 const QuerySchema = z.object({
   names: z.string().min(1), // Recibe "Main,Alter1,Alter2"
 });

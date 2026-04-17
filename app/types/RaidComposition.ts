@@ -12,6 +12,7 @@ export interface RaidItem {
   id_raids: string;
   personaje: string | null;
   class: string | null;
+  items: itemsDetail
 }
 
 export interface RaidInfo {
@@ -28,4 +29,12 @@ export interface RaidInfo {
 export interface RaidsByDateResponse {
   date: string;
   raids: RaidInfo[];
+}
+
+export interface itemsDetail{
+  id: number;
+  id_item: number;
+  name: string;
+  raid: string;
+  icon: string;
 }

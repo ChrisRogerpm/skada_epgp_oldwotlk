@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { supabase } from "../../../lib/supabase";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -36,7 +39,7 @@ export async function GET(request: Request) {
     // 2.5 Fetch items won for these raids
     const { data: raidItems, error: itemsError } = await supabase
       .from("raid_items")
-      .select("*")
+      .select("*, items(*)")
       .in("id_raids", raidIds);
 
     if (itemsError) throw itemsError;
@@ -59,7 +62,7 @@ export async function GET(request: Request) {
         error: "Error fetching data from Supabase",
         details: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
