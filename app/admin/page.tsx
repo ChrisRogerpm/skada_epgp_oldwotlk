@@ -5,7 +5,7 @@ import Image from "next/image";
 import { 
   Settings, Database, Save, AlertCircle, CheckCircle2, Loader2,
   FileText, Users, Trophy, Plus, X, Shield, TrendingUp, TrendingDown, Edit3, Search,
-  ChevronDown, ChevronUp, Copy, LogOut, Lock, Mail, Trash2, LayoutDashboard, ExternalLink
+  ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Copy, LogOut, Lock, Mail, Trash2, LayoutDashboard, ExternalLink
 } from "lucide-react";
 import { supabase } from "../../lib/supabase";
 import { 
@@ -25,7 +25,7 @@ export default function AdminPage() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   // Admin Panel states
-  const [activeSection, setActiveSection] = useState<"skada" | "epgp" | "reglas">("reglas");
+  const [activeSection, setActiveSection] = useState<"skada" | "epgp" | "reglas" | "fullgeared">("reglas");
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState<{ type: "success" | "error", message: string } | null>(null);
@@ -34,6 +34,26 @@ export default function AdminPage() {
   const [expandedRaids, setExpandedRaids] = useState<Set<number>>(new Set([0]));
   const [activeReglasTab, setActiveReglasTab] = useState<"loteo" | "beneficios" | "sanciones">("loteo");
 
+  // Full Geared states
+  const [fullGearedCharacters, setFullGearedCharacters] = useState<any[]>([]);
+  const [fgTotalItems, setFgTotalItems] = useState(0);
+  const [fgCurrentPage, setFgCurrentPage] = useState(1);
+  const [fgTotalPages, setFgTotalPages] = useState(1);
+  const fgLimit = 10;
+
+  const [isSearchingChar, setIsSearchingChar] = useState(false);
+  const [charSearchResults, setCharSearchResults] = useState<any[]>([]);
+  const [selectedChar, setSelectedChar] = useState<any>(null);
+  const [charForm, setCharForm] = useState({
+    id: null,
+    name: "",
+    class: "",
+    icc: 0,
+    rs: 0,
+    gs: 0,
+    main: ""
+  });
+
   const [lootRules, setLootRules] = useState<any[]>([]);
   const [benefits, setBenefits] = useState<any[]>([]);
   const [penalties, setPenalties] = useState<any[]>([]);
@@ -41,10 +61,24 @@ export default function AdminPage() {
   // Ref to track if data has been fetched to avoid multiple calls
   const fetchedRef = useRef(false);
 
+  const CLASS_ICONS: Record<string, string> = {
+    DEATHKNIGHT: "https://wow.zamimg.com/images/wow/icons/large/spell_deathknight_classicon.jpg",
+    DRUID: "https://wow.zamimg.com/images/wow/icons/large/classicon_druid.jpg",
+    HUNTER: "https://wow.zamimg.com/images/wow/icons/large/classicon_hunter.jpg",
+    MAGE: "https://wow.zamimg.com/images/wow/icons/large/classicon_mage.jpg",
+    PALADIN: "https://wow.zamimg.com/images/wow/icons/large/classicon_paladin.jpg",
+    PRIEST: "https://wow.zamimg.com/images/wow/icons/large/classicon_priest.jpg",
+    ROGUE: "https://wow.zamimg.com/images/wow/icons/large/classicon_rogue.jpg",
+    SHAMAN: "https://wow.zamimg.com/images/wow/icons/large/classicon_shaman.jpg",
+    WARLOCK: "https://wow.zamimg.com/images/wow/icons/large/classicon_warlock.jpg",
+    WARRIOR: "https://wow.zamimg.com/images/wow/icons/large/classicon_warrior.jpg",
+  };
+
   const sections = [
     { id: "reglas", label: "Reglas & Loot", icon: Trophy, color: "text-orange-400" },
     { id: "epgp", label: "Sistema EPGP", icon: Users, color: "text-emerald-400" },
     { id: "skada", label: "Logs Skada", icon: FileText, color: "text-blue-400" },
+    { id: "fullgeared", label: "Full ICC/RS", icon: Shield, color: "text-purple-400" },
   ];
 
   const checkAdminRole = async (userId: string) => {
@@ -120,10 +154,101 @@ export default function AdminPage() {
   useEffect(() => {
     // Only fetch if we have an admin user, we are in the right section, 
     // AND we haven't fetched successfully yet in this mount cycle
-    if (isAdmin && activeSection === "reglas" && !fetchedRef.current && !isLoading) {
-      fetchRules();
+    if (isAdmin) {
+      if (activeSection === "reglas" && !fetchedRef.current && !isLoading) {
+        fetchRules();
+      } else if (activeSection === "fullgeared" && !isLoading) {
+        fetchFullGeared();
+      }
     }
-  }, [isAdmin, activeSection]); // Trigger when isAdmin or activeSection changes
+  }, [isAdmin, activeSection, fgCurrentPage, adminSearch]); // Trigger when isAdmin or activeSection changes
+
+  const fetchFullGeared = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch(`/api/full-geared?page=${fgCurrentPage}&limit=${fgLimit}&search=${encodeURIComponent(adminSearch)}`);
+      if (!res.ok) throw new Error("Error al obtener personajes");
+      const result = await res.json();
+      setFullGearedCharacters(result.data || []);
+      setFgTotalItems(result.total || 0);
+      setFgTotalPages(result.totalPages || 1);
+    } catch (error) {
+      console.error("Error fetching full geared:", error);
+      setStatus({ type: "error", message: "Error al cargar personajes" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const searchCharacters = async (q: string) => {
+    if (!q || q.length < 2) {
+      setCharSearchResults([]);
+      return;
+    }
+    setIsSearchingChar(true);
+    try {
+      const res = await fetch(`/api/epgp/search?q=${encodeURIComponent(q)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCharSearchResults(data);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSearchingChar(false);
+    }
+  };
+
+  const handleSelectChar = (char: any) => {
+    setCharForm({
+      ...charForm,
+      name: char.nombre_alter,
+      class: char.clase,
+      main: char.main
+    });
+    setCharSearchResults([]);
+    setSelectedChar(char);
+  };
+
+  const handleSaveFullGeared = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      const method = charForm.id ? "PUT" : "POST";
+      const res = await fetch("/api/full-geared", {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(charForm)
+      });
+      
+      if (!res.ok) throw new Error("Error al guardar");
+      
+      setStatus({ type: "success", message: "Personaje guardado correctamente" });
+      setCharForm({ id: null, name: "", class: "", icc: 0, rs: 0, gs: 0, main: "" });
+      setSelectedChar(null);
+      fetchFullGeared();
+    } catch (error: any) {
+      setStatus({ type: "error", message: error.message });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteFullGeared = async (id: number) => {
+    if (!confirm("¿Seguro que deseas eliminar este personaje?")) return;
+    
+    setIsSaving(true);
+    try {
+      const res = await fetch(`/api/full-geared?id=${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Error al eliminar");
+      setStatus({ type: "success", message: "Personaje eliminado" });
+      fetchFullGeared();
+    } catch (error: any) {
+      setStatus({ type: "error", message: error.message });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -526,22 +651,24 @@ export default function AdminPage() {
       </div>
 
       {/* Floating Save Button */}
-      <div className="fixed bottom-8 right-8 z-50 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-        <button
-          onClick={handleSaveReglas}
-          disabled={isSaving || isLoading}
-          className="flex items-center gap-3 px-8 py-5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 text-white rounded-3xl font-black transition-all shadow-2xl shadow-emerald-950/50 group border border-emerald-400/20 active:scale-95"
-        >
-          {isSaving ? (
-            <Loader2 className="animate-spin" size={24} />
-          ) : (
-            <Save size={24} className="group-hover:scale-110 group-hover:rotate-6 transition-transform" />
-          )}
-          <span className="hidden md:inline uppercase tracking-widest text-xs">
-            {isSaving ? "Guardando Cambios..." : "Guardar Todo"}
-          </span>
-        </button>
-      </div>
+      {activeSection === "reglas" && (
+        <div className="fixed bottom-8 right-8 z-50 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+          <button
+            onClick={handleSaveReglas}
+            disabled={isSaving || isLoading}
+            className="flex items-center gap-3 px-8 py-5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 text-white rounded-3xl font-black transition-all shadow-2xl shadow-emerald-950/50 group border border-emerald-400/20 active:scale-95"
+          >
+            {isSaving ? (
+              <Loader2 className="animate-spin" size={24} />
+            ) : (
+              <Save size={24} className="group-hover:scale-110 group-hover:rotate-6 transition-transform" />
+            )}
+            <span className="hidden md:inline uppercase tracking-widest text-xs">
+              {isSaving ? "Guardando Cambios..." : "Guardar Todo"}
+            </span>
+          </button>
+        </div>
+      )}
 
       <div className="max-w-[1600px] mx-auto flex flex-col lg:flex-row min-h-screen relative">
         
@@ -603,27 +730,27 @@ export default function AdminPage() {
         <div className="flex-1 p-6 md:p-10 lg:p-12 space-y-10 overflow-x-hidden">
           
           {/* Top Bar */}
-          <header className="flex flex-col md:flex-row md:items-center justify-between gap-8 pb-8 border-b border-white/5">
+          <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/5">
             <div>
               <div className="flex items-center gap-3 mb-1">
-                <span className="px-2 py-0.5 rounded text-[10px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-widest">Live System</span>
+                <span className="px-2 py-0.5 rounded text-[9px] md:text-[10px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-widest">Live System</span>
                 <span className="text-slate-600">/</span>
-                <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest">{sections.find(s => s.id === activeSection)?.label}</span>
+                <span className="text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-widest truncate max-w-[150px] md:max-w-none">{sections.find(s => s.id === activeSection)?.label}</span>
               </div>
-              <h2 className="text-3xl font-black text-white tracking-tighter uppercase">
-                {activeSection === "reglas" ? "Editor de Reglas" : activeSection === "epgp" ? "Configuración EPGP" : "Gestión de Logs"}
+              <h2 className="text-2xl md:text-3xl font-black text-white tracking-tighter uppercase">
+                {activeSection === "reglas" ? "Editor de Reglas" : activeSection === "epgp" ? "Configuración EPGP" : activeSection === "fullgeared" ? "Full ICC & RS" : "Gestión de Logs"}
               </h2>
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className="relative group">
+            <div className="flex items-center gap-4 w-full md:w-auto">
+              <div className="relative group w-full md:w-auto">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-emerald-400 transition-colors" size={18} />
                 <input 
                   type="text"
-                  placeholder="Filtrar por raid o ítem..."
+                  placeholder="Filtrar..."
                   value={adminSearch}
                   onChange={(e) => setAdminSearch(e.target.value)}
-                  className="w-full md:w-80 bg-slate-900/50 border border-white/5 rounded-2xl py-3.5 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/40 transition-all placeholder:text-slate-700 font-medium"
+                  className="w-full md:w-64 lg:w-80 bg-slate-900/50 border border-white/5 rounded-2xl py-3 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/40 transition-all placeholder:text-slate-700 font-medium"
                 />
               </div>
             </div>
@@ -1114,23 +1241,292 @@ export default function AdminPage() {
                   </>
                 )}
               </div>
-            ) : (
-              <div className="bg-slate-900/40 rounded-[3rem] border border-white/5 p-24 text-center animate-in fade-in duration-1000 shadow-2xl backdrop-blur-3xl relative overflow-hidden group">
-                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-blue-500/5 opacity-50" />
-                <div className="relative z-10">
-                  <div className="w-24 h-24 bg-slate-950 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-white/5 shadow-[0_0_50px_rgba(0,0,0,0.5)] group-hover:scale-110 transition-transform duration-500">
-                    <Database className="text-slate-800 group-hover:text-emerald-500/40 transition-colors duration-500" size={48} />
+            ) : activeSection === "fullgeared" ? (
+              <div className="space-y-10 animate-in fade-in duration-700">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  {/* FORMULARIO DE REGISTRO */}
+                  <div className="lg:col-span-1 space-y-6">
+                    <div className="bg-slate-900/60 rounded-[2.5rem] border border-white/10 p-8 shadow-2xl backdrop-blur-xl">
+                      <div className="flex items-center gap-4 mb-8">
+                        <div className="w-12 h-12 bg-purple-500/10 rounded-2xl border border-purple-500/20 flex items-center justify-center">
+                          <Plus className="text-purple-400" size={24} />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-black text-white uppercase tracking-tight">
+                            {charForm.id ? "Editar Personaje" : "Registrar Personaje"}
+                          </h3>
+                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">ICC & RS Milestone</p>
+                        </div>
+                      </div>
+
+                      <form onSubmit={handleSaveFullGeared} className="space-y-6">
+                        <div className="space-y-2 relative">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Buscar en EPGP</label>
+                          <div className="relative group">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-purple-400 transition-colors" size={18} />
+                            <input 
+                              type="text" 
+                              placeholder="Nombre del main o alter..."
+                              onChange={(e) => searchCharacters(e.target.value)}
+                              className="w-full bg-slate-950/50 border border-slate-800 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/40 transition-all text-white placeholder:text-slate-700"
+                            />
+                          </div>
+
+                          {/* SEARCH RESULTS DROPDOWN */}
+                          {charSearchResults.length > 0 && (
+                            <div className="absolute z-50 w-full mt-2 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2">
+                              {charSearchResults.map((char, idx) => (
+                                <button
+                                  key={idx}
+                                  type="button"
+                                  onClick={() => handleSelectChar(char)}
+                                  className="w-full flex items-center gap-4 p-4 hover:bg-white/5 transition-colors border-b border-white/5 last:border-none text-left"
+                                >
+                                  <div className="w-10 h-10 rounded-xl bg-slate-800 border border-white/10 overflow-hidden shrink-0">
+                                    {char.url_icono ? (
+                                      <Image src={char.url_icono} alt="icon" width={40} height={40} className="w-full h-full object-cover" />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center text-slate-600 font-bold text-xs">
+                                        {char.nombre_alter[0]}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-black text-white">{char.nombre_alter}</p>
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">
+                                      Main: {char.main} • {char.clase}
+                                    </p>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Personaje</label>
+                            <input 
+                              readOnly
+                              value={charForm.name}
+                              className="w-full bg-slate-950/30 border border-slate-800/50 rounded-xl py-3 px-4 text-xs text-slate-400 font-bold outline-none"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Clase</label>
+                            <input 
+                              readOnly
+                              value={charForm.class}
+                              className="w-full bg-slate-950/30 border border-slate-800/50 rounded-xl py-3 px-4 text-xs text-slate-400 font-bold outline-none"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Main (EPGP)</label>
+                          <input 
+                            readOnly
+                            value={charForm.main}
+                            className="w-full bg-slate-950/30 border border-slate-800/50 rounded-xl py-3 px-4 text-xs text-slate-400 font-bold outline-none"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Gear Score (GS)</label>
+                          <div className="relative">
+                            <input 
+                              type="number" 
+                              value={charForm.gs}
+                              onChange={(e) => setCharForm({...charForm, gs: parseInt(e.target.value) || 0})}
+                              className="w-full bg-slate-950/50 border border-slate-800 rounded-xl py-4 px-4 text-sm text-white font-black focus:border-purple-500/50 outline-none transition-all"
+                            />
+                            <Shield className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-800" size={20} />
+                          </div>
+                        </div>
+
+                        <div className="flex gap-6 py-2">
+                          <label className="flex items-center gap-3 cursor-pointer group">
+                            <div className="relative">
+                              <input 
+                                type="checkbox" 
+                                checked={charForm.icc === 1}
+                                onChange={(e) => setCharForm({...charForm, icc: e.target.checked ? 1 : 0})}
+                                className="peer sr-only"
+                              />
+                              <div className="w-6 h-6 bg-slate-950 border-2 border-slate-800 rounded-lg peer-checked:bg-purple-600 peer-checked:border-purple-600 transition-all flex items-center justify-center">
+                                <CheckCircle2 className="text-white scale-0 peer-checked:scale-100 transition-transform" size={14} />
+                              </div>
+                            </div>
+                            <span className="text-xs font-black text-slate-400 uppercase tracking-widest group-hover:text-white transition-colors">Full ICC</span>
+                          </label>
+
+                          <label className="flex items-center gap-3 cursor-pointer group">
+                            <div className="relative">
+                              <input 
+                                type="checkbox" 
+                                checked={charForm.rs === 1}
+                                onChange={(e) => setCharForm({...charForm, rs: e.target.checked ? 1 : 0})}
+                                className="peer sr-only"
+                              />
+                              <div className="w-6 h-6 bg-slate-950 border-2 border-slate-800 rounded-lg peer-checked:bg-blue-600 peer-checked:border-blue-600 transition-all flex items-center justify-center">
+                                <CheckCircle2 className="text-white scale-0 peer-checked:scale-100 transition-transform" size={14} />
+                              </div>
+                            </div>
+                            <span className="text-xs font-black text-slate-400 uppercase tracking-widest group-hover:text-white transition-colors">Full RS</span>
+                          </label>
+                        </div>
+
+                        <div className="flex gap-4 pt-4">
+                          <button 
+                            type="submit"
+                            disabled={isSaving || !charForm.name}
+                            className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-50 text-white font-black py-4 rounded-2xl transition-all shadow-xl shadow-purple-900/20 uppercase tracking-widest text-xs"
+                          >
+                            {isSaving ? <Loader2 className="animate-spin mx-auto" size={20} /> : (charForm.id ? "Actualizar" : "Registrar")}
+                          </button>
+                          
+                          {charForm.id && (
+                            <button 
+                              type="button"
+                              onClick={() => {
+                                setCharForm({ id: null, name: "", class: "", icc: 0, rs: 0, gs: 0, main: "" });
+                                setSelectedChar(null);
+                              }}
+                              className="px-6 bg-slate-800 hover:bg-slate-700 text-white font-black rounded-2xl transition-all uppercase tracking-widest text-[10px]"
+                            >
+                              Cancelar
+                            </button>
+                          )}
+                        </div>
+                      </form>
+                    </div>
                   </div>
-                  <h2 className="text-3xl font-black text-white uppercase tracking-tighter mb-4">Módulo en Desarrollo</h2>
-                  <p className="text-slate-500 max-w-sm mx-auto text-sm leading-relaxed font-medium">
-                    Estamos integrando la arquitectura para el procesamiento de logs de {activeSection}. La sincronización de datos estará disponible próximamente.
-                  </p>
-                  <div className="mt-10 flex justify-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500/30 animate-bounce" />
-                    <div className="w-2 h-2 rounded-full bg-emerald-500/30 animate-bounce [animation-delay:0.2s]" />
-                    <div className="w-2 h-2 rounded-full bg-emerald-500/30 animate-bounce [animation-delay:0.4s]" />
+
+                  {/* LISTADO DE PERSONAJES */}
+                  <div className="lg:col-span-2 space-y-6">
+                    <div className="bg-slate-900/40 rounded-[2.5rem] border border-white/5 overflow-hidden shadow-2xl backdrop-blur-sm">
+                      <div className="p-8 border-b border-white/5 flex items-center justify-between">
+                        <div>
+                          <h3 className="text-xl font-black text-white uppercase tracking-tight">Personajes Registrados</h3>
+                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Listado de méritos</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="px-3 py-1 bg-white/5 rounded-full text-[10px] font-black text-slate-400 uppercase tracking-widest border border-white/10">
+                            {fgTotalItems} Personajes
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left">
+                          <thead>
+                            <tr className="bg-slate-950/40">
+                              <th className="px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Personaje</th>
+                              <th className="px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Main</th>
+                              <th className="px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">GS</th>
+                              <th className="px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Méritos</th>
+                              <th className="px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Acciones</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-white/5">
+                            {fullGearedCharacters.map((char) => (
+                              <tr key={char.id} className="hover:bg-white/[0.02] transition-colors group">
+                                <td className="px-8 py-5">
+                                  <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-xl bg-slate-800 border border-white/10 flex items-center justify-center overflow-hidden">
+                                      {CLASS_ICONS[char.class.toUpperCase()] ? (
+                                        <Image 
+                                          src={CLASS_ICONS[char.class.toUpperCase()]} 
+                                          alt={char.class} 
+                                          width={40} 
+                                          height={40} 
+                                          className="w-full h-full object-cover"
+                                        />
+                                      ) : (
+                                        <span className="text-xs font-black text-purple-400">{char.name[0]}</span>
+                                      )}
+                                    </div>
+                                    <div>
+                                      <p className="text-sm font-black text-white">{char.name}</p>
+                                      <p className="text-[10px] font-bold text-slate-500 uppercase">{char.class}</p>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="px-8 py-5">
+                                  <span className="text-xs font-bold text-slate-400">{char.main}</span>
+                                </td>
+                                <td className="px-8 py-5">
+                                  <span className="text-sm font-black text-emerald-400 tracking-tighter">{char.gs}</span>
+                                </td>
+                                <td className="px-8 py-5">
+                                  <div className="flex gap-2">
+                                    {char.icc === 1 && (
+                                      <span className="px-2 py-0.5 bg-purple-500/10 text-purple-400 border border-purple-500/20 rounded text-[9px] font-black uppercase tracking-widest">ICC</span>
+                                    )}
+                                    {char.rs === 1 && (
+                                      <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded text-[9px] font-black uppercase tracking-widest">RS</span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="px-8 py-5 text-right">
+                                  <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button 
+                                      onClick={() => setCharForm(char)}
+                                      className="p-2 hover:bg-white/5 rounded-lg text-slate-500 hover:text-white transition-colors"
+                                    >
+                                      <Edit3 size={16} />
+                                    </button>
+                                    <button 
+                                      onClick={() => handleDeleteFullGeared(char.id)}
+                                      className="p-2 hover:bg-red-500/10 rounded-lg text-slate-500 hover:text-red-400 transition-colors"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                            {fullGearedCharacters.length === 0 && !isLoading && (
+                              <tr>
+                                <td colSpan={5} className="px-8 py-20 text-center">
+                                  <p className="text-slate-500 text-xs font-black uppercase tracking-widest">No hay personajes registrados</p>
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {fgTotalPages > 1 && (
+                        <div className="p-6 border-t border-white/5 flex items-center justify-between">
+                          <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">
+                            Página {fgCurrentPage} de {fgTotalPages}
+                          </p>
+                          <div className="flex gap-2">
+                            <button 
+                              onClick={() => setFgCurrentPage(p => Math.max(1, p - 1))}
+                              disabled={fgCurrentPage === 1}
+                              className="p-2 bg-white/5 border border-white/10 rounded-lg text-slate-400 hover:text-white disabled:opacity-20 transition-all"
+                            >
+                              <ChevronLeft size={16} />
+                            </button>
+                            <button 
+                              onClick={() => setFgCurrentPage(p => Math.min(fgTotalPages, p + 1))}
+                              disabled={fgCurrentPage === fgTotalPages}
+                              className="p-2 bg-white/5 border border-white/10 rounded-lg text-slate-400 hover:text-white disabled:opacity-20 transition-all"
+                            >
+                              <ChevronRight size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
+              </div>
+            ) : (
+              <div className="bg-slate-900/40 rounded-[3rem] border border-white/5 p-24 text-center animate-in fade-in duration-1000 shadow-2xl backdrop-blur-3xl relative overflow-hidden group">
+                {/* ... existing development placeholder ... */}
               </div>
             )}
           </div>
