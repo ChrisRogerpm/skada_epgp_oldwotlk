@@ -483,7 +483,7 @@ export default function RulesPage() {
                                       </ul>
                                     </div>
                                   ) : (
-                                    <p className="text-[10px] text-slate-500 italic">
+                                    <p className="text-[10px] text-slate-500">
                                       Sin requisitos específicos para lootear.
                                     </p>
                                   )}

@@ -215,18 +215,18 @@ export default function EPGPPage() {
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20 shadow-md"><BarChart2 className="text-blue-400" size={28} /></div>
-              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">Sistema EPGP</h1>
+              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 font-display">Sistema EPGP</h1>
             </div>
             <div className="flex flex-wrap items-center gap-3 text-xs md:text-sm text-slate-400">
-              <div className="flex items-center gap-1.5 bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-700/50 shadow-sm"><Calendar size={14} className="text-blue-400" /><span>TZ Lima: {lastUpdatedDate}</span></div>
-              <div className="flex items-center gap-1.5 bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-700/50 shadow-sm"><Clock size={14} className="text-blue-400" /><span>{lastUpdatedHour}</span></div>
-              <div className="flex items-center gap-1.5 bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-700/50 shadow-sm"><Users size={14} className="text-blue-400" /><span>{roster.length} Jugadores</span></div>
+              <div className="flex items-center gap-1.5 bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-700/50 shadow-sm font-display uppercase tracking-wider"><Calendar size={14} className="text-blue-400" /><span>TZ Lima: {lastUpdatedDate}</span></div>
+              <div className="flex items-center gap-1.5 bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-700/50 shadow-sm font-display uppercase tracking-wider"><Clock size={14} className="text-blue-400" /><span>{lastUpdatedHour}</span></div>
+              <div className="flex items-center gap-1.5 bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-700/50 shadow-sm font-display uppercase tracking-wider"><Users size={14} className="text-blue-400" /><span>{roster.length} Jugadores</span></div>
             </div>
           </div>
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto">
             <div className="flex bg-slate-900/80 p-1.5 rounded-xl border border-slate-700/60 shadow-inner w-full sm:w-auto">
-              <button onClick={() => setActiveTab("roster")} className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === "roster" ? "bg-slate-800 text-blue-400 shadow-md border border-slate-700/50" : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/50"}`}><LayoutList size={16} /> Roster</button>
-              <button onClick={() => setActiveTab("history")} className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === "history" ? "bg-slate-800 text-blue-400 shadow-md border border-slate-700/50" : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/50"}`}><History size={16} /> Historial</button>
+              <button onClick={() => setActiveTab("roster")} className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all font-display uppercase tracking-wide ${activeTab === "roster" ? "bg-slate-800 text-blue-400 shadow-md border border-slate-700/50" : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/50"}`}><LayoutList size={16} /> Roster</button>
+              <button onClick={() => setActiveTab("history")} className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all font-display uppercase tracking-wide ${activeTab === "history" ? "bg-slate-800 text-blue-400 shadow-md border border-slate-700/50" : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/50"}`}><History size={16} /> Historial</button>
             </div>
             <div className="relative group w-full sm:w-64">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Search className="h-4 w-4 text-slate-500 group-focus-within:text-blue-400 transition-colors" /></div>

@@ -190,7 +190,8 @@ export default function AdminPage() {
       const res = await fetch(`/api/epgp/search?q=${encodeURIComponent(q)}`);
       if (res.ok) {
         const data = await res.json();
-        setCharSearchResults(data);
+        // Limit to 5 results for a cleaner UI
+        setCharSearchResults(data.slice(0, 5));
       }
     } catch (err) {
       console.error(err);
@@ -1274,27 +1275,27 @@ export default function AdminPage() {
 
                           {/* SEARCH RESULTS DROPDOWN */}
                           {charSearchResults.length > 0 && (
-                            <div className="absolute z-50 w-full mt-2 bg-slate-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2">
+                            <div className="absolute z-50 w-full mt-1 bg-slate-900 border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.7)] overflow-hidden animate-in fade-in slide-in-from-top-1 max-h-[280px] overflow-y-auto">
                               {charSearchResults.map((char, idx) => (
                                 <button
                                   key={idx}
                                   type="button"
                                   onClick={() => handleSelectChar(char)}
-                                  className="w-full flex items-center gap-4 p-4 hover:bg-white/5 transition-colors border-b border-white/5 last:border-none text-left"
+                                  className="w-full flex items-center gap-3 p-2.5 hover:bg-white/5 transition-colors border-b border-white/5 last:border-none text-left"
                                 >
-                                  <div className="w-10 h-10 rounded-xl bg-slate-800 border border-white/10 overflow-hidden shrink-0">
+                                  <div className="w-8 h-8 rounded-lg bg-slate-800 border border-white/10 overflow-hidden shrink-0">
                                     {char.url_icono ? (
-                                      <Image src={char.url_icono} alt="icon" width={40} height={40} className="w-full h-full object-cover" />
+                                      <Image src={char.url_icono} alt="icon" width={32} height={32} className="w-full h-full object-cover" />
                                     ) : (
-                                      <div className="w-full h-full flex items-center justify-center text-slate-600 font-bold text-xs">
+                                      <div className="w-full h-full flex items-center justify-center text-slate-600 font-bold text-[10px]">
                                         {char.nombre_alter[0]}
                                       </div>
                                     )}
                                   </div>
-                                  <div>
-                                    <p className="text-sm font-black text-white">{char.nombre_alter}</p>
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">
-                                      Main: {char.main} • {char.clase}
+                                  <div className="min-w-0">
+                                    <p className="text-xs font-black text-white truncate">{char.nombre_alter}</p>
+                                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter truncate">
+                                      {char.main} • {char.clase}
                                     </p>
                                   </div>
                                 </button>

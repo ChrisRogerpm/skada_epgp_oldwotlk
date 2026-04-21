@@ -110,20 +110,20 @@ export default function ListaNegraPage() {
               Registro de Seguridad
             </div>
             <div className="flex flex-col gap-1">
-              <h1 className="text-3xl md:text-5xl font-black tracking-tightest">
+              <h1 className="text-3xl md:text-5xl font-black tracking-tightest font-display">
                 LISTA{" "}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-orange-500 to-red-600 drop-shadow-lg">
                   NEGRA
                 </span>
               </h1>
-              <p className="text-slate-400 max-w-xl text-base font-medium leading-relaxed">
+              <p className="text-slate-400 max-w-xl text-base font-medium leading-relaxed font-display">
                 Supervisión y control de jugadores restringidos. Los registros
                 son permanentes y mantenidos por el consejo de oficiales.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 bg-slate-900/40 backdrop-blur-md border border-slate-800/80 p-3 rounded-2xl shadow-xl">
+          <div className="flex items-center gap-3 bg-slate-900/40 backdrop-blur-md border border-slate-800/80 p-3 rounded-2xl shadow-xl font-display">
             <span className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">
               Total
             </span>
@@ -267,7 +267,7 @@ export default function ListaNegraPage() {
                               </div>
                             </td>
                             <td className="py-4 px-8">
-                              <p className="text-slate-400 text-sm italic line-clamp-2 max-w-xs group-hover:text-slate-300 transition-colors">
+                              <p className="text-slate-400 text-sm line-clamp-2 max-w-xs group-hover:text-slate-300 transition-colors">
                                 {entry.reason || "Sin motivo especificado"}
                               </p>
                             </td>

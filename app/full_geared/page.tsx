@@ -112,18 +112,18 @@ export default function FullGearedPage() {
             </div>
           </div>
           <div className="space-y-2">
-            <h1 className="text-4xl md:text-7xl font-black text-white tracking-tighter uppercase italic leading-none">
+            <h1 className="text-4xl md:text-7xl font-black text-white tracking-tighter uppercase leading-none font-display">
               Salón de la{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-indigo-400 to-blue-400">
                 Fama
               </span>
             </h1>
-            <p className="text-slate-500 font-black uppercase tracking-[0.4em] text-[8px] md:text-xs">
+            <p className="text-slate-500 font-black uppercase tracking-[0.4em] text-[8px] md:text-xs font-display">
               Mitos de Old Legends • ICC & RS Heroic
             </p>
           </div>
           <div className="flex justify-center gap-4 pt-2">
-            <span className="px-6 py-2 bg-slate-900/60 rounded-full text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border border-white/5 shadow-2xl backdrop-blur-xl">
+            <span className="px-6 py-2 bg-slate-900/60 rounded-full text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border border-white/5 shadow-2xl backdrop-blur-xl font-display">
               Total Honorables:{" "}
               <span className="text-white ml-2">{totalItems}</span>
             </span>
@@ -189,144 +189,95 @@ export default function FullGearedPage() {
         ) : (
           <>
             {viewMode === "cards" ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 md:gap-6 animate-in fade-in slide-in-from-bottom-8 duration-1000">
                 {characters.map((char) => {
                   const classColor =
                     CLASS_COLORS[char.class.toUpperCase()] || "#94a3b8";
                   return (
                     <div key={char.id} className="group relative">
-                      {/* Glow Effect */}
+                      {/* Ambient Glow Background */}
                       <div
-                        className="absolute inset-0 rounded-[2.5rem] blur-2xl opacity-0 group-hover:opacity-20 transition-opacity duration-500"
+                        className="absolute inset-0 rounded-[1.5rem] blur-[30px] opacity-0 group-hover:opacity-20 transition-all duration-700"
                         style={{ backgroundColor: classColor }}
                       />
 
-                      <div className="relative bg-slate-900/40 border border-white/5 rounded-[2.5rem] p-6 md:p-8 hover:border-white/20 transition-all duration-500 hover:scale-[1.03] hover:-translate-y-2 backdrop-blur-xl flex flex-col h-full shadow-2xl">
-                        {/* Class Background Text */}
-                        <div
-                          className="absolute top-4 right-6 text-[10px] font-black uppercase tracking-widest opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none"
-                          style={{ color: classColor }}
-                        >
-                          {char.class}
+                      <div 
+                        className="relative bg-slate-950/40 border border-white/5 rounded-[1.5rem] p-5 hover:scale-[1.02] transition-all duration-500 backdrop-blur-2xl flex flex-col h-full shadow-2xl overflow-hidden"
+                        onMouseEnter={(e) => e.currentTarget.style.boxShadow = `0 0 15px ${classColor}20, inset 0 0 8px ${classColor}10`}
+                        onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
+                      >
+                        {/* Neon Border Override on Hover */}
+                        <div 
+                          className="absolute inset-0 rounded-[1.5rem] border border-transparent group-hover:opacity-100 opacity-0 transition-opacity duration-500 pointer-events-none"
+                          style={{ borderColor: classColor }}
+                        />
+
+                        <div className="flex-1 flex flex-col items-center text-center space-y-4">
+                          {/* Character Icon with Neon Ring */}
+                          <div className="relative">
+                            <div 
+                              className="absolute inset-0 rounded-xl blur-lg opacity-0 group-hover:opacity-60 transition-opacity duration-500"
+                              style={{ backgroundColor: classColor }}
+                            />
+                            <div className="w-14 h-14 rounded-xl bg-slate-900 border border-white/10 flex items-center justify-center overflow-hidden relative z-10 shadow-xl group-hover:border-white/30 transition-all">
+                              {CLASS_ICONS[char.class.toUpperCase()] ? (
+                                <Image
+                                  src={CLASS_ICONS[char.class.toUpperCase()]}
+                                  alt={char.class}
+                                  width={56}
+                                  height={56}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-xl font-black text-white">{char.name[0]}</span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="space-y-0.5 min-w-0 w-full">
+                            <h3 className="text-lg font-black text-white tracking-tight uppercase leading-none truncate font-display">
+                              {char.name}
+                            </h3>
+                            <div className="flex items-center justify-center gap-1.5">
+                              <span className="w-1 h-1 rounded-full" style={{ backgroundColor: classColor }} />
+                              <p className="text-[9px] font-black uppercase tracking-[0.15em] font-display" style={{ color: classColor }}>
+                                {char.class}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="w-full py-2.5 px-4 bg-white/[0.02] rounded-2xl border border-white/5 shadow-inner">
+                            <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-0.5 font-display">Gear Score</p>
+                            <span className="text-2xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-500">
+                              {char.gs}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 w-full">
+                            <div className={clsx(
+                              "flex flex-col items-center justify-center py-2 rounded-xl border transition-all duration-500",
+                              char.icc === 1 
+                                ? "bg-purple-500/10 border-purple-500/30 text-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.1)]" 
+                                : "bg-slate-950/20 border-white/5 opacity-20 grayscale"
+                            )}>
+                              <Image src={RAID_ICONS.ICC} alt="ICC" width={20} height={20} className="rounded mb-0.5" />
+                              <span className="text-[7px] font-black uppercase tracking-wider">ICC HEROIC</span>
+                            </div>
+                            <div className={clsx(
+                              "flex flex-col items-center justify-center py-2 rounded-xl border transition-all duration-500",
+                              char.rs === 1 
+                                ? "bg-blue-500/10 border-blue-500/30 text-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.1)]" 
+                                : "bg-slate-950/20 border-white/5 opacity-20 grayscale"
+                            )}>
+                              <Image src={RAID_ICONS.RS} alt="RS" width={20} height={20} className="rounded mb-0.5" />
+                              <span className="text-[7px] font-black uppercase tracking-wider">RS HEROIC</span>
+                            </div>
+                          </div>
                         </div>
 
-                        <div className="flex-1 space-y-6 md:space-y-8">
-                          <div className="flex items-center gap-4 md:gap-5">
-                            <div className="relative shrink-0">
-                              <div
-                                className="absolute inset-0 rounded-2xl blur-lg opacity-40"
-                                style={{ backgroundColor: classColor }}
-                              />
-                              <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-slate-800 border-2 border-white/10 flex items-center justify-center overflow-hidden shadow-2xl relative z-10 group-hover:border-white/30 transition-colors">
-                                {CLASS_ICONS[char.class.toUpperCase()] ? (
-                                  <Image
-                                    src={CLASS_ICONS[char.class.toUpperCase()]}
-                                    alt={char.class}
-                                    width={64}
-                                    height={64}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <span className="text-2xl font-black text-white">
-                                    {char.name[0]}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <div className="min-w-0">
-                              <h3 className="text-xl md:text-2xl font-black text-white tracking-tighter uppercase leading-none mb-1.5 truncate group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-white group-hover:to-slate-400 transition-all">
-                                {char.name}
-                              </h3>
-                              <div className="flex items-center gap-2">
-                                <div
-                                  className="w-2 h-2 rounded-full animate-pulse"
-                                  style={{ backgroundColor: classColor }}
-                                />
-                                <p
-                                  className="text-[10px] font-black uppercase tracking-widest"
-                                  style={{ color: classColor }}
-                                >
-                                  {char.class}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="space-y-4">
-                            <div className="flex items-end justify-between">
-                              <div className="space-y-1">
-                                <p className="text-[10px] font-black text-slate-600 uppercase tracking-tighter">
-                                  Main Legendario
-                                </p>
-                                <p className="text-sm font-bold text-slate-400">
-                                  {char.main}
-                                </p>
-                              </div>
-                              <div className="text-right">
-                                <div className="inline-block px-4 py-2 bg-gradient-to-br from-slate-800 to-slate-950 border border-white/10 rounded-2xl shadow-xl">
-                                  <p className="text-[8px] font-black text-slate-500 uppercase tracking-tighter mb-0.5">
-                                    Gear Score
-                                  </p>
-                                  <p className="text-xl font-black text-emerald-400 tracking-tighter leading-none italic">
-                                    {char.gs}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-3 pt-2">
-                            {char.icc === 1 ? (
-                              <div className="flex flex-col items-center justify-center py-3 bg-purple-500/10 border border-purple-500/20 rounded-2xl group-hover:bg-purple-500/20 transition-all shadow-inner relative overflow-hidden group/raid">
-                                <Image
-                                  src={RAID_ICONS.ICC}
-                                  alt="ICC"
-                                  width={32}
-                                  height={32}
-                                  className="w-6 h-6 md:w-8 md:h-8 rounded-lg mb-1 shadow-lg border border-purple-500/30"
-                                />
-                                <span className="text-[9px] font-black text-purple-400 uppercase tracking-widest relative z-10">
-                                  Full ICC
-                                </span>
-                                <div className="absolute inset-0 bg-purple-500/5 opacity-0 group-hover/raid:opacity-100 transition-opacity" />
-                              </div>
-                            ) : (
-                              <div className="flex flex-col items-center justify-center py-3 bg-slate-950/40 border border-white/5 rounded-2xl opacity-30 grayscale">
-                                <Shield
-                                  className="text-slate-600 mb-1"
-                                  size={16}
-                                />
-                                <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">
-                                  ICC Pending
-                                </span>
-                              </div>
-                            )}
-                            {char.rs === 1 ? (
-                              <div className="flex flex-col items-center justify-center py-3 bg-blue-500/10 border border-blue-500/20 rounded-2xl group-hover:bg-blue-500/20 transition-all shadow-inner relative overflow-hidden group/raid">
-                                <Image
-                                  src={RAID_ICONS.RS}
-                                  alt="RS"
-                                  width={32}
-                                  height={32}
-                                  className="w-6 h-6 md:w-8 md:h-8 rounded-lg mb-1 shadow-lg border border-blue-500/30"
-                                />
-                                <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest relative z-10">
-                                  Full RS
-                                </span>
-                                <div className="absolute inset-0 bg-blue-500/5 opacity-0 group-hover/raid:opacity-100 transition-opacity" />
-                              </div>
-                            ) : (
-                              <div className="flex flex-col items-center justify-center py-3 bg-slate-950/40 border border-white/5 rounded-2xl opacity-30 grayscale">
-                                <Shield
-                                  className="text-slate-600 mb-1"
-                                  size={16}
-                                />
-                                <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">
-                                  RS Pending
-                                </span>
-                              </div>
-                            )}
-                          </div>
+                        <div className="mt-4 pt-3 border-t border-white/5 w-full flex justify-between items-center">
+                          <span className="text-[8px] font-black text-slate-700 uppercase tracking-tighter font-display">Leyenda</span>
+                          <span className="text-[11px] font-bold text-slate-500 truncate max-w-[100px]">{char.main}</span>
                         </div>
                       </div>
                     </div>
@@ -371,18 +322,20 @@ export default function FullGearedPage() {
                         }}
                       />
 
-                      <div className="relative h-full flex items-center justify-between px-3 md:px-4 z-10">
-                        <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
-                          <span className="hidden xs:block text-[10px] font-mono text-slate-600 w-4">
-                            {(currentPage - 1) * limit + idx + 1}
+                      <div className="relative h-full flex items-center justify-between px-3 md:px-5 z-10">
+                        <div className="flex items-center gap-4 md:gap-6 flex-1 min-w-0">
+                          {/* Rank Numbering */}
+                          <span className="text-[11px] font-black text-slate-500 w-6 shrink-0 font-display">
+                            {String((currentPage - 1) * limit + idx + 1).padStart(2, '0')}
                           </span>
-                          <div className="w-8 h-8 rounded-lg bg-slate-800 border border-white/5 flex items-center justify-center overflow-hidden shrink-0 shadow-lg">
+                          
+                          <div className="w-9 h-9 rounded-lg bg-slate-800 border border-white/5 flex items-center justify-center overflow-hidden shrink-0 shadow-lg">
                             {CLASS_ICONS[char.class.toUpperCase()] ? (
                               <Image
                                 src={CLASS_ICONS[char.class.toUpperCase()]}
                                 alt={char.class}
-                                width={32}
-                                height={32}
+                                width={36}
+                                height={36}
                                 className="w-full h-full object-cover"
                               />
                             ) : (
@@ -391,50 +344,50 @@ export default function FullGearedPage() {
                               </span>
                             )}
                           </div>
-                          <div className="flex flex-col sm:flex-row sm:items-baseline gap-0.5 sm:gap-3 truncate">
+                          <div className="flex flex-col md:flex-row md:items-center gap-0 md:gap-4 truncate">
                             <h4
-                              className="text-xs md:text-sm font-black text-white uppercase tracking-tight truncate"
+                              className="text-sm font-black text-white uppercase tracking-tight truncate font-display"
                               style={{ color: classColor }}
                             >
                               {char.name}
                             </h4>
-                            <span className="text-[8px] md:text-[9px] font-bold text-slate-500 uppercase truncate">
+                            <span className="text-[9px] font-bold text-slate-500 uppercase truncate tracking-wider">
                               {char.main}
                             </span>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-3 md:gap-6 shrink-0">
+                        <div className="flex items-center gap-4 md:gap-8 shrink-0">
                           <div className="flex gap-1.5 md:gap-2">
                             {char.icc === 1 && (
                               <div
-                                className="w-6 h-6 md:w-7 md:h-7 rounded-md overflow-hidden border border-purple-500/30 shadow-lg"
+                                className="w-6 h-6 md:w-8 md:h-8 rounded-md overflow-hidden border border-purple-500/30 shadow-lg"
                                 title="Full ICC"
                               >
                                 <Image
                                   src={RAID_ICONS.ICC}
                                   alt="ICC"
-                                  width={28}
-                                  height={28}
+                                  width={32}
+                                  height={32}
                                 />
                               </div>
                             )}
                             {char.rs === 1 && (
                               <div
-                                className="w-6 h-6 md:w-7 md:h-7 rounded-md overflow-hidden border border-blue-500/30 shadow-lg"
+                                className="w-6 h-6 md:w-8 md:h-8 rounded-md overflow-hidden border border-blue-500/30 shadow-lg"
                                 title="Full RS"
                               >
                                 <Image
                                   src={RAID_ICONS.RS}
                                   alt="RS"
-                                  width={28}
-                                  height={28}
+                                  width={32}
+                                  height={32}
                                 />
                               </div>
                             )}
                           </div>
-                          <div className="text-right min-w-[50px] md:min-w-[60px]">
-                            <span className="text-base md:text-lg font-black text-emerald-400 tracking-tighter italic drop-shadow-md">
+                          <div className="text-right min-w-[50px] md:min-w-[70px]">
+                            <span className="text-base md:text-xl font-black text-emerald-400 tracking-tighter drop-shadow-md">
                               {char.gs}
                             </span>
                           </div>

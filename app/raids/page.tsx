@@ -67,12 +67,12 @@ export default function RaidsPage() {
                 <Users className="text-emerald-400 relative z-10" size={32} />
               </div>
               <div>
-                <h1 className="text-4xl md:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-emerald-200 to-cyan-400 drop-shadow-2xl animate-in fade-in slide-in-from-left-4 duration-1000">
+                <h1 className="text-4xl md:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-emerald-200 to-cyan-400 drop-shadow-2xl animate-in fade-in slide-in-from-left-4 duration-1000 font-display">
                   Composición de Raids
                 </h1>
                 <div className="flex items-center gap-2 mt-1">
                   <Sparkles size={14} className="text-emerald-500 animate-pulse" />
-                  <p className="text-slate-400 text-sm md:text-base font-bold tracking-wide uppercase opacity-80">
+                  <p className="text-slate-400 text-sm md:text-base font-bold tracking-wide uppercase opacity-80 font-display">
                     Visualiza la formación de los grupos para cada encuentro.
                   </p>
                 </div>
@@ -80,8 +80,8 @@ export default function RaidsPage() {
             </div>
             
             <div className="mt-4 flex flex-col gap-2">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Fecha Seleccionada</span>
-              <h2 className="text-xl font-bold text-slate-200 capitalize">
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] font-display">Fecha Seleccionada</span>
+              <h2 className="text-xl font-bold text-slate-200 capitalize font-display">
                 {formattedFullDate}
               </h2>
             </div>
@@ -90,13 +90,13 @@ export default function RaidsPage() {
           <div className="flex flex-wrap items-end gap-6 relative z-20">
             {/* View Mode Toggle */}
             <div className="flex flex-col space-y-3">
-               <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">
+               <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] font-display">
                  Visualización
                </label>
                <div className="flex bg-slate-900/60 border border-slate-800 rounded-xl p-1 backdrop-blur-md shadow-lg">
                  <button
                    onClick={() => setViewMode("vertical")}
-                   className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black tracking-widest uppercase transition-all ${
+                   className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black tracking-widest uppercase transition-all font-display ${
                      viewMode === "vertical" 
                        ? "bg-emerald-500/20 text-emerald-400 shadow-inner" 
                        : "text-slate-500 hover:text-slate-300"
@@ -106,7 +106,7 @@ export default function RaidsPage() {
                  </button>
                  <button
                    onClick={() => setViewMode("horizontal")}
-                   className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black tracking-widest uppercase transition-all ${
+                   className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black tracking-widest uppercase transition-all font-display ${
                      viewMode === "horizontal" 
                        ? "bg-emerald-500/20 text-emerald-400 shadow-inner" 
                        : "text-slate-500 hover:text-slate-300"
@@ -119,7 +119,7 @@ export default function RaidsPage() {
 
             {/* Manual Date Picker */}
             <div className="flex flex-col space-y-3">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2 font-display">
                 <Calendar size={12} className="text-emerald-500" /> Filtrar por fecha
               </label>
               <button
