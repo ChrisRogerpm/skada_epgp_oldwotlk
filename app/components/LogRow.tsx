@@ -25,7 +25,7 @@ export default function LogRow({ log, index, metric = "Damage" }: LogRowProps) {
       </td>
       <td className="py-1 px-4">
         <div className="flex items-center space-x-2">
-          <div className="relative w-7 h-7 overflow-hidden rounded-full ring-2 ring-slate-800 group-hover:ring-slate-600 transition-all shrink-0">
+          <div className="relative w-7 h-7 overflow-hidden rounded-full ring-2 ring-slate-200 dark:ring-slate-800 group-hover:ring-slate-400 dark:group-hover:ring-slate-600 transition-all shrink-0">
             <Image
               src={log.Icon || DEFAULT_ICONS.UNKNOWN}
               alt={log.Character}
@@ -37,7 +37,7 @@ export default function LogRow({ log, index, metric = "Damage" }: LogRowProps) {
             />
           </div>
           <div>
-            <div className="font-semibold text-sm text-slate-100">{log.Character}</div>
+            <div className="font-semibold text-sm text-slate-900 dark:text-slate-100">{log.Character}</div>
             <div className="text-xs text-slate-500">{log.Talent}</div>
           </div>
         </div>

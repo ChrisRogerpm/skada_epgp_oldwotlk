@@ -71,12 +71,18 @@ export default function EPGPPage() {
   // Helper functions for UI
   const getClassColor = (className: string) => {
     const colors: Record<string, string> = {
-      DEATHKNIGHT: "text-red-500", DRUID: "text-orange-400", HUNTER: "text-green-500",
-      MAGE: "text-cyan-300", PALADIN: "text-pink-300", PRIEST: "text-slate-900 dark:text-white",
-      ROGUE: "text-yellow-200", SHAMAN: "text-blue-500", WARLOCK: "text-purple-500",
-      WARRIOR: "text-amber-700",
+      DEATHKNIGHT: "text-red-600 dark:text-red-500", 
+      DRUID: "text-orange-600 dark:text-orange-400", 
+      HUNTER: "text-green-600 dark:text-green-500",
+      MAGE: "text-cyan-600 dark:text-cyan-300", 
+      PALADIN: "text-pink-600 dark:text-pink-300", 
+      PRIEST: "text-slate-900 dark:text-white",
+      ROGUE: "text-amber-600 dark:text-yellow-200", 
+      SHAMAN: "text-blue-600 dark:text-blue-500", 
+      WARLOCK: "text-purple-600 dark:text-purple-500",
+      WARRIOR: "text-amber-800 dark:text-amber-700",
     };
-    return colors[className] || "text-slate-800 dark:text-slate-200";
+    return colors[className.toUpperCase()] || "text-slate-800 dark:text-slate-200";
   };
 
   const getClassBgColor = (className: string) => {
@@ -209,13 +215,13 @@ export default function EPGPPage() {
   if (isLoading) return <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center gap-4"><Loader2 className="w-12 h-12 text-blue-500 animate-spin" /><p className="text-slate-600 dark:text-slate-400 font-medium">Cargando EPGP...</p></div>;
 
   return (
-    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black text-slate-800 dark:text-slate-200 p-4 md:p-8 lg:p-12 font-sans">
+    <main className="min-h-screen bg-white dark:bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-100 via-white to-white dark:from-slate-900 dark:via-slate-950 dark:to-black text-slate-800 dark:text-slate-200 p-4 md:p-8 lg:p-12 font-sans">
       <div className="max-w-7xl mx-auto space-y-6">
         <header className="flex flex-col xl:flex-row xl:items-end justify-between gap-6 pb-6 border-b border-slate-200 dark:border-slate-800/60">
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20 shadow-md"><BarChart2 className="text-blue-400" size={28} /></div>
-              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 font-display">Sistema EPGP</h1>
+              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-blue-400 dark:to-cyan-400 font-display">Sistema EPGP</h1>
             </div>
             <div className="flex flex-wrap items-center gap-3 text-xs md:text-sm text-slate-600 dark:text-slate-400">
               <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700/50 shadow-sm font-display uppercase tracking-wider"><Calendar size={14} className="text-blue-400" /><span>TZ Lima: {lastUpdatedDate}</span></div>
@@ -327,7 +333,7 @@ export default function EPGPPage() {
                             </div>
                           </td>
                           <td className="px-4 py-3 text-center"><span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-white dark:bg-slate-900/80 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700/50 uppercase">{member.class}</span></td>
-                          <td className="px-4 py-3 text-right font-mono font-bold text-slate-100">{member.amount.toLocaleString()}</td>
+                          <td className="px-4 py-3 text-right font-mono font-bold text-slate-800 dark:text-slate-100">{member.amount.toLocaleString()}</td>
                           <td className="px-4 py-3 text-center"><span className="font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900/80 px-2 py-0.5 rounded border border-slate-300 dark:border-slate-700/50 text-[10px]">{member.alters?.length || 0}</span></td>
                           <td className="px-4 py-3 text-center"><button onClick={(e) => { e.stopPropagation(); handleSetMyCharacter(member.main); }} className={`p-1.5 rounded-lg transition-all ${member.main === myCharacter ? 'text-yellow-400 bg-yellow-400/10' : 'text-slate-600 hover:text-yellow-400'}`}><Star size={16} className={member.main === myCharacter ? "fill-yellow-400" : ""} /></button></td>
                         </tr>

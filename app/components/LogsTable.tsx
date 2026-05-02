@@ -2,7 +2,7 @@
 
 import { RaidLog } from "../types/RaidLog";
 import LogRow from "./LogRow";
-import { Ghost, Search, Download } from "lucide-react";
+import { Ghost, Search } from "lucide-react";
 
 interface LogsTableProps {
   logs: RaidLog[];
@@ -54,68 +54,8 @@ export default function LogsTable({ logs, loading, error, metric = "Damage" }: L
     );
   }
 
-  const handleExportCSV = () => {
-    if (logs.length === 0) return;
-    
-    const headers = ["Rango", "Personaje", "Clase", "Talento", "Cantidad", metric === "Damage" ? "DPS" : ""];
-    const csvContent = [
-      headers.filter(Boolean).join(","),
-      ...logs.map(log => {
-        const row = [
-          log.Rank,
-          `"${log.Character}"`,
-          log.Class,
-          `"${log.Talent || ''}"`,
-          `"${log.Amount}"`,
-          metric === "Damage" ? `"${log.DPS || ''}"` : ""
-        ];
-        return row.filter(val => val !== "").join(",");
-      })
-    ].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `logs_${metric.toLowerCase()}_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleExportJSON = () => {
-    if (logs.length === 0) return;
-    const dataStr = JSON.stringify(logs, null, 2);
-    const blob = new Blob([dataStr], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", `logs_${metric.toLowerCase()}_${new Date().toISOString().split('T')[0]}.json`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   return (
     <div className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl overflow-hidden backdrop-blur-sm bg-opacity-70 flex flex-col">
-      {/* Table Header with Actions */}
-      <div className="flex justify-end gap-2 p-3 bg-slate-50 dark:bg-slate-950/50 border-b border-slate-200 dark:border-slate-800">
-        <button
-          onClick={handleExportJSON}
-          disabled={logs.length === 0 || loading}
-          className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Download size={14} /> JSON
-        </button>
-        <button
-          onClick={handleExportCSV}
-          disabled={logs.length === 0 || loading}
-          className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 bg-emerald-900/50 hover:bg-emerald-800/50 text-emerald-400 border border-emerald-800/50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Download size={14} /> CSV
-        </button>
-      </div>
-
       <div className="overflow-x-auto">
         <table className="w-full text-left whitespace-nowrap border-collapse">
           <thead className="bg-slate-50 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-xs uppercase tracking-wider font-semibold">

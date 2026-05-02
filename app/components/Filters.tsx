@@ -120,7 +120,7 @@ export default function Filters({ filters, setFilters }: FiltersProps) {
               value={filters.search}
               onChange={handleChange}
               placeholder="Ej: Thrall..."
-              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg pl-3 pr-8 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all placeholder-slate-600 outline-none"
+              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg pl-3 pr-8 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all placeholder-slate-400 dark:placeholder-slate-600 outline-none"
             />
           </div>
         </div>

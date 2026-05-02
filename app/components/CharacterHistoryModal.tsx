@@ -161,7 +161,7 @@ export default function CharacterHistoryModal({ mainName, alters = [], isOpen, o
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="text-sm font-bold text-slate-100 uppercase tracking-tight truncate">
+                            <p className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase tracking-tight truncate">
                               {log.descripcion.split(/(\[.*?\])/).map((part, i) => {
                                 if (part.startsWith("[") && part.endsWith("]")) {
                                   const itemName = part.slice(1, -1);
@@ -220,3 +220,4 @@ export default function CharacterHistoryModal({ mainName, alters = [], isOpen, o
     </div>
   );
 }
+

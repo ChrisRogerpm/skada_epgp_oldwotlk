@@ -54,7 +54,7 @@ export default function RaidsPage() {
   const formattedFullDate = format(selectedDateObj, "EEEE, d 'de' MMMM", { locale: es });
 
   return (
-    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black text-slate-800 dark:text-slate-200 p-4 md:p-8 lg:p-12 font-sans selection:bg-emerald-500/30 overflow-x-hidden">
+    <main className="min-h-screen bg-white dark:bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-100 via-white to-white dark:from-slate-900 dark:via-slate-950 dark:to-black text-slate-800 dark:text-slate-200 p-4 md:p-8 lg:p-12 font-sans selection:bg-emerald-500/30 overflow-x-hidden">
       <div className="max-w-7xl mx-auto space-y-12">
         {/* Header */}
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-8 border-b border-slate-200 dark:border-slate-800/60 relative">
@@ -133,7 +133,7 @@ export default function RaidsPage() {
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="bg-transparent border-none text-slate-100 font-bold focus:ring-0 outline-none w-32 cursor-pointer"
+                  className="bg-transparent border-none text-slate-800 dark:text-slate-100 font-bold focus:ring-0 outline-none w-32 cursor-pointer"
                 />
               </button>
             </div>

@@ -90,7 +90,7 @@ export default function RaidCompositionGrid({ participants, viewMode }: RaidComp
                     </div>
                     
                     <span 
-                      className="text-[13px] font-bold text-slate-100 truncate drop-shadow-sm transition-all" 
+                      className="text-[13px] font-bold text-slate-900 dark:text-slate-100 truncate drop-shadow-sm transition-all" 
                       title={`${player.player_name} (${player.player_class})`}
                     >
                       {player.player_name}

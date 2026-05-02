@@ -21,11 +21,28 @@ const CLASS_COLORS: Record<string, string> = {
   HUNTER: "#ABD473",
   MAGE: "#69CCF0",
   PALADIN: "#F58CBA",
-  PRIEST: "#FFFFFF",
-  ROGUE: "#FFF569",
+  PRIEST: "#94a3b8", // Cambiado de #FFFFFF para visibilidad
+  ROGUE: "#d97706", // Cambiado de #FFF569 para visibilidad en light mode
   SHAMAN: "#0070DE",
   WARLOCK: "#9482C9",
   WARRIOR: "#C79C6E",
+};
+
+// Mapeo dinámico para etiquetas de texto que necesitan alto contraste
+const getClassTextColor = (className: string) => {
+  const colors: Record<string, string> = {
+    DEATHKNIGHT: "text-red-600 dark:text-red-500",
+    DRUID: "text-orange-600 dark:text-orange-400",
+    HUNTER: "text-green-600 dark:text-green-500",
+    MAGE: "text-cyan-600 dark:text-cyan-300",
+    PALADIN: "text-pink-600 dark:text-pink-300",
+    PRIEST: "text-slate-900 dark:text-white",
+    ROGUE: "text-amber-600 dark:text-yellow-200",
+    SHAMAN: "text-blue-600 dark:text-blue-500",
+    WARLOCK: "text-purple-600 dark:text-purple-500",
+    WARRIOR: "text-amber-800 dark:text-amber-700",
+  };
+  return colors[className.toUpperCase()] || "text-slate-900 dark:text-slate-200";
 };
 
 const RAID_ICONS = {
@@ -92,7 +109,7 @@ export default function FullGearedPage() {
   }, [searchTerm]);
 
   return (
-    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 p-4 md:p-12 lg:p-20 relative overflow-hidden">
+    <main className="min-h-screen bg-white dark:bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-100 via-white to-white dark:from-slate-900 dark:via-slate-950 dark:to-black text-slate-800 dark:text-slate-200 p-4 md:p-12 lg:p-20 relative overflow-hidden">
       {/* Background Decor */}
       <div className="fixed inset-0 pointer-events-none opacity-20">
         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-purple-600/10 rounded-full blur-[120px]" />
@@ -240,7 +257,7 @@ export default function FullGearedPage() {
                             </h3>
                             <div className="flex items-center justify-center gap-1.5">
                               <span className="w-1 h-1 rounded-full" style={{ backgroundColor: classColor }} />
-                              <p className="text-[9px] font-black uppercase tracking-[0.15em] font-display" style={{ color: classColor }}>
+                              <p className={clsx("text-[9px] font-black uppercase tracking-[0.15em] font-display", getClassTextColor(char.class))}>
                                 {char.class}
                               </p>
                             </div>
@@ -277,7 +294,7 @@ export default function FullGearedPage() {
 
                         <div className="mt-4 pt-3 border-t border-white/5 w-full flex justify-between items-center">
                           <span className="text-[8px] font-black text-slate-700 uppercase tracking-tighter font-display">Leyenda</span>
-                          <span className="text-[11px] font-bold text-slate-500 truncate max-w-[100px]">{char.main}</span>
+                          <span className="text-[11px] font-bold text-slate-700 dark:text-slate-500 truncate max-w-[100px]">{char.main}</span>
                         </div>
                       </div>
                     </div>
@@ -346,8 +363,7 @@ export default function FullGearedPage() {
                           </div>
                           <div className="flex flex-col md:flex-row md:items-center gap-0 md:gap-4 truncate">
                             <h4
-                              className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight truncate font-display"
-                              style={{ color: classColor }}
+                              className={clsx("text-sm font-black uppercase tracking-tight truncate font-display", getClassTextColor(char.class))}
                             >
                               {char.name}
                             </h4>

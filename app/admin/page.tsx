@@ -524,7 +524,7 @@ export default function AdminPage() {
   // LOGIN SCREEN
   if (!user) {
     return (
-      <main className="min-h-screen bg-slate-50 dark:bg-slate-950 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black text-slate-800 dark:text-slate-200 flex items-center justify-center p-4">
+      <main className="min-h-screen bg-white dark:bg-slate-950 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-slate-100 via-white to-white dark:from-slate-900 dark:via-slate-950 dark:to-black text-slate-800 dark:text-slate-200 flex items-center justify-center p-4">
         <div className="w-full max-w-md space-y-8 animate-in fade-in zoom-in duration-700">
           <div className="text-center space-y-4">
             <div className="w-24 h-24 bg-gradient-to-br from-emerald-500/20 to-teal-500/5 rounded-3xl border border-emerald-500/30 flex items-center justify-center mx-auto shadow-[0_0_50px_rgba(16,185,129,0.15)] group hover:scale-105 transition-transform duration-500">

@@ -93,7 +93,7 @@ export default function ListaNegraPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#020617] text-slate-800 dark:text-slate-200 p-4 md:p-8 lg:p-12 font-sans selection:bg-red-500/40 relative overflow-hidden">
+    <main className="min-h-screen bg-white dark:bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-100 via-white to-white dark:from-slate-900 dark:via-slate-950 dark:to-black text-slate-800 dark:text-slate-200 p-4 md:p-8 lg:p-12 font-sans selection:bg-red-500/40 relative overflow-hidden">
       {/* Background decoration elements */}
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20 overflow-hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-red-600/20 blur-[120px] rounded-full" />
@@ -142,7 +142,7 @@ export default function ListaNegraPage() {
             <input
               type="text"
               placeholder="Escribe el nombre del personaje para buscar..."
-              className="block w-full pl-11 pr-4 py-3 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-red-500/10 focus:border-red-500/40 transition-all backdrop-blur-sm text-base"
+              className="block w-full pl-11 pr-4 py-3 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-red-500/10 focus:border-red-500/40 transition-all backdrop-blur-sm text-base"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -260,7 +260,7 @@ export default function ListaNegraPage() {
                                   <ShieldAlert size={20} />
                                 </div>
                                 <div>
-                                  <span className="block font-black text-lg text-slate-100 group-hover:text-slate-900 dark:text-white transition-colors">
+                                  <span className="block font-black text-lg text-slate-900 dark:text-white transition-colors">
                                     {entry.nombre}
                                   </span>
                                 </div>

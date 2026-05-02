@@ -97,7 +97,7 @@ export default function Navbar() {
                   "flex items-center gap-4 px-6 py-4 rounded-2xl text-sm font-black uppercase tracking-widest transition-all",
                   active
                     ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-                    : "text-slate-600 hover:text-slate-900 dark:text-slate-500 dark:hover:text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-white/[0.02]"
+                    : "text-slate-700 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 bg-slate-50 dark:bg-white/[0.02]"
                 )}
               >
                 <Icon size={18} />

@@ -227,7 +227,7 @@ export default function RulesPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black text-slate-800 dark:text-slate-200 p-4 md:p-8 lg:p-12 font-sans selection:bg-emerald-500/30">
+    <main className="min-h-screen bg-white dark:bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-100 via-white to-white dark:from-slate-900 dark:via-slate-950 dark:to-black text-slate-800 dark:text-slate-200 p-4 md:p-8 lg:p-12 font-sans selection:bg-emerald-500/30">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header Section */}
         <header className="flex flex-col xl:flex-row xl:items-end justify-between gap-6 pb-6 border-b border-slate-200 dark:border-slate-800/60">
@@ -354,7 +354,7 @@ export default function RulesPage() {
                         <Shield className="text-emerald-400" size={20} />
                       </div>
                       <div>
-                        <h2 className="text-xl font-bold text-slate-100">
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
                           {raidRule.raid}
                         </h2>
                         <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
@@ -412,10 +412,10 @@ export default function RulesPage() {
                                     height={56}
                                     className="w-full h-full object-cover"
                                   />
-                                  <div className="absolute inset-0 bg-slate-100 dark:bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                  <div className="absolute inset-0 bg-emerald-500/10 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity backdrop-blur-[1px]">
                                     <ExternalLink
                                       size={14}
-                                      className="text-slate-900 dark:text-white"
+                                      className="text-emerald-600 dark:text-emerald-400"
                                     />
                                   </div>
                                 </a>
@@ -430,10 +430,10 @@ export default function RulesPage() {
                                     <div
                                       className={`flex items-center gap-1.5 px-2 py-0.5 rounded border ${
                                         canAfford === true
-                                          ? "bg-green-500/10 border-green-500/20 text-green-400"
+                                          ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
                                           : canAfford === false
-                                            ? "bg-red-500/10 border-red-500/20 text-red-400"
-                                            : "bg-emerald-500/10 border-emerald-500/20 text-emerald-300"
+                                            ? "bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400"
+                                            : "bg-emerald-500/5 border-emerald-500/20 text-emerald-700 dark:text-emerald-300"
                                       }`}
                                     >
                                       <Coins size={12} />
@@ -508,8 +508,8 @@ export default function RulesPage() {
                   className="bg-white dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800/60 overflow-hidden shadow-xl backdrop-blur-sm flex flex-col"
                 >
                   <div className="p-4 bg-emerald-500/10 border-b border-slate-200 dark:border-slate-800/60 flex items-center gap-3">
-                    <TrendingUp className="text-emerald-400" size={18} />
-                    <h2 className="font-bold text-slate-100">{cat.category}</h2>
+                    <TrendingUp className="text-emerald-500 dark:text-emerald-400" size={18} />
+                    <h2 className="font-bold text-slate-900 dark:text-slate-100">{cat.category}</h2>
                   </div>
                   <div className="p-2 flex-1">
                     <table className="w-full text-left">
@@ -560,8 +560,8 @@ export default function RulesPage() {
                   className="bg-white dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800/60 overflow-hidden shadow-xl backdrop-blur-sm flex flex-col"
                 >
                   <div className="p-4 bg-red-500/10 border-b border-slate-200 dark:border-slate-800/60 flex items-center gap-3">
-                    <AlertTriangle className="text-red-400" size={18} />
-                    <h2 className="font-bold text-slate-100">{cat.category}</h2>
+                    <AlertTriangle className="text-red-500 dark:text-red-400" size={18} />
+                    <h2 className="font-bold text-slate-900 dark:text-slate-100">{cat.category}</h2>
                   </div>
                   <div className="p-2 flex-1">
                     <table className="w-full text-left">
