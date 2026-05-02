@@ -72,11 +72,11 @@ export default function EPGPPage() {
   const getClassColor = (className: string) => {
     const colors: Record<string, string> = {
       DEATHKNIGHT: "text-red-500", DRUID: "text-orange-400", HUNTER: "text-green-500",
-      MAGE: "text-cyan-300", PALADIN: "text-pink-300", PRIEST: "text-white",
+      MAGE: "text-cyan-300", PALADIN: "text-pink-300", PRIEST: "text-slate-900 dark:text-white",
       ROGUE: "text-yellow-200", SHAMAN: "text-blue-500", WARLOCK: "text-purple-500",
       WARRIOR: "text-amber-700",
     };
-    return colors[className] || "text-slate-200";
+    return colors[className] || "text-slate-800 dark:text-slate-200";
   };
 
   const getClassBgColor = (className: string) => {
@@ -206,50 +206,50 @@ export default function EPGPPage() {
     setExpandedRows(newExpanded);
   };
 
-  if (isLoading) return <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-4"><Loader2 className="w-12 h-12 text-blue-500 animate-spin" /><p className="text-slate-400 font-medium">Cargando EPGP...</p></div>;
+  if (isLoading) return <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center gap-4"><Loader2 className="w-12 h-12 text-blue-500 animate-spin" /><p className="text-slate-600 dark:text-slate-400 font-medium">Cargando EPGP...</p></div>;
 
   return (
-    <main className="min-h-screen bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black text-slate-200 p-4 md:p-8 lg:p-12 font-sans">
+    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black text-slate-800 dark:text-slate-200 p-4 md:p-8 lg:p-12 font-sans">
       <div className="max-w-7xl mx-auto space-y-6">
-        <header className="flex flex-col xl:flex-row xl:items-end justify-between gap-6 pb-6 border-b border-slate-800/60">
+        <header className="flex flex-col xl:flex-row xl:items-end justify-between gap-6 pb-6 border-b border-slate-200 dark:border-slate-800/60">
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20 shadow-md"><BarChart2 className="text-blue-400" size={28} /></div>
               <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 font-display">Sistema EPGP</h1>
             </div>
-            <div className="flex flex-wrap items-center gap-3 text-xs md:text-sm text-slate-400">
-              <div className="flex items-center gap-1.5 bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-700/50 shadow-sm font-display uppercase tracking-wider"><Calendar size={14} className="text-blue-400" /><span>TZ Lima: {lastUpdatedDate}</span></div>
-              <div className="flex items-center gap-1.5 bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-700/50 shadow-sm font-display uppercase tracking-wider"><Clock size={14} className="text-blue-400" /><span>{lastUpdatedHour}</span></div>
-              <div className="flex items-center gap-1.5 bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-700/50 shadow-sm font-display uppercase tracking-wider"><Users size={14} className="text-blue-400" /><span>{roster.length} Jugadores</span></div>
+            <div className="flex flex-wrap items-center gap-3 text-xs md:text-sm text-slate-600 dark:text-slate-400">
+              <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700/50 shadow-sm font-display uppercase tracking-wider"><Calendar size={14} className="text-blue-400" /><span>TZ Lima: {lastUpdatedDate}</span></div>
+              <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700/50 shadow-sm font-display uppercase tracking-wider"><Clock size={14} className="text-blue-400" /><span>{lastUpdatedHour}</span></div>
+              <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700/50 shadow-sm font-display uppercase tracking-wider"><Users size={14} className="text-blue-400" /><span>{roster.length} Jugadores</span></div>
             </div>
           </div>
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto">
-            <div className="flex bg-slate-900/80 p-1.5 rounded-xl border border-slate-700/60 shadow-inner w-full sm:w-auto">
-              <button onClick={() => setActiveTab("roster")} className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all font-display uppercase tracking-wide ${activeTab === "roster" ? "bg-slate-800 text-blue-400 shadow-md border border-slate-700/50" : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/50"}`}><LayoutList size={16} /> Roster</button>
-              <button onClick={() => setActiveTab("history")} className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all font-display uppercase tracking-wide ${activeTab === "history" ? "bg-slate-800 text-blue-400 shadow-md border border-slate-700/50" : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/50"}`}><History size={16} /> Historial</button>
+            <div className="flex bg-white dark:bg-slate-900/80 p-1.5 rounded-xl border border-slate-300 dark:border-slate-700/60 shadow-inner w-full sm:w-auto">
+              <button onClick={() => setActiveTab("roster")} className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all font-display uppercase tracking-wide ${activeTab === "roster" ? "bg-slate-100 dark:bg-slate-800 text-blue-400 shadow-md border border-slate-300 dark:border-slate-700/50" : "text-slate-500 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:bg-slate-800/50"}`}><LayoutList size={16} /> Roster</button>
+              <button onClick={() => setActiveTab("history")} className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all font-display uppercase tracking-wide ${activeTab === "history" ? "bg-slate-100 dark:bg-slate-800 text-blue-400 shadow-md border border-slate-300 dark:border-slate-700/50" : "text-slate-500 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:bg-slate-800/50"}`}><History size={16} /> Historial</button>
             </div>
             <div className="relative group w-full sm:w-64">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Search className="h-4 w-4 text-slate-500 group-focus-within:text-blue-400 transition-colors" /></div>
-              <input type="text" placeholder="Buscar..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full bg-slate-900/80 border border-slate-700/60 rounded-xl py-2 pl-9 pr-4 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all shadow-inner" />
+              <input type="text" placeholder="Buscar..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full bg-white dark:bg-slate-900/80 border border-slate-300 dark:border-slate-700/60 rounded-xl py-2 pl-9 pr-4 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all shadow-inner" />
             </div>
-            <button onClick={() => setShowFilters(!showFilters)} className={`p-2 rounded-xl border transition-all flex-shrink-0 ${showFilters || selectedClasses.size > 0 ? "bg-blue-500/20 border-blue-500/50 text-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.1)]" : "bg-slate-900/80 border-slate-700/60 text-slate-400 hover:bg-slate-800"}`} title="Filtros"><Filter size={18} /></button>
+            <button onClick={() => setShowFilters(!showFilters)} className={`p-2 rounded-xl border transition-all flex-shrink-0 ${showFilters || selectedClasses.size > 0 ? "bg-blue-500/20 border-blue-500/50 text-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.1)]" : "bg-white dark:bg-slate-900/80 border-slate-300 dark:border-slate-700/60 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:bg-slate-800"}`} title="Filtros"><Filter size={18} /></button>
           </div>
         </header>
 
         {showFilters && (
-          <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-4 animate-in fade-in slide-in-from-top-2 duration-200 backdrop-blur-sm shadow-lg space-y-4">
+          <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 rounded-xl p-4 animate-in fade-in slide-in-from-top-2 duration-200 backdrop-blur-sm shadow-lg space-y-4">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               {activeTab === "roster" ? (
                 <>
                   <div>
                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Filtrar por Clase</p>
-                    <div className="flex flex-wrap gap-1.5">{WOW_CLASSES.map(cls => (<button key={cls} onClick={() => toggleClassFilter(cls)} className={`px-2 py-1 text-[10px] font-bold rounded border transition-all ${selectedClasses.has(cls) ? `${getClassBgColor(cls)} text-slate-950 border-transparent shadow-sm` : `bg-slate-800/50 text-slate-400 border-slate-700 hover:bg-slate-700 ${getClassColor(cls)}`}`}>{cls}</button>))}</div>
+                    <div className="flex flex-wrap gap-1.5">{WOW_CLASSES.map(cls => (<button key={cls} onClick={() => toggleClassFilter(cls)} className={`px-2 py-1 text-[10px] font-bold rounded border transition-all ${selectedClasses.has(cls) ? `${getClassBgColor(cls)} text-slate-950 border-transparent shadow-sm` : `bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700 hover:bg-slate-700 ${getClassColor(cls)}`}`}>{cls}</button>))}</div>
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Vista</p>
-                    <div className="flex bg-slate-950 rounded-lg p-1 border border-slate-800">
-                      <button onClick={() => setViewMode('table')} className={`p-1.5 rounded-md ${viewMode === 'table' ? 'bg-slate-800 text-blue-400' : 'text-slate-500'}`}><List size={16} /></button>
-                      <button onClick={() => setViewMode('grid')} className={`p-1.5 rounded-md ${viewMode === 'grid' ? 'bg-slate-800 text-blue-400' : 'text-slate-500'}`}><Grid size={16} /></button>
+                    <div className="flex bg-slate-50 dark:bg-slate-950 rounded-lg p-1 border border-slate-200 dark:border-slate-800">
+                      <button onClick={() => setViewMode('table')} className={`p-1.5 rounded-md ${viewMode === 'table' ? 'bg-slate-100 dark:bg-slate-800 text-blue-400' : 'text-slate-500'}`}><List size={16} /></button>
+                      <button onClick={() => setViewMode('grid')} className={`p-1.5 rounded-md ${viewMode === 'grid' ? 'bg-slate-100 dark:bg-slate-800 text-blue-400' : 'text-slate-500'}`}><Grid size={16} /></button>
                     </div>
                   </div>
                 </>
@@ -263,7 +263,7 @@ export default function EPGPPage() {
                         type="date" 
                         value={logToIsoDate(selectedDate)}
                         onChange={(e) => setSelectedDate(isoToLogDate(e.target.value))}
-                        className="bg-slate-950 border border-slate-700 rounded-lg py-2 pl-10 pr-4 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 [color-scheme:dark] cursor-pointer"
+                        className="bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg py-2 pl-10 pr-4 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50 [color-scheme:dark] cursor-pointer"
                       />
                     </div>
                     {selectedDate && (
@@ -281,9 +281,9 @@ export default function EPGPPage() {
           </div>
         )}
 
-        <div className="bg-slate-900/40 rounded-2xl border border-slate-800/60 overflow-hidden shadow-xl backdrop-blur-sm min-h-[50vh] relative">
+        <div className="bg-white dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800/60 overflow-hidden shadow-xl backdrop-blur-sm min-h-[50vh] relative">
           {isHistoryLoading && activeTab === "history" && (
-            <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-[2px] z-50 flex items-center justify-center rounded-2xl">
+            <div className="absolute inset-0 bg-slate-50 dark:bg-slate-950/40 backdrop-blur-[2px] z-50 flex items-center justify-center rounded-2xl">
               <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
             </div>
           )}
@@ -292,8 +292,8 @@ export default function EPGPPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-950/60 border-b border-slate-800 text-slate-400 text-xs uppercase tracking-wider font-semibold select-none">
-                    <th className="px-4 py-3 cursor-pointer hover:bg-slate-800/50 transition-colors">Jugador (Main)</th>
+                  <tr className="bg-slate-50 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-xs uppercase tracking-wider font-semibold select-none">
+                    <th className="px-4 py-3 cursor-pointer hover:bg-slate-100 dark:bg-slate-800/50 transition-colors">Jugador (Main)</th>
                     <th className="px-4 py-3 text-center">Clase</th>
                     <th className="px-4 py-3 text-right">EP Actual</th>
                     <th className="px-4 py-3 text-center">Alters</th>
@@ -304,9 +304,9 @@ export default function EPGPPage() {
                   {processedRoster.length > 0 ? (
                     processedRoster.map((member) => (
                       <React.Fragment key={member.main}>
-                        <tr onClick={() => toggleRow(member.main)} className={`group cursor-pointer transition-colors ${member.main === myCharacter ? 'bg-blue-900/10' : 'hover:bg-slate-800/30'}`}>
+                        <tr onClick={() => toggleRow(member.main)} className={`group cursor-pointer transition-colors ${member.main === myCharacter ? 'bg-blue-900/10' : 'hover:bg-slate-100 dark:bg-slate-800/30'}`}>
                           <td className="px-4 py-3 flex items-center gap-3">
-                            <div className={`relative w-8 h-8 rounded border overflow-hidden bg-slate-800 ${member.main === myCharacter ? 'border-blue-400 shadow-sm' : 'border-slate-700'}`}>
+                            <div className={`relative w-8 h-8 rounded border overflow-hidden bg-slate-100 dark:bg-slate-800 ${member.main === myCharacter ? 'border-blue-400 shadow-sm' : 'border-slate-300 dark:border-slate-700'}`}>
                               <Image 
                                 src={member.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"} 
                                 alt={member.class} 
@@ -326,14 +326,14 @@ export default function EPGPPage() {
                               </button>
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-center"><span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-900/80 text-slate-300 border border-slate-700/50 uppercase">{member.class}</span></td>
+                          <td className="px-4 py-3 text-center"><span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-white dark:bg-slate-900/80 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700/50 uppercase">{member.class}</span></td>
                           <td className="px-4 py-3 text-right font-mono font-bold text-slate-100">{member.amount.toLocaleString()}</td>
-                          <td className="px-4 py-3 text-center"><span className="font-semibold text-slate-300 bg-slate-900/80 px-2 py-0.5 rounded border border-slate-700/50 text-[10px]">{member.alters?.length || 0}</span></td>
+                          <td className="px-4 py-3 text-center"><span className="font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900/80 px-2 py-0.5 rounded border border-slate-300 dark:border-slate-700/50 text-[10px]">{member.alters?.length || 0}</span></td>
                           <td className="px-4 py-3 text-center"><button onClick={(e) => { e.stopPropagation(); handleSetMyCharacter(member.main); }} className={`p-1.5 rounded-lg transition-all ${member.main === myCharacter ? 'text-yellow-400 bg-yellow-400/10' : 'text-slate-600 hover:text-yellow-400'}`}><Star size={16} className={member.main === myCharacter ? "fill-yellow-400" : ""} /></button></td>
                         </tr>
                         {expandedRows.has(member.main) && member.alters && member.alters.length > 0 && (
-                          <tr className={`border-b border-slate-800/50 ${member.main === myCharacter ? 'bg-blue-900/5' : 'bg-slate-900/80'}`}>
-                            <td colSpan={5} className="px-4 py-3"><div className="pl-12 grid grid-cols-2 sm:grid-cols-4 gap-2 animate-in fade-in slide-in-from-top-2 duration-200">{member.alters.map((alt) => (<div key={alt.name} className="flex items-center gap-2.5 bg-slate-950/60 p-2 rounded-lg border border-slate-800/60"><div className="w-6 h-6 rounded overflow-hidden border border-slate-700 bg-slate-800 shrink-0 relative">
+                          <tr className={`border-b border-slate-200 dark:border-slate-800/50 ${member.main === myCharacter ? 'bg-blue-900/5' : 'bg-white dark:bg-slate-900/80'}`}>
+                            <td colSpan={5} className="px-4 py-3"><div className="pl-12 grid grid-cols-2 sm:grid-cols-4 gap-2 animate-in fade-in slide-in-from-top-2 duration-200">{member.alters.map((alt) => (<div key={alt.name} className="flex items-center gap-2.5 bg-slate-50 dark:bg-slate-950/60 p-2 rounded-lg border border-slate-200 dark:border-slate-800/60"><div className="w-6 h-6 rounded overflow-hidden border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 shrink-0 relative">
                               <Image 
                                 src={alt.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"} 
                                 alt={alt.class} 
@@ -347,20 +347,20 @@ export default function EPGPPage() {
                       </React.Fragment>
                     ))
                   ) : (
-                    <tr><td colSpan={5} className="px-4 py-16 text-center text-slate-400"><div className="flex flex-col items-center justify-center gap-3"><Search size={32} className="text-slate-600" /><p className="text-lg font-semibold text-slate-300">No se encontraron personajes</p></div></td></tr>
+                    <tr><td colSpan={5} className="px-4 py-16 text-center text-slate-600 dark:text-slate-400"><div className="flex flex-col items-center justify-center gap-3"><Search size={32} className="text-slate-600" /><p className="text-lg font-semibold text-slate-700 dark:text-slate-300">No se encontraron personajes</p></div></td></tr>
                   )}
                 </tbody>
               </table>
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <div className="p-4 bg-slate-950/40 border-b border-slate-800/60 flex items-center justify-between">
-                <div className="flex items-center gap-2"><CalendarDays size={18} className="text-blue-400" /><span className="text-sm font-bold text-slate-300">Registros del {selectedDate || "Todos los tiempos"}</span></div>
-                <span className="text-[10px] font-bold text-slate-500 bg-slate-900 px-2 py-1 rounded border border-slate-800">{processedHistory.length} REGISTROS</span>
+              <div className="p-4 bg-slate-50 dark:bg-slate-950/40 border-b border-slate-200 dark:border-slate-800/60 flex items-center justify-between">
+                <div className="flex items-center gap-2"><CalendarDays size={18} className="text-blue-400" /><span className="text-sm font-bold text-slate-700 dark:text-slate-300">Registros del {selectedDate || "Todos los tiempos"}</span></div>
+                <span className="text-[10px] font-bold text-slate-500 bg-white dark:bg-slate-900 px-2 py-1 rounded border border-slate-200 dark:border-slate-800">{processedHistory.length} REGISTROS</span>
               </div>
               <table className="w-full text-left border-collapse text-sm">
                 <thead>
-                  <tr className="bg-slate-950/60 border-b border-slate-800 text-slate-400 text-xs uppercase tracking-wider font-semibold select-none">
+                  <tr className="bg-slate-50 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-xs uppercase tracking-wider font-semibold select-none">
                     <th className="px-4 py-3 w-36">Hora</th>
                     <th className="px-4 py-3">Personaje</th>
                     <th className="px-4 py-3">Descripción</th>
@@ -376,14 +376,14 @@ export default function EPGPPage() {
                       const myCharData = roster.find(r => r.main === myCharacter);
                       const isMeOrMyAlter = myCharacter && (log.personaje === myCharacter || (myCharData?.alters?.some(a => a.name === log.personaje) ?? false));
                       return (
-                        <tr key={index} className={`hover:bg-slate-800/30 transition-colors relative ${isMeOrMyAlter ? 'bg-blue-900/10' : ''}`}>
+                        <tr key={index} className={`hover:bg-slate-100 dark:bg-slate-800/30 transition-colors relative ${isMeOrMyAlter ? 'bg-blue-900/10' : ''}`}>
                           <td className="px-4 py-2.5 relative">
                             {isMeOrMyAlter && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-r-full shadow-lg z-10"></div>}
-                            <div className="flex flex-col leading-tight"><span className="text-slate-300 font-medium text-xs">{log.hour}</span><span className="text-slate-500 text-[9px]">{log.fecha}</span></div>
+                            <div className="flex flex-col leading-tight"><span className="text-slate-700 dark:text-slate-300 font-medium text-xs">{log.hour}</span><span className="text-slate-500 text-[9px]">{log.fecha}</span></div>
                           </td>
                           <td className="px-4 py-2.5">
                             <div className="flex items-center gap-2.5">
-                              <div className="relative w-6 h-6 rounded border border-slate-700 bg-slate-800 shrink-0 shadow-sm">
+                              <div className="relative w-6 h-6 rounded border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 shrink-0 shadow-sm">
                                 {charInfo ? <Image src={charInfo.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"} alt={charInfo.class} width={24} height={24} className="object-cover w-full h-full" /> : <Users size={14} className="text-slate-500 p-1" />}
                               </div>
                               <div className="flex items-center gap-2">
@@ -407,8 +407,8 @@ export default function EPGPPage() {
                               </div>
                             </div>
                           </td>
-                          <td className="px-4 py-2.5"><span className="text-slate-300 text-sm">{log.descripcion}</span></td>
-                          <td className="px-4 py-2.5 text-center"><span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-900/80 text-slate-400 border border-slate-700/50 uppercase tracking-wider">EP</span></td>
+                          <td className="px-4 py-2.5"><span className="text-slate-700 dark:text-slate-300 text-sm">{log.descripcion}</span></td>
+                          <td className="px-4 py-2.5 text-center"><span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-white dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700/50 uppercase tracking-wider">EP</span></td>
                           <td className="px-4 py-2.5 text-right"><div className={`flex items-center justify-end gap-1.5 font-mono text-sm font-bold ${isPositive ? 'text-green-400' : 'text-red-400'}`}>{isPositive ? "+" : ""}{log.valor}</div></td>
                         </tr>
                       );
@@ -418,7 +418,7 @@ export default function EPGPPage() {
                       <td colSpan={5} className="px-4 py-16 text-center">
                         <div className="flex flex-col items-center justify-center gap-3">
                           <History size={32} className="text-slate-600" />
-                          <p className="text-lg font-semibold text-slate-300">
+                          <p className="text-lg font-semibold text-slate-700 dark:text-slate-300">
                             {selectedDate ? "No hay registros para este día" : "Seleccione una fecha para ver el historial"}
                           </p>
                         </div>

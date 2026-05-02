@@ -35,7 +35,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <Script id="wowhead-config" strategy="beforeInteractive">
           {`const whTooltips = { colorLinks: true, iconizeLinks: true, renameLinks: true };`}

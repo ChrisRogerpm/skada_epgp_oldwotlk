@@ -217,9 +217,9 @@ export default function RulesPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-4">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center gap-4">
         <Loader2 className="w-12 h-12 text-emerald-500 animate-spin" />
-        <p className="text-slate-400 font-medium animate-pulse">
+        <p className="text-slate-600 dark:text-slate-400 font-medium animate-pulse">
           Cargando normativas...
         </p>
       </div>
@@ -227,10 +227,10 @@ export default function RulesPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black text-slate-200 p-4 md:p-8 lg:p-12 font-sans selection:bg-emerald-500/30">
+    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black text-slate-800 dark:text-slate-200 p-4 md:p-8 lg:p-12 font-sans selection:bg-emerald-500/30">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header Section */}
-        <header className="flex flex-col xl:flex-row xl:items-end justify-between gap-6 pb-6 border-b border-slate-800/60">
+        <header className="flex flex-col xl:flex-row xl:items-end justify-between gap-6 pb-6 border-b border-slate-200 dark:border-slate-800/60">
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
@@ -249,7 +249,7 @@ export default function RulesPage() {
                 )}
               </div>
             </div>
-            <p className="text-slate-400 text-sm md:text-base max-w-2xl">
+            <p className="text-slate-600 dark:text-slate-400 text-sm md:text-base max-w-2xl">
               Consulta las reglas de loteo, requisitos de items BIS y el sistema
               de bonificaciones y penalizaciones.
             </p>
@@ -257,7 +257,7 @@ export default function RulesPage() {
 
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto">
             {/* Tabs */}
-            <div className="flex bg-slate-900/80 p-1.5 rounded-xl border border-slate-700/60 shadow-inner w-full sm:w-auto">
+            <div className="flex bg-white dark:bg-slate-900/80 p-1.5 rounded-xl border border-slate-300 dark:border-slate-700/60 shadow-inner w-full sm:w-auto">
               <button
                 onClick={() => {
                   setActiveTab("loot");
@@ -265,8 +265,8 @@ export default function RulesPage() {
                 }}
                 className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
                   activeTab === "loot"
-                    ? "bg-slate-800 text-emerald-400 shadow-md border border-slate-700/50"
-                    : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/50"
+                    ? "bg-slate-100 dark:bg-slate-800 text-emerald-400 shadow-md border border-slate-300 dark:border-slate-700/50"
+                    : "text-slate-500 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:bg-slate-800/50"
                 }`}
               >
                 <Trophy size={16} /> Loteo
@@ -278,8 +278,8 @@ export default function RulesPage() {
                 }}
                 className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
                   activeTab === "benefits"
-                    ? "bg-slate-800 text-emerald-400 shadow-md border border-slate-700/50"
-                    : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/50"
+                    ? "bg-slate-100 dark:bg-slate-800 text-emerald-400 shadow-md border border-slate-300 dark:border-slate-700/50"
+                    : "text-slate-500 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:bg-slate-800/50"
                 }`}
               >
                 <TrendingUp size={16} /> Beneficios
@@ -291,8 +291,8 @@ export default function RulesPage() {
                 }}
                 className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
                   activeTab === "penalties"
-                    ? "bg-slate-800 text-emerald-400 shadow-md border border-slate-700/50"
-                    : "text-slate-500 hover:text-slate-300 hover:bg-slate-800/50"
+                    ? "bg-slate-100 dark:bg-slate-800 text-emerald-400 shadow-md border border-slate-300 dark:border-slate-700/50"
+                    : "text-slate-500 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:bg-slate-800/50"
                 }`}
               >
                 <TrendingDown size={16} /> Perjuicios
@@ -308,7 +308,7 @@ export default function RulesPage() {
                 placeholder="Buscar..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-slate-900/80 border border-slate-700/60 rounded-xl py-2 pl-9 pr-4 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all shadow-inner"
+                className="w-full bg-white dark:bg-slate-900/80 border border-slate-300 dark:border-slate-700/60 rounded-xl py-2 pl-9 pr-4 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all shadow-inner"
               />
             </div>
           </div>
@@ -327,7 +327,7 @@ export default function RulesPage() {
                 className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border ${
                   selectedCategory === cat
                     ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-[0_0_10px_rgba(16,185,129,0.1)]"
-                    : "bg-slate-900/50 text-slate-500 border-slate-800 hover:border-slate-700 hover:text-slate-300"
+                    : "bg-white dark:bg-slate-900/50 text-slate-500 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:border-slate-700 hover:text-slate-700 dark:text-slate-300"
                 }`}
               >
                 {cat}
@@ -343,11 +343,11 @@ export default function RulesPage() {
               {filteredLoot.map((raidRule: any) => (
                 <section
                   key={raidRule.raid}
-                  className="bg-slate-900/40 rounded-2xl border border-slate-800/60 overflow-hidden shadow-xl backdrop-blur-sm"
+                  className="bg-white dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800/60 overflow-hidden shadow-xl backdrop-blur-sm"
                 >
                   <button
                     onClick={() => toggleRaid(raidRule.raid)}
-                    className="w-full flex items-center justify-between p-4 md:p-6 bg-slate-950/40 hover:bg-slate-900/60 transition-colors text-left"
+                    className="w-full flex items-center justify-between p-4 md:p-6 bg-slate-50 dark:bg-slate-950/40 hover:bg-white dark:bg-slate-900/60 transition-colors text-left"
                   >
                     <div className="flex items-center gap-4">
                       <div className="p-2 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
@@ -363,7 +363,7 @@ export default function RulesPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
-                      <span className="hidden sm:inline-block text-[10px] font-bold text-slate-500 bg-slate-900/80 px-2 py-1 rounded border border-slate-800">
+                      <span className="hidden sm:inline-block text-[10px] font-bold text-slate-500 bg-white dark:bg-slate-900/80 px-2 py-1 rounded border border-slate-200 dark:border-slate-800">
                         {raidRule.items.length} ÍTEMS
                       </span>
                       {expandedRaids.has(raidRule.raid) ? (
@@ -388,10 +388,10 @@ export default function RulesPage() {
                           return (
                             <div
                               key={idx}
-                              className={`relative bg-slate-950/60 rounded-xl border p-4 transition-all group shadow-sm overflow-hidden ${
+                              className={`relative bg-slate-50 dark:bg-slate-950/60 rounded-xl border p-4 transition-all group shadow-sm overflow-hidden ${
                                 isBIS
                                   ? "border-orange-500/30 hover:border-orange-500/50"
-                                  : "border-slate-800/80 hover:border-emerald-500/30"
+                                  : "border-slate-200 dark:border-slate-800/80 hover:border-emerald-500/30"
                               }`}
                             >
                               {isBIS && (
@@ -403,7 +403,7 @@ export default function RulesPage() {
                                   href={`https://www.wowhead.com/wotlk/search?q=${encodeURIComponent(item.item)}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="w-14 h-14 rounded-lg overflow-hidden border-2 border-slate-800 group-hover:border-emerald-500/40 transition-colors bg-slate-900 shrink-0 relative"
+                                  className="w-14 h-14 rounded-lg overflow-hidden border-2 border-slate-200 dark:border-slate-800 group-hover:border-emerald-500/40 transition-colors bg-white dark:bg-slate-900 shrink-0 relative"
                                 >
                                   <Image
                                     src={item.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"}
@@ -412,10 +412,10 @@ export default function RulesPage() {
                                     height={56}
                                     className="w-full h-full object-cover"
                                   />
-                                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                  <div className="absolute inset-0 bg-slate-100 dark:bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
                                     <ExternalLink
                                       size={14}
-                                      className="text-white"
+                                      className="text-slate-900 dark:text-white"
                                     />
                                   </div>
                                 </a>
@@ -454,7 +454,7 @@ export default function RulesPage() {
                                       className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
                                         isBIS
                                           ? "bg-orange-500/20 text-orange-400 border border-orange-500/30"
-                                          : "bg-slate-800 text-slate-400"
+                                          : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                                       }`}
                                     >
                                       {item.category}
@@ -471,7 +471,7 @@ export default function RulesPage() {
                                           (req: any, rIdx: number) => (
                                             <li
                                               key={rIdx}
-                                              className="text-xs text-slate-300 flex items-start gap-2 leading-tight"
+                                              className="text-xs text-slate-700 dark:text-slate-300 flex items-start gap-2 leading-tight"
                                             >
                                               <div
                                                 className={`w-1 h-1 rounded-full mt-1.5 shrink-0 ${isBIS ? "bg-orange-500" : "bg-emerald-500"}`}
@@ -505,9 +505,9 @@ export default function RulesPage() {
               {filteredBenefits.map((cat: any, idx: number) => (
                 <div
                   key={idx}
-                  className="bg-slate-900/40 rounded-2xl border border-slate-800/60 overflow-hidden shadow-xl backdrop-blur-sm flex flex-col"
+                  className="bg-white dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800/60 overflow-hidden shadow-xl backdrop-blur-sm flex flex-col"
                 >
-                  <div className="p-4 bg-emerald-500/10 border-b border-slate-800/60 flex items-center gap-3">
+                  <div className="p-4 bg-emerald-500/10 border-b border-slate-200 dark:border-slate-800/60 flex items-center gap-3">
                     <TrendingUp className="text-emerald-400" size={18} />
                     <h2 className="font-bold text-slate-100">{cat.category}</h2>
                   </div>
@@ -522,7 +522,7 @@ export default function RulesPage() {
                             <td className="px-3 py-3">
                               <div className="flex items-center gap-3">
                                 {item.icon && (
-                                  <div className="w-8 h-8 rounded border border-slate-700 overflow-hidden bg-slate-900 shrink-0 relative">
+                                  <div className="w-8 h-8 rounded border border-slate-300 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-900 shrink-0 relative">
                                     <Image
                                       src={item.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"}
                                       alt="Icon"
@@ -532,7 +532,7 @@ export default function RulesPage() {
                                     />
                                   </div>
                                 )}
-                                <span className="text-sm text-slate-300 leading-tight">
+                                <span className="text-sm text-slate-700 dark:text-slate-300 leading-tight">
                                   {item.descripcion}
                                 </span>
                               </div>
@@ -557,9 +557,9 @@ export default function RulesPage() {
               {filteredPenalties.map((cat: any, idx: number) => (
                 <div
                   key={idx}
-                  className="bg-slate-900/40 rounded-2xl border border-slate-800/60 overflow-hidden shadow-xl backdrop-blur-sm flex flex-col"
+                  className="bg-white dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800/60 overflow-hidden shadow-xl backdrop-blur-sm flex flex-col"
                 >
-                  <div className="p-4 bg-red-500/10 border-b border-slate-800/60 flex items-center gap-3">
+                  <div className="p-4 bg-red-500/10 border-b border-slate-200 dark:border-slate-800/60 flex items-center gap-3">
                     <AlertTriangle className="text-red-400" size={18} />
                     <h2 className="font-bold text-slate-100">{cat.category}</h2>
                   </div>
@@ -574,7 +574,7 @@ export default function RulesPage() {
                             <td className="px-3 py-3">
                               <div className="flex items-center gap-3">
                                 {item.icon && (
-                                  <div className="w-8 h-8 rounded border border-slate-700 overflow-hidden bg-slate-900 shrink-0 relative">
+                                  <div className="w-8 h-8 rounded border border-slate-300 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-900 shrink-0 relative">
                                     <Image
                                       src={item.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"}
                                       alt="Icon"
@@ -584,7 +584,7 @@ export default function RulesPage() {
                                     />
                                   </div>
                                 )}
-                                <span className="text-sm text-slate-300 leading-tight">
+                                <span className="text-sm text-slate-700 dark:text-slate-300 leading-tight">
                                   {item.descripcion}
                                 </span>
                               </div>

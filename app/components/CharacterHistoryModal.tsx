@@ -81,23 +81,23 @@ export default function CharacterHistoryModal({ mainName, alters = [], isOpen, o
   const displayHistory = [...chronologicalHistory].reverse();
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-100 dark:bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+      <div className="w-full max-w-4xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
         
         {/* Header */}
-        <div className="p-6 md:p-8 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
+        <div className="p-6 md:p-8 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900/50">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 flex items-center justify-center text-emerald-400">
               <Shield size={28} />
             </div>
             <div>
-              <h3 className="text-2xl font-black text-white uppercase tracking-tighter">{mainName}</h3>
+              <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">{mainName}</h3>
               <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">
                 Bitácora Global ({allNames.length} Personajes)
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-full transition-colors">
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:bg-slate-800 rounded-full transition-colors">
             <X size={24} className="text-slate-500" />
           </button>
         </div>
@@ -106,12 +106,12 @@ export default function CharacterHistoryModal({ mainName, alters = [], isOpen, o
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20 space-y-4">
               <Loader2 className="animate-spin text-emerald-500" size={40} />
-              <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest">Calculando Bitácora Combinada...</p>
+              <p className="text-slate-600 dark:text-slate-400 font-bold uppercase text-[10px] tracking-widest">Calculando Bitácora Combinada...</p>
             </div>
           ) : history.length === 0 ? (
-            <div className="text-center py-20 bg-slate-950/30 rounded-3xl border border-dashed border-slate-800">
+            <div className="text-center py-20 bg-slate-50 dark:bg-slate-950/30 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800">
               <Info className="mx-auto text-slate-700 mb-4" size={48} />
-              <p className="text-slate-400 font-bold uppercase text-xs">No hay registros detallados para este jugador o sus alters.</p>
+              <p className="text-slate-600 dark:text-slate-400 font-bold uppercase text-xs">No hay registros detallados para este jugador o sus alters.</p>
             </div>
           ) : (
             <>
@@ -121,7 +121,7 @@ export default function CharacterHistoryModal({ mainName, alters = [], isOpen, o
                   <TrendingUp size={16} className="text-emerald-400" />
                   <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Evolución de EP Acumulado</span>
                 </div>
-                <div className="h-[250px] bg-slate-950/50 rounded-3xl p-4 border border-slate-800/50">
+                <div className="h-[250px] bg-slate-50 dark:bg-slate-950/50 rounded-3xl p-4 border border-slate-200 dark:border-slate-800/50">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartData}>
                       <defs>
@@ -151,7 +151,7 @@ export default function CharacterHistoryModal({ mainName, alters = [], isOpen, o
                 </div>
                 <div className="grid gap-3">
                   {displayHistory.map((log, idx) => (
-                    <div key={idx} className="bg-slate-950/40 hover:bg-slate-900/60 transition-colors border border-slate-800 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 group">
+                    <div key={idx} className="bg-slate-50 dark:bg-slate-950/40 hover:bg-white dark:bg-slate-900/60 transition-colors border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 group">
                       <div className="flex items-start gap-4 flex-1">
                         <div className={clsx(
                           "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border transition-all group-hover:rotate-6",
@@ -196,7 +196,7 @@ export default function CharacterHistoryModal({ mainName, alters = [], isOpen, o
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-6 px-4 md:border-l md:border-slate-800">
+                      <div className="flex items-center gap-6 px-4 md:border-l md:border-slate-200 dark:border-slate-800">
                         <div className="text-right">
                           <p className="text-[9px] font-black text-slate-600 uppercase">Valor</p>
                           <p className={clsx("text-sm font-black", log.valor >= 0 ? "text-emerald-400" : "text-red-400")}>
@@ -213,7 +213,7 @@ export default function CharacterHistoryModal({ mainName, alters = [], isOpen, o
         </div>
         
         {/* Footer */}
-        <div className="p-4 bg-slate-950/50 border-t border-slate-800 text-center">
+        <div className="p-4 bg-slate-50 dark:bg-slate-950/50 border-t border-slate-200 dark:border-slate-800 text-center">
           <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">Sistema de Auditoría EPGP • Old Legends</p>
         </div>
       </div>

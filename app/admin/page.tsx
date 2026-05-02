@@ -7,7 +7,7 @@ import {
   FileText, Users, Trophy, Plus, X, Shield, TrendingUp, TrendingDown, Edit3, Search,
   ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Copy, LogOut, Lock, Mail, Trash2, LayoutDashboard, ExternalLink
 } from "lucide-react";
-import { supabase } from "../../lib/supabase";
+import { supabase } from "@/src/infrastructure/config/supabase";
 import { 
   User 
 } from "@supabase/supabase-js";
@@ -508,13 +508,13 @@ export default function AdminPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center space-y-6">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center space-y-6">
         <div className="relative">
           <div className="w-16 h-16 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
           <Settings className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-emerald-500 w-6 h-6" />
         </div>
         <div className="text-center space-y-2">
-          <p className="text-white font-black tracking-widest text-sm uppercase">Cargando Sistema</p>
+          <p className="text-slate-900 dark:text-white font-black tracking-widest text-sm uppercase">Cargando Sistema</p>
           <p className="text-slate-500 text-xs font-medium animate-pulse">Verificando credenciales de acceso...</p>
         </div>
       </div>
@@ -524,20 +524,20 @@ export default function AdminPage() {
   // LOGIN SCREEN
   if (!user) {
     return (
-      <main className="min-h-screen bg-slate-950 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black text-slate-200 flex items-center justify-center p-4">
+      <main className="min-h-screen bg-slate-50 dark:bg-slate-950 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black text-slate-800 dark:text-slate-200 flex items-center justify-center p-4">
         <div className="w-full max-w-md space-y-8 animate-in fade-in zoom-in duration-700">
           <div className="text-center space-y-4">
             <div className="w-24 h-24 bg-gradient-to-br from-emerald-500/20 to-teal-500/5 rounded-3xl border border-emerald-500/30 flex items-center justify-center mx-auto shadow-[0_0_50px_rgba(16,185,129,0.15)] group hover:scale-105 transition-transform duration-500">
               <Shield className="text-emerald-400 group-hover:rotate-12 transition-transform duration-500" size={48} />
             </div>
             <div className="space-y-1">
-              <h1 className="text-4xl font-black text-white tracking-tighter uppercase">Panel Admin</h1>
+              <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">Panel Admin</h1>
               <p className="text-emerald-500/60 text-xs font-black uppercase tracking-[0.3em]">Gestión Old Legends</p>
             </div>
           </div>
 
-          <div className="bg-slate-900/40 backdrop-blur-2xl border border-white/5 p-1 rounded-[2.5rem] shadow-2xl">
-            <form onSubmit={handleLogin} className="bg-slate-900/40 border border-white/5 p-8 rounded-[2.2rem] space-y-6">
+          <div className="bg-white dark:bg-slate-900/40 backdrop-blur-2xl border border-white/5 p-1 rounded-[2.5rem] shadow-2xl">
+            <form onSubmit={handleLogin} className="bg-white dark:bg-slate-900/40 border border-white/5 p-8 rounded-[2.2rem] space-y-6">
               <div className="space-y-5">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Identificación</label>
@@ -549,7 +549,7 @@ export default function AdminPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="admin@old-legends.com"
-                      className="w-full bg-slate-950/50 border border-slate-800 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/40 transition-all text-white placeholder:text-slate-700"
+                      className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/40 transition-all text-slate-900 dark:text-white placeholder:text-slate-700"
                     />
                   </div>
                 </div>
@@ -564,7 +564,7 @@ export default function AdminPage() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••••••"
-                      className="w-full bg-slate-950/50 border border-slate-800 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/40 transition-all text-white placeholder:text-slate-700"
+                      className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/40 transition-all text-slate-900 dark:text-white placeholder:text-slate-700"
                     />
                   </div>
                 </div>
@@ -580,7 +580,7 @@ export default function AdminPage() {
               <button 
                 type="submit" 
                 disabled={isLoggingIn}
-                className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 text-white font-black py-4 rounded-2xl transition-all shadow-xl shadow-emerald-900/20 flex items-center justify-center gap-3 uppercase tracking-widest text-xs group"
+                className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 text-slate-900 dark:text-white font-black py-4 rounded-2xl transition-all shadow-xl shadow-emerald-900/20 flex items-center justify-center gap-3 uppercase tracking-widest text-xs group"
               >
                 {isLoggingIn ? <Loader2 className="animate-spin" size={20} /> : (
                   <>
@@ -597,9 +597,9 @@ export default function AdminPage() {
               Solo Oficiales Autorizados
             </p>
             <div className="flex gap-2">
-              <div className="w-1 h-1 rounded-full bg-slate-800" />
-              <div className="w-1 h-1 rounded-full bg-slate-800" />
-              <div className="w-1 h-1 rounded-full bg-slate-800" />
+              <div className="w-1 h-1 rounded-full bg-slate-100 dark:bg-slate-800" />
+              <div className="w-1 h-1 rounded-full bg-slate-100 dark:bg-slate-800" />
+              <div className="w-1 h-1 rounded-full bg-slate-100 dark:bg-slate-800" />
             </div>
           </div>
         </div>
@@ -609,7 +609,7 @@ export default function AdminPage() {
 
   // MAIN ADMIN PANEL
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-emerald-500/30">
+    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 font-sans selection:bg-emerald-500/30">
       
       {/* Floating Notifications (Toasts) */}
       {status && (
@@ -657,7 +657,7 @@ export default function AdminPage() {
           <button
             onClick={handleSaveReglas}
             disabled={isSaving || isLoading}
-            className="flex items-center gap-3 px-8 py-5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 text-white rounded-3xl font-black transition-all shadow-2xl shadow-emerald-950/50 group border border-emerald-400/20 active:scale-95"
+            className="flex items-center gap-3 px-8 py-5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50 text-slate-900 dark:text-white rounded-3xl font-black transition-all shadow-2xl shadow-emerald-950/50 group border border-emerald-400/20 active:scale-95"
           >
             {isSaving ? (
               <Loader2 className="animate-spin" size={24} />
@@ -674,13 +674,13 @@ export default function AdminPage() {
       <div className="max-w-[1600px] mx-auto flex flex-col lg:flex-row min-h-screen relative">
         
         {/* Sidebar Navigation */}
-        <aside className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-white/5 p-6 lg:p-8 space-y-10 lg:sticky lg:top-0 h-fit lg:h-screen flex flex-col backdrop-blur-md bg-slate-950/30">
+        <aside className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r border-white/5 p-6 lg:p-8 space-y-10 lg:sticky lg:top-0 h-fit lg:h-screen flex flex-col backdrop-blur-md bg-slate-50 dark:bg-slate-950/30">
           <div className="flex items-center gap-4 px-2">
             <div className="p-3 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 shadow-inner">
               <Shield className="text-emerald-400" size={28} />
             </div>
             <div className="min-w-0">
-              <h1 className="text-xl font-black text-white tracking-tighter uppercase leading-none">Admin</h1>
+              <h1 className="text-xl font-black text-slate-900 dark:text-white tracking-tighter uppercase leading-none">Admin</h1>
               <p className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-widest truncate">Portal Old Legends</p>
             </div>
           </div>
@@ -694,8 +694,8 @@ export default function AdminPage() {
                 className={clsx(
                   "w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-bold transition-all border group relative overflow-hidden",
                   activeSection === section.id 
-                    ? "bg-white/[0.03] text-white border-white/10 shadow-xl" 
-                    : "text-slate-500 hover:text-slate-300 hover:bg-white/[0.02] border-transparent"
+                    ? "bg-white/[0.03] text-slate-900 dark:text-white border-black/10 dark:border-white/10 shadow-xl" 
+                    : "text-slate-500 hover:text-slate-700 dark:text-slate-300 hover:bg-white/[0.02] border-transparent"
                 )}
               >
                 {activeSection === section.id && (
@@ -709,12 +709,12 @@ export default function AdminPage() {
           </nav>
 
           <div className="pt-6 border-t border-white/5 space-y-4">
-            <div className="bg-slate-900/50 rounded-2xl p-4 border border-white/5 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-xs font-black text-emerald-400 border border-white/5">
+            <div className="bg-white dark:bg-slate-900/50 rounded-2xl p-4 border border-white/5 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xs font-black text-emerald-400 border border-white/5">
                 {user.email?.[0].toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold text-white truncate">{user.email}</p>
+                <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{user.email}</p>
                 <p className="text-[9px] font-black text-slate-600 uppercase tracking-tighter">Administrador</p>
               </div>
             </div>
@@ -736,9 +736,9 @@ export default function AdminPage() {
               <div className="flex items-center gap-3 mb-1">
                 <span className="px-2 py-0.5 rounded text-[9px] md:text-[10px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-widest">Live System</span>
                 <span className="text-slate-600">/</span>
-                <span className="text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-widest truncate max-w-[150px] md:max-w-none">{sections.find(s => s.id === activeSection)?.label}</span>
+                <span className="text-slate-600 dark:text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-widest truncate max-w-[150px] md:max-w-none">{sections.find(s => s.id === activeSection)?.label}</span>
               </div>
-              <h2 className="text-2xl md:text-3xl font-black text-white tracking-tighter uppercase">
+              <h2 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">
                 {activeSection === "reglas" ? "Editor de Reglas" : activeSection === "epgp" ? "Configuración EPGP" : activeSection === "fullgeared" ? "Full ICC & RS" : "Gestión de Logs"}
               </h2>
             </div>
@@ -751,7 +751,7 @@ export default function AdminPage() {
                   placeholder="Filtrar..."
                   value={adminSearch}
                   onChange={(e) => setAdminSearch(e.target.value)}
-                  className="w-full md:w-64 lg:w-80 bg-slate-900/50 border border-white/5 rounded-2xl py-3 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/40 transition-all placeholder:text-slate-700 font-medium"
+                  className="w-full md:w-64 lg:w-80 bg-white dark:bg-slate-900/50 border border-white/5 rounded-2xl py-3 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/40 transition-all placeholder:text-slate-700 font-medium"
                 />
               </div>
             </div>
@@ -789,19 +789,19 @@ export default function AdminPage() {
                       <Database className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-emerald-500 w-8 h-8 opacity-50" />
                     </div>
                     <div className="text-center">
-                      <p className="text-white font-black tracking-widest text-sm uppercase">Sincronizando Datos</p>
+                      <p className="text-slate-900 dark:text-white font-black tracking-widest text-sm uppercase">Sincronizando Datos</p>
                       <p className="text-slate-600 text-[10px] font-black uppercase mt-1">Conectando con Supabase Engine...</p>
                     </div>
                   </div>
                 ) : (
                   <>
                     {/* SUB-TABS NAVIGATION */}
-                    <div className="flex items-center gap-1 p-1 bg-slate-900/50 rounded-2xl border border-white/5 w-fit">
+                    <div className="flex items-center gap-1 p-1 bg-white dark:bg-slate-900/50 rounded-2xl border border-white/5 w-fit">
                       <button 
                         onClick={() => setActiveReglasTab("loteo")}
                         className={clsx(
                           "px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2",
-                          activeReglasTab === "loteo" ? "bg-orange-500/10 text-orange-400 shadow-lg border border-orange-500/20" : "text-slate-500 hover:text-slate-300"
+                          activeReglasTab === "loteo" ? "bg-orange-500/10 text-orange-400 shadow-lg border border-orange-500/20" : "text-slate-500 hover:text-slate-700 dark:text-slate-300"
                         )}
                       >
                         <Trophy size={14} /> Loteo
@@ -810,7 +810,7 @@ export default function AdminPage() {
                         onClick={() => setActiveReglasTab("beneficios")}
                         className={clsx(
                           "px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2",
-                          activeReglasTab === "beneficios" ? "bg-emerald-500/10 text-emerald-400 shadow-lg border border-emerald-500/20" : "text-slate-500 hover:text-slate-300"
+                          activeReglasTab === "beneficios" ? "bg-emerald-500/10 text-emerald-400 shadow-lg border border-emerald-500/20" : "text-slate-500 hover:text-slate-700 dark:text-slate-300"
                         )}
                       >
                         <TrendingUp size={14} /> Bonos
@@ -819,7 +819,7 @@ export default function AdminPage() {
                         onClick={() => setActiveReglasTab("sanciones")}
                         className={clsx(
                           "px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2",
-                          activeReglasTab === "sanciones" ? "bg-red-500/10 text-red-400 shadow-lg border border-red-500/20" : "text-slate-500 hover:text-slate-300"
+                          activeReglasTab === "sanciones" ? "bg-red-500/10 text-red-400 shadow-lg border border-red-500/20" : "text-slate-500 hover:text-slate-700 dark:text-slate-300"
                         )}
                       >
                         <TrendingDown size={14} /> Sanciones
@@ -835,7 +835,7 @@ export default function AdminPage() {
                               <Trophy className="text-orange-400" size={24} />
                             </div>
                             <div>
-                              <h3 className="text-xl font-black text-white uppercase tracking-tight">Reglas de Loteo</h3>
+                              <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Reglas de Loteo</h3>
                               <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Gestión de prioridad por Raid</p>
                             </div>
                           </div>
@@ -849,11 +849,11 @@ export default function AdminPage() {
 
                         <div className="space-y-6">
                           {filteredLootRules.length === 0 ? (
-                            <div className="bg-slate-900/20 border border-dashed border-white/5 rounded-[2rem] p-20 text-center">
-                              <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center mx-auto mb-6 text-slate-700 border border-white/5 shadow-inner">
+                            <div className="bg-white dark:bg-slate-900/20 border border-dashed border-white/5 rounded-[2rem] p-20 text-center">
+                              <div className="w-16 h-16 bg-white dark:bg-slate-900 rounded-2xl flex items-center justify-center mx-auto mb-6 text-slate-700 border border-white/5 shadow-inner">
                                 <Search size={32} />
                               </div>
-                              <h4 className="text-white font-black uppercase mb-2">No se encontraron resultados</h4>
+                              <h4 className="text-slate-900 dark:text-white font-black uppercase mb-2">No se encontraron resultados</h4>
                               <p className="text-slate-500 text-sm max-w-xs mx-auto">Ajusta tu búsqueda o crea una nueva configuración de raid.</p>
                             </div>
                           ) : (
@@ -861,17 +861,17 @@ export default function AdminPage() {
                               const isExpanded = expandedRaids.has(rIdx);
                               return (
                                 <div key={rIdx} className={clsx(
-                                  "group bg-slate-900/40 rounded-[2.5rem] border transition-all duration-500 overflow-hidden",
-                                  isExpanded ? "border-white/10 shadow-2xl bg-slate-900/60" : "border-white/5 hover:border-white/10"
+                                  "group bg-white dark:bg-slate-900/40 rounded-[2.5rem] border transition-all duration-500 overflow-hidden",
+                                  isExpanded ? "border-black/10 dark:border-white/10 shadow-2xl bg-white dark:bg-slate-900/60" : "border-white/5 hover:border-black/10 dark:border-white/10"
                                 )}>
                                   <div 
                                     onClick={() => toggleRaidExpand(rIdx)}
-                                    className="p-6 md:p-8 bg-slate-950/40 border-b border-white/5 flex items-center justify-between cursor-pointer"
+                                    className="p-6 md:p-8 bg-slate-50 dark:bg-slate-950/40 border-b border-white/5 flex items-center justify-between cursor-pointer"
                                   >
                                     <div className="flex items-center gap-6 flex-1 min-w-0">
                                       <div className={clsx(
                                         "w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 shadow-inner",
-                                        isExpanded ? "bg-orange-500/20 text-orange-400 rotate-6" : "bg-slate-800/50 text-slate-600"
+                                        isExpanded ? "bg-orange-500/20 text-orange-400 rotate-6" : "bg-slate-100 dark:bg-slate-800/50 text-slate-600"
                                       )}>
                                         <Shield size={24} />
                                       </div>
@@ -884,7 +884,7 @@ export default function AdminPage() {
                                             nl[rIdx].raid = e.target.value;
                                             setLootRules(nl);
                                           }}
-                                          className="bg-transparent border-none text-2xl font-black text-white focus:ring-0 outline-none w-full p-0 placeholder-slate-800 uppercase tracking-tighter"
+                                          className="bg-transparent border-none text-2xl font-black text-slate-900 dark:text-white focus:ring-0 outline-none w-full p-0 placeholder-slate-800 uppercase tracking-tighter"
                                           placeholder="Nombre de la Raid"
                                         />
                                         <div className="flex items-center gap-3 mt-1">
@@ -916,7 +916,7 @@ export default function AdminPage() {
                                     <div className="p-6 md:p-8 space-y-6 animate-in slide-in-from-top-4 duration-500">
                                       <div className="grid grid-cols-1 gap-4">
                                         {raid.items.map((item: any, iIdx: number) => (
-                                          <div key={iIdx} className="bg-slate-950/60 border border-white/5 rounded-[1.5rem] p-6 grid grid-cols-1 md:grid-cols-12 gap-6 items-start group/item hover:border-white/10 hover:bg-slate-900/60 transition-all shadow-inner">
+                                          <div key={iIdx} className="bg-slate-50 dark:bg-slate-950/60 border border-white/5 rounded-[1.5rem] p-6 grid grid-cols-1 md:grid-cols-12 gap-6 items-start group/item hover:border-black/10 dark:border-white/10 hover:bg-white dark:bg-slate-900/60 transition-all shadow-inner">
                                             <div className="md:col-span-1 flex justify-center">
                                               <div className="relative group/icon cursor-pointer">
                                                 <Image 
@@ -924,9 +924,9 @@ export default function AdminPage() {
                                                   alt="icon" 
                                                   width={56}
                                                   height={56}
-                                                  className="w-14 h-14 rounded-2xl border-2 border-slate-800 mx-auto object-cover bg-slate-900 group-hover/icon:border-emerald-500 transition-all shadow-2xl" 
+                                                  className="w-14 h-14 rounded-2xl border-2 border-slate-200 dark:border-slate-800 mx-auto object-cover bg-white dark:bg-slate-900 group-hover/icon:border-emerald-500 transition-all shadow-2xl" 
                                                 />
-                                                <div className="absolute -bottom-1 -right-1 bg-slate-900 rounded-lg p-1 border border-white/10 opacity-0 group-hover/item:opacity-100 transition-all scale-75 group-hover:scale-100">
+                                                <div className="absolute -bottom-1 -right-1 bg-white dark:bg-slate-900 rounded-lg p-1 border border-black/10 dark:border-white/10 opacity-0 group-hover/item:opacity-100 transition-all scale-75 group-hover:scale-100">
                                                   <Edit3 size={12} className="text-emerald-400" />
                                                 </div>
                                               </div>
@@ -938,7 +938,7 @@ export default function AdminPage() {
                                                 <input 
                                                   value={item.item} 
                                                   onChange={(e) => updateItem(rIdx, iIdx, "item", e.target.value)} 
-                                                  className="w-full bg-slate-900/50 border border-white/5 rounded-xl px-4 py-2.5 text-xs text-white font-black focus:border-emerald-500/50 outline-none transition-all" 
+                                                  className="w-full bg-white dark:bg-slate-900/50 border border-white/5 rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-white font-black focus:border-emerald-500/50 outline-none transition-all" 
                                                 />
                                               </div>
                                               <div className="space-y-1.5">
@@ -948,7 +948,7 @@ export default function AdminPage() {
                                                     value={item.icon} 
                                                     onChange={(e) => updateItem(rIdx, iIdx, "icon", e.target.value)}
                                                     placeholder="https://..."
-                                                    className="flex-1 bg-slate-900/30 border border-white/5 rounded-xl px-4 py-2 text-[10px] text-slate-500 focus:text-slate-300 outline-none font-mono"
+                                                    className="flex-1 bg-white dark:bg-slate-900/30 border border-white/5 rounded-xl px-4 py-2 text-[10px] text-slate-500 focus:text-slate-700 dark:text-slate-300 outline-none font-mono"
                                                   />
                                                   <a href={item.icon} target="_blank" className="p-2 bg-white/5 rounded-xl text-slate-500 hover:text-emerald-400 transition-colors">
                                                     <ExternalLink size={14} />
@@ -963,7 +963,7 @@ export default function AdminPage() {
                                                 <input 
                                                   value={item.category} 
                                                   onChange={(e) => updateItem(rIdx, iIdx, "category", e.target.value)} 
-                                                  className="w-full bg-slate-900/50 border border-white/5 rounded-xl px-4 py-2.5 text-xs text-slate-400 uppercase font-black focus:border-emerald-500/50 outline-none transition-all" 
+                                                  className="w-full bg-white dark:bg-slate-900/50 border border-white/5 rounded-xl px-4 py-2.5 text-xs text-slate-600 dark:text-slate-400 uppercase font-black focus:border-emerald-500/50 outline-none transition-all" 
                                                 />
                                               </div>
                                               <div className="space-y-1.5">
@@ -973,7 +973,7 @@ export default function AdminPage() {
                                                     type="number" 
                                                     value={item.valueMin} 
                                                     onChange={(e) => updateItem(rIdx, iIdx, "valueMin", parseInt(e.target.value) || 0)} 
-                                                    className="w-full bg-slate-950/50 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-emerald-400 font-black focus:border-emerald-500/50 outline-none transition-all pr-10" 
+                                                    className="w-full bg-slate-50 dark:bg-slate-950/50 border border-white/5 rounded-xl px-4 py-2.5 text-sm text-emerald-400 font-black focus:border-emerald-500/50 outline-none transition-all pr-10" 
                                                   />
                                                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-emerald-900/60 uppercase">pts</span>
                                                 </div>
@@ -987,7 +987,7 @@ export default function AdminPage() {
                                                 onChange={(e) => updateItem(rIdx, iIdx, "requirement", e.target.value)} 
                                                 rows={4} 
                                                 placeholder="Ej: Solo Tanques Principal&#10;Mínimo 4/5 Tier 10&#10;Asistencia 80%+"
-                                                className="w-full bg-slate-900/50 border border-white/5 rounded-2xl px-4 py-3 text-xs text-slate-300 resize-none focus:border-emerald-500/50 outline-none leading-relaxed transition-all placeholder:text-slate-800" 
+                                                className="w-full bg-white dark:bg-slate-900/50 border border-white/5 rounded-2xl px-4 py-3 text-xs text-slate-700 dark:text-slate-300 resize-none focus:border-emerald-500/50 outline-none leading-relaxed transition-all placeholder:text-slate-800" 
                                               />
                                             </div>
 
@@ -1032,7 +1032,7 @@ export default function AdminPage() {
                               <TrendingUp className="text-emerald-400" size={24} />
                             </div>
                             <div>
-                              <h3 className="text-xl font-black text-white uppercase tracking-tight">Bonificaciones</h3>
+                              <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Bonificaciones</h3>
                               <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Incrementos de EP</p>
                             </div>
                           </div>
@@ -1046,12 +1046,12 @@ export default function AdminPage() {
                         
                         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                           {benefits.map((cat, cIdx) => (
-                            <div key={cIdx} className="bg-slate-900/40 rounded-[2rem] border border-white/5 p-6 space-y-6 shadow-xl hover:border-white/10 transition-colors">
+                            <div key={cIdx} className="bg-white dark:bg-slate-900/40 rounded-[2rem] border border-white/5 p-6 space-y-6 shadow-xl hover:border-black/10 dark:border-white/10 transition-colors">
                               <div className="flex items-center gap-4">
                                 <input 
                                   value={cat.category} 
                                   onChange={(e) => updateBenePenSection("benefits", cIdx, "category", e.target.value)} 
-                                  className="bg-slate-950/60 border border-white/5 rounded-xl px-4 py-3 text-sm font-black text-white w-full focus:border-emerald-500/50 outline-none uppercase tracking-wider transition-all" 
+                                  className="bg-slate-50 dark:bg-slate-950/60 border border-white/5 rounded-xl px-4 py-3 text-sm font-black text-slate-900 dark:text-white w-full focus:border-emerald-500/50 outline-none uppercase tracking-wider transition-all" 
                                 />
                                 <button onClick={() => setBenefits(benefits.filter((_, i) => i !== cIdx))} className="p-3 text-slate-700 hover:text-red-400 transition-colors">
                                   <Trash2 size={18} />
@@ -1059,7 +1059,7 @@ export default function AdminPage() {
                               </div>
                               <div className="grid grid-cols-1 gap-3">
                                 {cat.items.map((item: any, iIdx: number) => (
-                                  <div key={iIdx} className="bg-slate-950/40 border border-white/5 rounded-2xl p-4 space-y-4 group/bene hover:bg-slate-900/60 transition-all">
+                                  <div key={iIdx} className="bg-slate-50 dark:bg-slate-950/40 border border-white/5 rounded-2xl p-4 space-y-4 group/bene hover:bg-white dark:bg-slate-900/60 transition-all">
                                     <div className="flex items-center gap-4">
                                       <div className="relative group/icon shrink-0">
                                         <Image 
@@ -1067,7 +1067,7 @@ export default function AdminPage() {
                                           alt="icon" 
                                           width={48}
                                           height={48}
-                                          className="w-12 h-12 rounded-xl border border-white/10 object-cover bg-slate-900 shadow-lg group-hover/icon:border-emerald-500 transition-all" 
+                                          className="w-12 h-12 rounded-xl border border-black/10 dark:border-white/10 object-cover bg-white dark:bg-slate-900 shadow-lg group-hover/icon:border-emerald-500 transition-all" 
                                         />
                                       </div>
                                       <div className="flex-1 min-w-0 space-y-1.5">
@@ -1079,7 +1079,7 @@ export default function AdminPage() {
                                             setBenefits(nd);
                                           }} 
                                           placeholder="Descripción del bono..." 
-                                          className="bg-transparent border-none text-xs w-full text-white focus:ring-0 outline-none font-bold p-0" 
+                                          className="bg-transparent border-none text-xs w-full text-slate-900 dark:text-white focus:ring-0 outline-none font-bold p-0" 
                                         />
                                         <input 
                                           value={item.icon} 
@@ -1089,7 +1089,7 @@ export default function AdminPage() {
                                             setBenefits(nd);
                                           }} 
                                           placeholder="URL del icono..." 
-                                          className="bg-transparent border-none text-[9px] w-full text-slate-600 focus:text-slate-400 focus:ring-0 outline-none font-mono p-0" 
+                                          className="bg-transparent border-none text-[9px] w-full text-slate-600 focus:text-slate-600 dark:text-slate-400 focus:ring-0 outline-none font-mono p-0" 
                                         />
                                       </div>
                                       <div className="shrink-0 flex flex-col items-end gap-2">
@@ -1102,7 +1102,7 @@ export default function AdminPage() {
                                               nd[cIdx].items[iIdx].valor = parseInt(e.target.value) || 0;
                                               setBenefits(nd);
                                             }} 
-                                            className="bg-slate-950 border border-white/5 rounded-xl px-3 py-2 text-sm w-20 text-emerald-400 font-black text-right outline-none focus:border-emerald-500/50 transition-all" 
+                                            className="bg-slate-50 dark:bg-slate-950 border border-white/5 rounded-xl px-3 py-2 text-sm w-20 text-emerald-400 font-black text-right outline-none focus:border-emerald-500/50 transition-all" 
                                           />
                                         </div>
                                         <button 
@@ -1140,7 +1140,7 @@ export default function AdminPage() {
                               <TrendingDown className="text-red-400" size={24} />
                             </div>
                             <div>
-                              <h3 className="text-xl font-black text-white uppercase tracking-tight">Sanciones</h3>
+                              <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Sanciones</h3>
                               <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Descuentos de EP</p>
                             </div>
                           </div>
@@ -1154,12 +1154,12 @@ export default function AdminPage() {
 
                         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                           {penalties.map((cat, cIdx) => (
-                            <div key={cIdx} className="bg-slate-900/40 rounded-[2rem] border border-white/5 p-6 space-y-6 shadow-xl hover:border-white/10 transition-colors">
+                            <div key={cIdx} className="bg-white dark:bg-slate-900/40 rounded-[2rem] border border-white/5 p-6 space-y-6 shadow-xl hover:border-black/10 dark:border-white/10 transition-colors">
                               <div className="flex items-center gap-4">
                                 <input 
                                   value={cat.category} 
                                   onChange={(e) => updateBenePenSection("penalties", cIdx, "category", e.target.value)} 
-                                  className="bg-slate-950/60 border border-white/5 rounded-xl px-4 py-3 text-sm font-black text-white w-full focus:border-red-500/50 outline-none uppercase tracking-wider transition-all" 
+                                  className="bg-slate-50 dark:bg-slate-950/60 border border-white/5 rounded-xl px-4 py-3 text-sm font-black text-slate-900 dark:text-white w-full focus:border-red-500/50 outline-none uppercase tracking-wider transition-all" 
                                 />
                                 <button onClick={() => setPenalties(penalties.filter((_, i) => i !== cIdx))} className="p-3 text-slate-700 hover:text-red-400 transition-colors">
                                   <Trash2 size={18} />
@@ -1167,7 +1167,7 @@ export default function AdminPage() {
                               </div>
                               <div className="grid grid-cols-1 gap-3">
                                 {cat.items.map((item: any, iIdx: number) => (
-                                  <div key={iIdx} className="bg-slate-950/40 border border-white/5 rounded-2xl p-4 space-y-4 group/perj hover:bg-slate-900/60 transition-all">
+                                  <div key={iIdx} className="bg-slate-50 dark:bg-slate-950/40 border border-white/5 rounded-2xl p-4 space-y-4 group/perj hover:bg-white dark:bg-slate-900/60 transition-all">
                                     <div className="flex items-center gap-4">
                                       <div className="relative group/icon shrink-0">
                                         <Image 
@@ -1175,7 +1175,7 @@ export default function AdminPage() {
                                           alt="icon" 
                                           width={48}
                                           height={48}
-                                          className="w-12 h-12 rounded-xl border border-white/10 object-cover bg-slate-900 shadow-lg group-hover/icon:border-red-500 transition-all" 
+                                          className="w-12 h-12 rounded-xl border border-black/10 dark:border-white/10 object-cover bg-white dark:bg-slate-900 shadow-lg group-hover/icon:border-red-500 transition-all" 
                                         />
                                       </div>
                                       <div className="flex-1 min-w-0 space-y-1.5">
@@ -1187,7 +1187,7 @@ export default function AdminPage() {
                                             setPenalties(nd);
                                           }} 
                                           placeholder="Descripción de la sanción..." 
-                                          className="bg-transparent border-none text-xs w-full text-white focus:ring-0 outline-none font-bold p-0" 
+                                          className="bg-transparent border-none text-xs w-full text-slate-900 dark:text-white focus:ring-0 outline-none font-bold p-0" 
                                         />
                                         <input 
                                           value={item.icon} 
@@ -1197,7 +1197,7 @@ export default function AdminPage() {
                                             setPenalties(nd);
                                           }} 
                                           placeholder="URL del icono..." 
-                                          className="bg-transparent border-none text-[9px] w-full text-slate-600 focus:text-slate-400 focus:ring-0 outline-none font-mono p-0" 
+                                          className="bg-transparent border-none text-[9px] w-full text-slate-600 focus:text-slate-600 dark:text-slate-400 focus:ring-0 outline-none font-mono p-0" 
                                         />
                                       </div>
                                       <div className="shrink-0 flex flex-col items-end gap-2">
@@ -1210,7 +1210,7 @@ export default function AdminPage() {
                                               nd[cIdx].items[iIdx].valor = parseInt(e.target.value) || 0;
                                               setPenalties(nd);
                                             }} 
-                                            className="bg-slate-950 border border-white/5 rounded-xl px-3 py-2 text-sm w-20 text-red-400 font-black text-right outline-none focus:border-red-500/50 transition-all" 
+                                            className="bg-slate-50 dark:bg-slate-950 border border-white/5 rounded-xl px-3 py-2 text-sm w-20 text-red-400 font-black text-right outline-none focus:border-red-500/50 transition-all" 
                                           />
                                         </div>
                                         <button 
@@ -1247,13 +1247,13 @@ export default function AdminPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                   {/* FORMULARIO DE REGISTRO */}
                   <div className="lg:col-span-1 space-y-6">
-                    <div className="bg-slate-900/60 rounded-[2.5rem] border border-white/10 p-8 shadow-2xl backdrop-blur-xl">
+                    <div className="bg-white dark:bg-slate-900/60 rounded-[2.5rem] border border-black/10 dark:border-white/10 p-8 shadow-2xl backdrop-blur-xl">
                       <div className="flex items-center gap-4 mb-8">
                         <div className="w-12 h-12 bg-purple-500/10 rounded-2xl border border-purple-500/20 flex items-center justify-center">
                           <Plus className="text-purple-400" size={24} />
                         </div>
                         <div>
-                          <h3 className="text-xl font-black text-white uppercase tracking-tight">
+                          <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
                             {charForm.id ? "Editar Personaje" : "Registrar Personaje"}
                           </h3>
                           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">ICC & RS Milestone</p>
@@ -1269,13 +1269,13 @@ export default function AdminPage() {
                               type="text" 
                               placeholder="Nombre del main o alter..."
                               onChange={(e) => searchCharacters(e.target.value)}
-                              className="w-full bg-slate-950/50 border border-slate-800 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/40 transition-all text-white placeholder:text-slate-700"
+                              className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500/40 transition-all text-slate-900 dark:text-white placeholder:text-slate-700"
                             />
                           </div>
 
                           {/* SEARCH RESULTS DROPDOWN */}
                           {charSearchResults.length > 0 && (
-                            <div className="absolute z-50 w-full mt-1 bg-slate-900 border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.7)] overflow-hidden animate-in fade-in slide-in-from-top-1 max-h-[280px] overflow-y-auto">
+                            <div className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-900 border border-black/10 dark:border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.7)] overflow-hidden animate-in fade-in slide-in-from-top-1 max-h-[280px] overflow-y-auto">
                               {charSearchResults.map((char, idx) => (
                                 <button
                                   key={idx}
@@ -1283,7 +1283,7 @@ export default function AdminPage() {
                                   onClick={() => handleSelectChar(char)}
                                   className="w-full flex items-center gap-3 p-2.5 hover:bg-white/5 transition-colors border-b border-white/5 last:border-none text-left"
                                 >
-                                  <div className="w-8 h-8 rounded-lg bg-slate-800 border border-white/10 overflow-hidden shrink-0">
+                                  <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 border border-black/10 dark:border-white/10 overflow-hidden shrink-0">
                                     {char.url_icono ? (
                                       <Image src={char.url_icono} alt="icon" width={32} height={32} className="w-full h-full object-cover" />
                                     ) : (
@@ -1293,7 +1293,7 @@ export default function AdminPage() {
                                     )}
                                   </div>
                                   <div className="min-w-0">
-                                    <p className="text-xs font-black text-white truncate">{char.nombre_alter}</p>
+                                    <p className="text-xs font-black text-slate-900 dark:text-white truncate">{char.nombre_alter}</p>
                                     <p className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter truncate">
                                       {char.main} • {char.clase}
                                     </p>
@@ -1310,7 +1310,7 @@ export default function AdminPage() {
                             <input 
                               readOnly
                               value={charForm.name}
-                              className="w-full bg-slate-950/30 border border-slate-800/50 rounded-xl py-3 px-4 text-xs text-slate-400 font-bold outline-none"
+                              className="w-full bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/50 rounded-xl py-3 px-4 text-xs text-slate-600 dark:text-slate-400 font-bold outline-none"
                             />
                           </div>
                           <div className="space-y-2">
@@ -1318,7 +1318,7 @@ export default function AdminPage() {
                             <input 
                               readOnly
                               value={charForm.class}
-                              className="w-full bg-slate-950/30 border border-slate-800/50 rounded-xl py-3 px-4 text-xs text-slate-400 font-bold outline-none"
+                              className="w-full bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/50 rounded-xl py-3 px-4 text-xs text-slate-600 dark:text-slate-400 font-bold outline-none"
                             />
                           </div>
                         </div>
@@ -1328,7 +1328,7 @@ export default function AdminPage() {
                           <input 
                             readOnly
                             value={charForm.main}
-                            className="w-full bg-slate-950/30 border border-slate-800/50 rounded-xl py-3 px-4 text-xs text-slate-400 font-bold outline-none"
+                            className="w-full bg-slate-50 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-800/50 rounded-xl py-3 px-4 text-xs text-slate-600 dark:text-slate-400 font-bold outline-none"
                           />
                         </div>
 
@@ -1339,7 +1339,7 @@ export default function AdminPage() {
                               type="number" 
                               value={charForm.gs}
                               onChange={(e) => setCharForm({...charForm, gs: parseInt(e.target.value) || 0})}
-                              className="w-full bg-slate-950/50 border border-slate-800 rounded-xl py-4 px-4 text-sm text-white font-black focus:border-purple-500/50 outline-none transition-all"
+                              className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-xl py-4 px-4 text-sm text-slate-900 dark:text-white font-black focus:border-purple-500/50 outline-none transition-all"
                             />
                             <Shield className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-800" size={20} />
                           </div>
@@ -1354,11 +1354,11 @@ export default function AdminPage() {
                                 onChange={(e) => setCharForm({...charForm, icc: e.target.checked ? 1 : 0})}
                                 className="peer sr-only"
                               />
-                              <div className="w-6 h-6 bg-slate-950 border-2 border-slate-800 rounded-lg peer-checked:bg-purple-600 peer-checked:border-purple-600 transition-all flex items-center justify-center">
-                                <CheckCircle2 className="text-white scale-0 peer-checked:scale-100 transition-transform" size={14} />
+                              <div className="w-6 h-6 bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 rounded-lg peer-checked:bg-purple-600 peer-checked:border-purple-600 transition-all flex items-center justify-center">
+                                <CheckCircle2 className="text-slate-900 dark:text-white scale-0 peer-checked:scale-100 transition-transform" size={14} />
                               </div>
                             </div>
-                            <span className="text-xs font-black text-slate-400 uppercase tracking-widest group-hover:text-white transition-colors">Full ICC</span>
+                            <span className="text-xs font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest group-hover:text-slate-900 dark:text-white transition-colors">Full ICC</span>
                           </label>
 
                           <label className="flex items-center gap-3 cursor-pointer group">
@@ -1369,11 +1369,11 @@ export default function AdminPage() {
                                 onChange={(e) => setCharForm({...charForm, rs: e.target.checked ? 1 : 0})}
                                 className="peer sr-only"
                               />
-                              <div className="w-6 h-6 bg-slate-950 border-2 border-slate-800 rounded-lg peer-checked:bg-blue-600 peer-checked:border-blue-600 transition-all flex items-center justify-center">
-                                <CheckCircle2 className="text-white scale-0 peer-checked:scale-100 transition-transform" size={14} />
+                              <div className="w-6 h-6 bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 rounded-lg peer-checked:bg-blue-600 peer-checked:border-blue-600 transition-all flex items-center justify-center">
+                                <CheckCircle2 className="text-slate-900 dark:text-white scale-0 peer-checked:scale-100 transition-transform" size={14} />
                               </div>
                             </div>
-                            <span className="text-xs font-black text-slate-400 uppercase tracking-widest group-hover:text-white transition-colors">Full RS</span>
+                            <span className="text-xs font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest group-hover:text-slate-900 dark:text-white transition-colors">Full RS</span>
                           </label>
                         </div>
 
@@ -1381,7 +1381,7 @@ export default function AdminPage() {
                           <button 
                             type="submit"
                             disabled={isSaving || !charForm.name}
-                            className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-50 text-white font-black py-4 rounded-2xl transition-all shadow-xl shadow-purple-900/20 uppercase tracking-widest text-xs"
+                            className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-50 text-slate-900 dark:text-white font-black py-4 rounded-2xl transition-all shadow-xl shadow-purple-900/20 uppercase tracking-widest text-xs"
                           >
                             {isSaving ? <Loader2 className="animate-spin mx-auto" size={20} /> : (charForm.id ? "Actualizar" : "Registrar")}
                           </button>
@@ -1393,7 +1393,7 @@ export default function AdminPage() {
                                 setCharForm({ id: null, name: "", class: "", icc: 0, rs: 0, gs: 0, main: "" });
                                 setSelectedChar(null);
                               }}
-                              className="px-6 bg-slate-800 hover:bg-slate-700 text-white font-black rounded-2xl transition-all uppercase tracking-widest text-[10px]"
+                              className="px-6 bg-slate-100 dark:bg-slate-800 hover:bg-slate-700 text-slate-900 dark:text-white font-black rounded-2xl transition-all uppercase tracking-widest text-[10px]"
                             >
                               Cancelar
                             </button>
@@ -1405,14 +1405,14 @@ export default function AdminPage() {
 
                   {/* LISTADO DE PERSONAJES */}
                   <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-slate-900/40 rounded-[2.5rem] border border-white/5 overflow-hidden shadow-2xl backdrop-blur-sm">
+                    <div className="bg-white dark:bg-slate-900/40 rounded-[2.5rem] border border-white/5 overflow-hidden shadow-2xl backdrop-blur-sm">
                       <div className="p-8 border-b border-white/5 flex items-center justify-between">
                         <div>
-                          <h3 className="text-xl font-black text-white uppercase tracking-tight">Personajes Registrados</h3>
+                          <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Personajes Registrados</h3>
                           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Listado de méritos</p>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="px-3 py-1 bg-white/5 rounded-full text-[10px] font-black text-slate-400 uppercase tracking-widest border border-white/10">
+                          <span className="px-3 py-1 bg-white/5 rounded-full text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest border border-black/10 dark:border-white/10">
                             {fgTotalItems} Personajes
                           </span>
                         </div>
@@ -1421,7 +1421,7 @@ export default function AdminPage() {
                       <div className="overflow-x-auto">
                         <table className="w-full text-left">
                           <thead>
-                            <tr className="bg-slate-950/40">
+                            <tr className="bg-slate-50 dark:bg-slate-950/40">
                               <th className="px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Personaje</th>
                               <th className="px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Main</th>
                               <th className="px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">GS</th>
@@ -1434,7 +1434,7 @@ export default function AdminPage() {
                               <tr key={char.id} className="hover:bg-white/[0.02] transition-colors group">
                                 <td className="px-8 py-5">
                                   <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-xl bg-slate-800 border border-white/10 flex items-center justify-center overflow-hidden">
+                                    <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border border-black/10 dark:border-white/10 flex items-center justify-center overflow-hidden">
                                       {CLASS_ICONS[char.class.toUpperCase()] ? (
                                         <Image 
                                           src={CLASS_ICONS[char.class.toUpperCase()]} 
@@ -1448,13 +1448,13 @@ export default function AdminPage() {
                                       )}
                                     </div>
                                     <div>
-                                      <p className="text-sm font-black text-white">{char.name}</p>
+                                      <p className="text-sm font-black text-slate-900 dark:text-white">{char.name}</p>
                                       <p className="text-[10px] font-bold text-slate-500 uppercase">{char.class}</p>
                                     </div>
                                   </div>
                                 </td>
                                 <td className="px-8 py-5">
-                                  <span className="text-xs font-bold text-slate-400">{char.main}</span>
+                                  <span className="text-xs font-bold text-slate-600 dark:text-slate-400">{char.main}</span>
                                 </td>
                                 <td className="px-8 py-5">
                                   <span className="text-sm font-black text-emerald-400 tracking-tighter">{char.gs}</span>
@@ -1473,7 +1473,7 @@ export default function AdminPage() {
                                   <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button 
                                       onClick={() => setCharForm(char)}
-                                      className="p-2 hover:bg-white/5 rounded-lg text-slate-500 hover:text-white transition-colors"
+                                      className="p-2 hover:bg-white/5 rounded-lg text-slate-500 hover:text-slate-900 dark:text-white transition-colors"
                                     >
                                       <Edit3 size={16} />
                                     </button>
@@ -1507,14 +1507,14 @@ export default function AdminPage() {
                             <button 
                               onClick={() => setFgCurrentPage(p => Math.max(1, p - 1))}
                               disabled={fgCurrentPage === 1}
-                              className="p-2 bg-white/5 border border-white/10 rounded-lg text-slate-400 hover:text-white disabled:opacity-20 transition-all"
+                              className="p-2 bg-white/5 border border-black/10 dark:border-white/10 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-white disabled:opacity-20 transition-all"
                             >
                               <ChevronLeft size={16} />
                             </button>
                             <button 
                               onClick={() => setFgCurrentPage(p => Math.min(fgTotalPages, p + 1))}
                               disabled={fgCurrentPage === fgTotalPages}
-                              className="p-2 bg-white/5 border border-white/10 rounded-lg text-slate-400 hover:text-white disabled:opacity-20 transition-all"
+                              className="p-2 bg-white/5 border border-black/10 dark:border-white/10 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-white disabled:opacity-20 transition-all"
                             >
                               <ChevronRight size={16} />
                             </button>
@@ -1526,7 +1526,7 @@ export default function AdminPage() {
                 </div>
               </div>
             ) : (
-              <div className="bg-slate-900/40 rounded-[3rem] border border-white/5 p-24 text-center animate-in fade-in duration-1000 shadow-2xl backdrop-blur-3xl relative overflow-hidden group">
+              <div className="bg-white dark:bg-slate-900/40 rounded-[3rem] border border-white/5 p-24 text-center animate-in fade-in duration-1000 shadow-2xl backdrop-blur-3xl relative overflow-hidden group">
                 {/* ... existing development placeholder ... */}
               </div>
             )}

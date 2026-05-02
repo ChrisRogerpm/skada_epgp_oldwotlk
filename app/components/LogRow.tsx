@@ -2,7 +2,7 @@
 
 import { RaidLog } from "../types/RaidLog";
 import Image from "next/image";
-import { CLASS_COLORS, DEFAULT_ICONS } from "../../lib/constants";
+import { CLASS_COLORS, DEFAULT_ICONS } from "@/src/domain/constants/constants";
 
 interface LogRowProps {
   log: RaidLog;
@@ -12,13 +12,13 @@ interface LogRowProps {
 
 export default function LogRow({ log, index, metric = "Damage" }: LogRowProps) {
   const badgeClass =
-    CLASS_COLORS[log.Class.toUpperCase()] || "bg-slate-700 text-white";
+    CLASS_COLORS[log.Class.toUpperCase()] || "bg-slate-700 text-slate-900 dark:text-white";
 
   return (
-    <tr className="border-b border-slate-800/50 hover:bg-slate-800/50 transition-colors group">
-      <td className="py-1 px-4 text-sm text-slate-300 font-mono">
+    <tr className="border-b border-slate-200 dark:border-slate-800/50 hover:bg-slate-100 dark:bg-slate-800/50 transition-colors group">
+      <td className="py-1 px-4 text-sm text-slate-700 dark:text-slate-300 font-mono">
         <span
-          className={`flex items-center justify-center w-6 h-6 rounded-full bg-slate-900 border text-xs ${log.Rank <= 3 ? "border-yellow-500/50 text-yellow-400" : "border-slate-700"}`}
+          className={`flex items-center justify-center w-6 h-6 rounded-full bg-white dark:bg-slate-900 border text-xs ${log.Rank <= 3 ? "border-yellow-500/50 text-yellow-400" : "border-slate-300 dark:border-slate-700"}`}
         >
           {log.Rank}
         </span>
@@ -50,7 +50,7 @@ export default function LogRow({ log, index, metric = "Damage" }: LogRowProps) {
         </span>
       </td>
       <td className="py-1 px-4">
-        <div className="text-sm font-semibold text-slate-200">{log.Amount}</div>
+        <div className="text-sm font-semibold text-slate-800 dark:text-slate-200">{log.Amount}</div>
       </td>
       {metric === "Damage" && (
         <td className="py-1 px-4">

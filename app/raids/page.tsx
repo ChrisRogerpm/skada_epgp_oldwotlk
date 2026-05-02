@@ -54,10 +54,10 @@ export default function RaidsPage() {
   const formattedFullDate = format(selectedDateObj, "EEEE, d 'de' MMMM", { locale: es });
 
   return (
-    <main className="min-h-screen bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black text-slate-200 p-4 md:p-8 lg:p-12 font-sans selection:bg-emerald-500/30 overflow-x-hidden">
+    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black text-slate-800 dark:text-slate-200 p-4 md:p-8 lg:p-12 font-sans selection:bg-emerald-500/30 overflow-x-hidden">
       <div className="max-w-7xl mx-auto space-y-12">
         {/* Header */}
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-8 border-b border-slate-800/60 relative">
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-8 border-b border-slate-200 dark:border-slate-800/60 relative">
           <div className="absolute -top-24 -left-24 w-96 h-96 bg-emerald-500/10 blur-[120px] rounded-full pointer-events-none" />
           
           <div className="relative">
@@ -72,7 +72,7 @@ export default function RaidsPage() {
                 </h1>
                 <div className="flex items-center gap-2 mt-1">
                   <Sparkles size={14} className="text-emerald-500 animate-pulse" />
-                  <p className="text-slate-400 text-sm md:text-base font-bold tracking-wide uppercase opacity-80 font-display">
+                  <p className="text-slate-600 dark:text-slate-400 text-sm md:text-base font-bold tracking-wide uppercase opacity-80 font-display">
                     Visualiza la formación de los grupos para cada encuentro.
                   </p>
                 </div>
@@ -81,7 +81,7 @@ export default function RaidsPage() {
             
             <div className="mt-4 flex flex-col gap-2">
               <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] font-display">Fecha Seleccionada</span>
-              <h2 className="text-xl font-bold text-slate-200 capitalize font-display">
+              <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200 capitalize font-display">
                 {formattedFullDate}
               </h2>
             </div>
@@ -93,13 +93,13 @@ export default function RaidsPage() {
                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] font-display">
                  Visualización
                </label>
-               <div className="flex bg-slate-900/60 border border-slate-800 rounded-xl p-1 backdrop-blur-md shadow-lg">
+               <div className="flex bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl p-1 backdrop-blur-md shadow-lg">
                  <button
                    onClick={() => setViewMode("vertical")}
                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black tracking-widest uppercase transition-all font-display ${
                      viewMode === "vertical" 
                        ? "bg-emerald-500/20 text-emerald-400 shadow-inner" 
-                       : "text-slate-500 hover:text-slate-300"
+                       : "text-slate-500 hover:text-slate-700 dark:text-slate-300"
                    }`}
                  >
                    <LayoutGrid size={14} /> Grid
@@ -109,7 +109,7 @@ export default function RaidsPage() {
                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black tracking-widest uppercase transition-all font-display ${
                      viewMode === "horizontal" 
                        ? "bg-emerald-500/20 text-emerald-400 shadow-inner" 
-                       : "text-slate-500 hover:text-slate-300"
+                       : "text-slate-500 hover:text-slate-700 dark:text-slate-300"
                    }`}
                  >
                    <StretchHorizontal size={14} /> Filas
@@ -124,7 +124,7 @@ export default function RaidsPage() {
               </label>
               <button
                 onClick={openDatePicker}
-                className="bg-slate-900/60 border border-slate-800 rounded-xl px-4 py-2.5 hover:border-emerald-500/50 hover:bg-slate-900/80 transition-all backdrop-blur-md shadow-lg group flex items-center gap-3"
+                className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 hover:border-emerald-500/50 hover:bg-white dark:bg-slate-900/80 transition-all backdrop-blur-md shadow-lg group flex items-center gap-3"
               >
                 <Calendar size={16} className="text-emerald-400" />
                 <span className="sr-only">Seleccionar fecha</span>
@@ -163,19 +163,19 @@ export default function RaidsPage() {
                     className={`relative flex flex-col items-center gap-1 p-3 rounded-2xl border transition-all duration-300 group ${
                       isActive 
                         ? "bg-emerald-500/10 border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.15)] scale-[1.02]" 
-                        : "bg-slate-900/40 border-slate-800 hover:border-slate-700 hover:bg-slate-800/60"
+                        : "bg-white dark:bg-slate-900/40 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:bg-slate-800/60"
                     }`}
                   >
                     {isToday && !isActive && (
                       <div className="absolute top-2 right-2 w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
                     )}
                     <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${
-                      isActive ? "text-emerald-400" : "text-slate-500 group-hover:text-slate-400"
+                      isActive ? "text-emerald-400" : "text-slate-500 group-hover:text-slate-600 dark:text-slate-400"
                     }`}>
                       {day.dayName}
                     </span>
                     <span className={`text-xl font-black transition-all ${
-                      isActive ? "text-white scale-110" : "text-slate-300"
+                      isActive ? "text-slate-900 dark:text-white scale-110" : "text-slate-700 dark:text-slate-300"
                     }`}>
                       {day.dayNum}
                     </span>
@@ -197,7 +197,7 @@ export default function RaidsPage() {
                 <div className="absolute inset-0 bg-emerald-500/20 blur-2xl rounded-full animate-pulse" />
                 <Loader2 className="text-emerald-500 animate-spin relative" size={56} />
               </div>
-              <p className="text-slate-400 font-black tracking-[0.2em] uppercase text-xs animate-pulse">Consultando el Códice de Batalla...</p>
+              <p className="text-slate-600 dark:text-slate-400 font-black tracking-[0.2em] uppercase text-xs animate-pulse">Consultando el Códice de Batalla...</p>
             </div>
           )}
 
@@ -214,12 +214,12 @@ export default function RaidsPage() {
           )}
 
           {!isLoading && !error && data && data.raids.length === 0 && (
-            <div className="bg-slate-900/20 border border-slate-800/40 rounded-3xl p-24 flex flex-col items-center text-center space-y-6 backdrop-blur-sm">
-              <div className="p-6 bg-slate-800/40 rounded-full text-slate-600 border border-slate-700/50 shadow-inner">
+            <div className="bg-white dark:bg-slate-900/20 border border-slate-200 dark:border-slate-800/40 rounded-3xl p-24 flex flex-col items-center text-center space-y-6 backdrop-blur-sm">
+              <div className="p-6 bg-slate-100 dark:bg-slate-800/40 rounded-full text-slate-600 border border-slate-300 dark:border-slate-700/50 shadow-inner">
                 <Calendar size={48} />
               </div>
               <div>
-                <h2 className="text-2xl font-black text-slate-200 tracking-tight">Sin Reportes de Combate</h2>
+                <h2 className="text-2xl font-black text-slate-800 dark:text-slate-200 tracking-tight">Sin Reportes de Combate</h2>
                 <p className="text-slate-500 mt-2 font-medium max-w-sm mx-auto">No hay registros para este día. Selecciona otra fecha en la semana de raid.</p>
               </div>
             </div>

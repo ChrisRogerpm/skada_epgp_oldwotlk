@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { supabase } from "../../../lib/supabase";
+import { SupabaseReglasRepository } from "@/src/infrastructure/repositories/SupabaseReglasRepository";
+import { GetReglasUseCase } from "@/src/application/useCases/GetReglasUseCase";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -7,87 +8,18 @@ export const revalidate = 0;
 export async function GET() {
   console.log("Reglas API: Iniciando revisión de Beneficios y Perjuicios...");
   try {
-    // 1. Obtener Loteo
-    const { data: lootRows, error: lootError } = await supabase
-      .from("reglas_loteo")
-      .select(
-        "raid, categoria_item, nombre_item, requisitos, valor_minimo, icon_url",
-      )
-      .order("raid", { ascending: true });
+    const repository = new SupabaseReglasRepository();
+    const useCase = new GetReglasUseCase(repository);
 
-    if (lootError) console.error("Error Loteo:", lootError);
+    const result = await useCase.execute();
 
-    // 2. Obtener Puntos
-    const { data: pointsRows, error: pointsError } = await supabase
-      .from("reglas_puntos")
-      .select("tipo, categoria, descripcion, valor, icon_url");
-    // .order("category", { ascending: true });
-
-    if (pointsError) console.error("Error Puntos:", pointsError);
-
-    // --- PROCESAR LOTEO (Ya funciona) ---
-    const lootMap: Record<string, any> = {};
-    (lootRows || []).forEach((row) => {
-      const raidName = row.raid || "Otras Reglas";
-      if (!lootMap[raidName]) lootMap[raidName] = { raid: raidName, items: [] };
-      lootMap[raidName].items.push({
-        category: row.categoria_item,
-        item: row.nombre_item,
-        requirement: Array.isArray(row.requisitos)
-          ? row.requisitos
-          : row.requisitos
-            ? [row.requisitos]
-            : [],
-        valueMin: row.valor_minimo,
-        icon:
-          row.icon_url ||
-          "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg",
-      });
-    });
-
-    // --- PROCESAR PUNTOS (Beneficios y Perjuicios) ---
-    const processPoints = (rows: any[], target: string) => {
-      const categoriesMap: Record<string, any> = {};
-
-      rows.forEach((row) => {
-        const rowTipo = String(row.tipo || "").toLowerCase();
-        if (rowTipo !== target.toLowerCase()) return;
-
-        const catName = row.categoria || "General";
-        if (!categoriesMap[catName]) {
-          categoriesMap[catName] = { category: catName, items: [] };
-        }
-
-        // Caso A: La fila ya tiene un array de 'items' (Estructura anidada del Admin)
-        if (Array.isArray(row.items)) {
-          categoriesMap[catName].items.push(...row.items);
-        }
-        // Caso B: La fila es un ítem individual (Estructura plana)
-        else if (row.descripcion) {
-          categoriesMap[catName].items.push({
-            descripcion: row.descripcion,
-            valor: row.valor,
-            icon:
-              row.icon_url ||
-              "https://wow.zamimg.com/images/wow/icons/large/inv_misc_coin_02.jpg",
-          });
-        }
-      });
-
-      return Object.values(categoriesMap);
-    };
-
-    const beneficios = processPoints(pointsRows || [], "beneficio");
-    const perjuicios = processPoints(pointsRows || [], "perjuicio");
-    const result = [
-      { "Reglas de Loteo": Object.values(lootMap) },
-      { Beneficios: beneficios },
-      { Perjuicios: perjuicios },
-    ];
-
+    // To preserve the exact console.log as before
+    const beneficiosCount = result[1].Beneficios.length;
+    const perjuiciosCount = result[2].Perjuicios.length;
     console.log(
-      `Reglas API: Beneficios (${beneficios.length}), Perjuicios (${perjuicios.length})`,
+      `Reglas API: Beneficios (${beneficiosCount}), Perjuicios (${perjuiciosCount})`,
     );
+    
     return NextResponse.json(result);
   } catch (error) {
     console.error("Error crítico:", error);

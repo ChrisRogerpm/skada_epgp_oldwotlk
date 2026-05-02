@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { supabase } from "../../../lib/supabase";
+import { SupabaseRaidsRepository } from "@/src/infrastructure/repositories/SupabaseRaidsRepository";
+import { GetRaidsByDateUseCase } from "@/src/application/useCases/GetRaidsByDateUseCase";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -13,48 +14,12 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Date is required" }, { status: 400 });
     }
 
-    // 1. Fetch raids for the given date
-    const { data: raids, error: raidsError } = await supabase
-      .from("raids")
-      .select("*")
-      .eq("raid_date", date)
-      .order("raid_time", { ascending: true });
+    const repository = new SupabaseRaidsRepository();
+    const useCase = new GetRaidsByDateUseCase(repository);
 
-    if (raidsError) throw raidsError;
+    const result = await useCase.execute(date);
 
-    if (!raids || raids.length === 0) {
-      return NextResponse.json({ date, raids: [] });
-    }
-
-    // 2. Fetch participants for all these raids
-    const raidIds = raids.map((r) => r.id);
-    const { data: participants, error: participantsError } = await supabase
-      .from("raid_participants")
-      .select("*")
-      .in("raid_id", raidIds)
-      .order("player_group", { ascending: true });
-
-    if (participantsError) throw participantsError;
-
-    // 2.5 Fetch items won for these raids
-    const { data: raidItems, error: itemsError } = await supabase
-      .from("raid_items")
-      .select("*, items(*)")
-      .in("id_raids", raidIds);
-
-    if (itemsError) throw itemsError;
-
-    // 3. Group participants by raid_id
-    const raidsWithParticipants = raids.map((raid) => ({
-      ...raid,
-      participants: (participants || []).filter((p) => p.raid_id === raid.id),
-      items: (raidItems || []).filter((i) => i.id_raids === raid.id),
-    }));
-
-    return NextResponse.json({
-      date,
-      raids: raidsWithParticipants,
-    });
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Error fetching from Supabase (raids):", error);
     return NextResponse.json(

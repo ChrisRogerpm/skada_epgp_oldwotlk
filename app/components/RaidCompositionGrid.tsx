@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { RaidParticipant } from "../types/RaidComposition";
-import { CLASS_HEX, CLASS_ICONS, DEFAULT_ICONS } from "../../lib/constants";
+import { CLASS_HEX, CLASS_ICONS, DEFAULT_ICONS } from "@/src/domain/constants/constants";
 import { useMemo } from "react";
 
 interface RaidCompositionGridProps {
@@ -39,14 +39,14 @@ export default function RaidCompositionGrid({ participants, viewMode }: RaidComp
         {sortedGroupNumbers.map((groupNum) => (
           <div 
             key={groupNum} 
-            className={`group/group bg-slate-900/30 rounded-xl border border-slate-800/50 overflow-hidden shadow-lg transition-all ${
+            className={`group/group bg-white dark:bg-slate-900/30 rounded-xl border border-slate-200 dark:border-slate-800/50 overflow-hidden shadow-lg transition-all ${
               viewMode === "horizontal" ? "flex flex-col sm:flex-row items-stretch" : ""
             }`}
           >
-            <div className={`bg-slate-800/40 px-4 py-2 text-center border-slate-700/40 transition-colors flex items-center justify-center ${
+            <div className={`bg-slate-100 dark:bg-slate-800/40 px-4 py-2 text-center border-slate-300 dark:border-slate-700/40 transition-colors flex items-center justify-center ${
               viewMode === "vertical" ? "border-b" : "border-b sm:border-b-0 sm:border-r min-w-[120px]"
             }`}>
-              <span className="text-[11px] font-black text-slate-400 uppercase tracking-[0.25em]">
+              <span className="text-[11px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-[0.25em]">
                 Grupo {groupNum}
               </span>
             </div>

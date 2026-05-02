@@ -6,7 +6,7 @@ import { Clock, Shield, Swords, Ghost, Gem, Users, ChevronDown, ChevronUp } from
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
-import { CLASS_HEX, CLASS_ICONS, DEFAULT_ICONS } from "../../lib/constants";
+import { CLASS_HEX, CLASS_ICONS, DEFAULT_ICONS } from "@/src/domain/constants/constants";
 
 interface RaidCardProps {
   raid: RaidInfo;
@@ -104,9 +104,9 @@ const getRaidTheme = (bossName: string) => {
   return {
     label: "Raid",
     short: "RAID",
-    color: "text-slate-400",
+    color: "text-slate-600 dark:text-slate-400",
     bgGradient: "from-slate-500/10 via-slate-800/5 to-transparent",
-    borderColor: "border-slate-700/50",
+    borderColor: "border-slate-300 dark:border-slate-700/50",
     glowColor: "shadow-slate-500/5",
     icon: Swords,
   };
@@ -128,7 +128,7 @@ export default function RaidCard({ raid, viewMode, halionIndex }: RaidCardProps)
 
   return (
     <div
-      className={`group relative bg-slate-950/40 rounded-2xl border ${theme.borderColor} overflow-hidden mb-10 transition-colors backdrop-blur-md shadow-lg`}
+      className={`group relative bg-slate-50 dark:bg-slate-950/40 rounded-2xl border ${theme.borderColor} overflow-hidden mb-10 transition-colors backdrop-blur-md shadow-lg`}
     >
       {/* Dynamic Background Glow */}
       <div
@@ -137,18 +137,18 @@ export default function RaidCard({ raid, viewMode, halionIndex }: RaidCardProps)
 
       {/* Header */}
       <div 
-        className="relative border-b border-slate-800/50 bg-slate-900/20 px-8 py-6 flex flex-wrap items-center justify-between gap-6 cursor-pointer hover:bg-slate-900/40 transition-colors"
+        className="relative border-b border-slate-200 dark:border-slate-800/50 bg-white dark:bg-slate-900/20 px-8 py-6 flex flex-wrap items-center justify-between gap-6 cursor-pointer hover:bg-white dark:bg-slate-900/40 transition-colors"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-5">
           <div
-            className={`p-3.5 rounded-xl bg-slate-800/40 ${theme.color} border border-white/5 shadow-inner backdrop-blur-md`}
+            className={`p-3.5 rounded-xl bg-slate-100 dark:bg-slate-800/40 ${theme.color} border border-white/5 shadow-inner backdrop-blur-md`}
           >
             <Icon size={24} strokeWidth={2.5} />
           </div>
           <div>
             <div className="flex items-center gap-3">
-              <h3 className="text-2xl font-black text-white tracking-tight drop-shadow-md">
+              <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight drop-shadow-md">
                 {raid.boss_name}
               </h3>
               <span
@@ -158,20 +158,20 @@ export default function RaidCard({ raid, viewMode, halionIndex }: RaidCardProps)
               </span>
             </div>
             <div className="flex items-center gap-4 mt-1.5">
-              <span className="flex items-center gap-2 text-xs font-bold text-slate-400 tracking-wide uppercase">
+              <span className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-400 tracking-wide uppercase">
                 <Clock size={14} className="text-emerald-400" />
                 {raid.raid_time.substring(0, 5)}
               </span>
               <span className="w-1 h-1 rounded-full bg-slate-700" />
-              <span className="flex items-center gap-2 text-xs font-bold text-slate-400 tracking-wide uppercase">
+              <span className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-400 tracking-wide uppercase">
                 <Users size={14} className="text-blue-400" />
                 {raid.participants.length} Jugadores
               </span>
             </div>
           </div>
         </div>
-        <div className="p-2 bg-slate-800/40 rounded-full border border-slate-700/50 group-hover:bg-slate-700/60 transition-colors">
-          {isExpanded ? <ChevronUp size={20} className="text-slate-400 group-hover:text-white" /> : <ChevronDown size={20} className="text-slate-400 group-hover:text-white" />}
+        <div className="p-2 bg-slate-100 dark:bg-slate-800/40 rounded-full border border-slate-300 dark:border-slate-700/50 group-hover:bg-slate-700/60 transition-colors">
+          {isExpanded ? <ChevronUp size={20} className="text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:text-white" /> : <ChevronDown size={20} className="text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:text-white" />}
         </div>
       </div>
 
@@ -179,10 +179,10 @@ export default function RaidCard({ raid, viewMode, halionIndex }: RaidCardProps)
         <div className="animate-in fade-in slide-in-from-top-2 duration-300">
       {/* Loot Section */}
       {raid.items && raid.items.length > 0 && (
-        <div className="relative px-8 py-5 bg-gradient-to-r from-slate-950/20 to-transparent border-b border-slate-800/40 flex flex-wrap gap-4 items-center animate-in fade-in slide-in-from-left-4 duration-1000">
+        <div className="relative px-8 py-5 bg-gradient-to-r from-slate-950/20 to-transparent border-b border-slate-200 dark:border-slate-800/40 flex flex-wrap gap-4 items-center animate-in fade-in slide-in-from-left-4 duration-1000">
           <div className="flex items-center gap-2 mr-2">
             <Gem size={16} className="text-purple-400 animate-pulse" />
-            <span className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">
+            <span className="text-[11px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-[0.2em]">
               LOOT:
             </span>
           </div>
@@ -194,7 +194,7 @@ export default function RaidCard({ raid, viewMode, halionIndex }: RaidCardProps)
               return (
                 <div
                   key={item.id}
-                  className="group/item flex items-center gap-4 bg-slate-900/60 backdrop-blur-xl rounded-xl pl-2 pr-5 py-2 border border-purple-500/20 hover:border-purple-500/50 hover:bg-slate-800/80 transition-all duration-300 shadow-xl shadow-purple-500/5"
+                  className="group/item flex items-center gap-4 bg-white dark:bg-slate-900/60 backdrop-blur-xl rounded-xl pl-2 pr-5 py-2 border border-purple-500/20 hover:border-purple-500/50 hover:bg-slate-100 dark:bg-slate-800/80 transition-all duration-300 shadow-xl shadow-purple-500/5"
                 >
                   <div className="relative w-10 h-10 rounded-lg border border-purple-500/30 overflow-hidden shadow-lg shrink-0">
                     <Image

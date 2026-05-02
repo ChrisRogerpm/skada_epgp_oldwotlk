@@ -93,7 +93,7 @@ export default function ListaNegraPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#020617] text-slate-200 p-4 md:p-8 lg:p-12 font-sans selection:bg-red-500/40 relative overflow-hidden">
+    <main className="min-h-screen bg-[#020617] text-slate-800 dark:text-slate-200 p-4 md:p-8 lg:p-12 font-sans selection:bg-red-500/40 relative overflow-hidden">
       {/* Background decoration elements */}
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20 overflow-hidden">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-red-600/20 blur-[120px] rounded-full" />
@@ -103,7 +103,7 @@ export default function ListaNegraPage() {
 
       <div className="max-w-6xl mx-auto space-y-8 relative z-10">
         {/* Header Section */}
-        <header className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 pb-6 border-b border-slate-800/50">
+        <header className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6 pb-6 border-b border-slate-200 dark:border-slate-800/50">
           <div className="space-y-3">
             <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] font-bold uppercase tracking-wider animate-pulse">
               <ShieldAlert size={12} />
@@ -116,18 +116,18 @@ export default function ListaNegraPage() {
                   NEGRA
                 </span>
               </h1>
-              <p className="text-slate-400 max-w-xl text-base font-medium leading-relaxed font-display">
+              <p className="text-slate-600 dark:text-slate-400 max-w-xl text-base font-medium leading-relaxed font-display">
                 Supervisión y control de jugadores restringidos. Los registros
                 son permanentes y mantenidos por el consejo de oficiales.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 bg-slate-900/40 backdrop-blur-md border border-slate-800/80 p-3 rounded-2xl shadow-xl font-display">
+          <div className="flex items-center gap-3 bg-white dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-slate-800/80 p-3 rounded-2xl shadow-xl font-display">
             <span className="text-[10px] text-slate-500 uppercase font-bold tracking-widest">
               Total
             </span>
-            <span className="text-xl font-black text-white">
+            <span className="text-xl font-black text-slate-900 dark:text-white">
               {data.length}
             </span>
           </div>
@@ -142,7 +142,7 @@ export default function ListaNegraPage() {
             <input
               type="text"
               placeholder="Escribe el nombre del personaje para buscar..."
-              className="block w-full pl-11 pr-4 py-3 bg-slate-900/60 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-red-500/10 focus:border-red-500/40 transition-all backdrop-blur-sm text-base"
+              className="block w-full pl-11 pr-4 py-3 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-red-500/10 focus:border-red-500/40 transition-all backdrop-blur-sm text-base"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -177,9 +177,9 @@ export default function ListaNegraPage() {
                   </p>
                 </div>
               ) : paginatedData.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-32 text-slate-400 bg-slate-900/20 rounded-3xl border border-slate-800/40 border-dashed">
+                <div className="flex flex-col items-center justify-center py-32 text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900/20 rounded-3xl border border-slate-200 dark:border-slate-800/40 border-dashed">
                   <Ghost size={64} className="text-slate-700 mb-6" />
-                  <p className="text-2xl font-black text-slate-200 mb-2">
+                  <p className="text-2xl font-black text-slate-800 dark:text-slate-200 mb-2">
                     SIN REGISTROS
                   </p>
                   <p className="text-slate-500 italic">
@@ -193,14 +193,14 @@ export default function ListaNegraPage() {
                     {paginatedData.map((entry) => (
                       <div
                         key={entry.id}
-                        className="bg-slate-900/40 backdrop-blur-md border border-slate-800 rounded-2xl p-4 hover:border-red-500/30 transition-all"
+                        className="bg-white dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-slate-800 rounded-2xl p-4 hover:border-red-500/30 transition-all"
                       >
                         <div className="flex items-center gap-4 mb-3">
-                          <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-red-500 shadow-inner">
+                          <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-red-500 shadow-inner">
                             <ShieldAlert size={20} />
                           </div>
                           <div>
-                            <h4 className="text-lg font-black text-white">
+                            <h4 className="text-lg font-black text-slate-900 dark:text-white">
                               {entry.nombre}
                             </h4>
                             <span className="text-[10px] text-red-500 font-bold uppercase tracking-tighter">
@@ -210,13 +210,13 @@ export default function ListaNegraPage() {
                         </div>
                         {entry.reason && (
                           <div className="mb-3 px-3 py-2 bg-red-500/5 border border-red-500/10 rounded-xl">
-                            <p className="text-xs text-slate-400 italic">
+                            <p className="text-xs text-slate-600 dark:text-slate-400 italic">
                               "{entry.reason}"
                             </p>
                           </div>
                         )}
-                        <div className="flex items-center justify-between pt-3 border-t border-slate-800/50">
-                          <div className="flex items-center gap-2 text-slate-400 text-xs">
+                        <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-800/50">
+                          <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400 text-xs">
                             <Calendar size={12} className="text-red-500/50" />
                             <span>{formatLimaDate(entry.created_at)}</span>
                           </div>
@@ -230,10 +230,10 @@ export default function ListaNegraPage() {
                   </div>
 
                   {/* Desktop View: Table */}
-                  <div className="hidden md:block overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-950/40 backdrop-blur-md shadow-2xl">
+                  <div className="hidden md:block overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950/40 backdrop-blur-md shadow-2xl">
                     <table className="w-full text-left border-collapse">
                       <thead>
-                        <tr className="bg-slate-900/80 border-b border-slate-800">
+                        <tr className="bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800">
                           <th className="py-4 px-8 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
                             Personaje
                           </th>
@@ -256,24 +256,24 @@ export default function ListaNegraPage() {
                           >
                             <td className="py-4 px-8">
                               <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-red-500 group-hover:scale-110 group-hover:bg-red-500/10 transition-all duration-300 shadow-lg">
+                                <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-red-500 group-hover:scale-110 group-hover:bg-red-500/10 transition-all duration-300 shadow-lg">
                                   <ShieldAlert size={20} />
                                 </div>
                                 <div>
-                                  <span className="block font-black text-lg text-slate-100 group-hover:text-white transition-colors">
+                                  <span className="block font-black text-lg text-slate-100 group-hover:text-slate-900 dark:text-white transition-colors">
                                     {entry.nombre}
                                   </span>
                                 </div>
                               </div>
                             </td>
                             <td className="py-4 px-8">
-                              <p className="text-slate-400 text-sm line-clamp-2 max-w-xs group-hover:text-slate-300 transition-colors">
+                              <p className="text-slate-600 dark:text-slate-400 text-sm line-clamp-2 max-w-xs group-hover:text-slate-700 dark:text-slate-300 transition-colors">
                                 {entry.reason || "Sin motivo especificado"}
                               </p>
                             </td>
                             <td className="py-4 px-8">
                               <div className="flex flex-col">
-                                <div className="flex items-center gap-2 text-slate-200 font-bold mb-0.5">
+                                <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 font-bold mb-0.5">
                                   <Calendar
                                     size={14}
                                     className="text-red-500"
@@ -309,7 +309,7 @@ export default function ListaNegraPage() {
                         <span className="uppercase tracking-[0.1em]">
                           Página
                         </span>
-                        <div className="bg-slate-900 border border-slate-800 px-4 py-2 rounded-xl text-white">
+                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-4 py-2 rounded-xl text-slate-900 dark:text-white">
                           {currentPage} / {totalPages}
                         </div>
                       </div>
@@ -323,8 +323,8 @@ export default function ListaNegraPage() {
                           className={clsx(
                             "flex items-center gap-2 px-5 py-3 rounded-2xl border font-black uppercase text-xs tracking-widest transition-all",
                             currentPage === 1
-                              ? "border-slate-800 text-slate-700 bg-slate-900/20 cursor-not-allowed"
-                              : "border-slate-800 bg-slate-900 text-slate-300 hover:text-white hover:bg-slate-800 hover:border-slate-600 active:scale-95",
+                              ? "border-slate-200 dark:border-slate-800 text-slate-700 bg-white dark:bg-slate-900/20 cursor-not-allowed"
+                              : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-white hover:bg-slate-100 dark:bg-slate-800 hover:border-slate-600 active:scale-95",
                           )}
                         >
                           <ChevronLeft size={16} />
@@ -356,8 +356,8 @@ export default function ListaNegraPage() {
                                 className={clsx(
                                   "w-10 h-10 rounded-xl text-xs font-black transition-all",
                                   currentPage === p
-                                    ? "bg-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.4)]"
-                                    : "text-slate-500 hover:text-white hover:bg-slate-800",
+                                    ? "bg-red-500 text-slate-900 dark:text-white shadow-[0_0_15px_rgba(239,68,68,0.4)]"
+                                    : "text-slate-500 hover:text-slate-900 dark:text-white hover:bg-slate-100 dark:bg-slate-800",
                                 )}
                               >
                                 {p}
@@ -376,8 +376,8 @@ export default function ListaNegraPage() {
                           className={clsx(
                             "flex items-center gap-2 px-5 py-3 rounded-2xl border font-black uppercase text-xs tracking-widest transition-all",
                             currentPage === totalPages
-                              ? "border-slate-800 text-slate-700 bg-slate-900/20 cursor-not-allowed"
-                              : "border-slate-800 bg-slate-900 text-slate-300 hover:text-white hover:bg-slate-800 hover:border-slate-600 active:scale-95",
+                              ? "border-slate-200 dark:border-slate-800 text-slate-700 bg-white dark:bg-slate-900/20 cursor-not-allowed"
+                              : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-white hover:bg-slate-100 dark:bg-slate-800 hover:border-slate-600 active:scale-95",
                           )}
                         >
                           Siguiente
@@ -393,14 +393,14 @@ export default function ListaNegraPage() {
         </section>
 
         {/* Action Footer */}
-        <footer className="pt-12 border-t border-slate-800/50">
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-8 flex flex-col md:flex-row items-center gap-6 justify-between">
+        <footer className="pt-12 border-t border-slate-200 dark:border-slate-800/50">
+          <div className="bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/80 rounded-3xl p-8 flex flex-col md:flex-row items-center gap-6 justify-between">
             <div className="flex items-center gap-6">
-              <div className="p-4 bg-slate-800 rounded-2xl text-slate-400">
+              <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-2xl text-slate-600 dark:text-slate-400">
                 <Users size={32} />
               </div>
               <div>
-                <h5 className="text-xl font-black text-white mb-1">
+                <h5 className="text-xl font-black text-slate-900 dark:text-white mb-1">
                   ¿Falta alguien?
                 </h5>
                 <p className="text-slate-500 text-sm max-w-md font-medium">
@@ -412,7 +412,7 @@ export default function ListaNegraPage() {
             <a
               href="https://discord.gg/your-invite"
               target="_blank"
-              className="w-full md:w-auto px-8 py-4 bg-white text-black font-black uppercase text-xs tracking-[0.2em] rounded-2xl hover:bg-red-500 hover:text-white transition-all text-center"
+              className="w-full md:w-auto px-8 py-4 bg-white text-black font-black uppercase text-xs tracking-[0.2em] rounded-2xl hover:bg-red-500 hover:text-slate-900 dark:text-white transition-all text-center"
             >
               Contactar Oficiales
             </a>
@@ -421,7 +421,7 @@ export default function ListaNegraPage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-8 px-4 text-slate-600 text-[10px] font-black uppercase tracking-[0.3em]">
             <div className="flex items-center gap-4">
               <span>Skada EPGP</span>
-              <span className="w-1 h-1 rounded-full bg-slate-800" />
+              <span className="w-1 h-1 rounded-full bg-slate-100 dark:bg-slate-800" />
               <span>Lista Negra Module v2.0</span>
             </div>
             <div className="flex items-center gap-2">
