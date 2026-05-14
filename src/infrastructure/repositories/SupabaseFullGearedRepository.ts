@@ -22,7 +22,11 @@ export class SupabaseFullGearedRepository implements IFullGearedRepository {
     if (error) throw error;
 
     return {
-      data: data || [],
+      data: (data || []).map(char => ({
+        ...char,
+        icc: !!char.icc,
+        rs: !!char.rs
+      })),
       total: count || 0,
       page,
       limit,
@@ -31,9 +35,14 @@ export class SupabaseFullGearedRepository implements IFullGearedRepository {
   }
 
   async createCharacter(character: Omit<FullGearedCharacter, "id" | "updated_at">): Promise<FullGearedCharacter> {
+    const formattedCharacter = {
+      ...character,
+      icc: character.icc ? 1 : 0,
+      rs: character.rs ? 1 : 0
+    };
     const { data, error } = await supabase
       .from('full_geared_characters')
-      .insert([character])
+      .insert([formattedCharacter])
       .select();
 
     if (error) throw error;
@@ -41,10 +50,16 @@ export class SupabaseFullGearedRepository implements IFullGearedRepository {
   }
 
   async updateCharacter(character: FullGearedCharacter): Promise<FullGearedCharacter> {
-    const { id, ...updateData } = character;
+    const { id, updated_at, ...updateData } = character;
+    const formattedData = {
+      ...updateData,
+      icc: updateData.icc ? 1 : 0,
+      rs: updateData.rs ? 1 : 0,
+      updated_at: new Date().toISOString()
+    };
     const { data, error } = await supabase
       .from('full_geared_characters')
-      .update({ ...updateData, updated_at: new Date().toISOString() })
+      .update(formattedData)
       .eq('id', id)
       .select();
 

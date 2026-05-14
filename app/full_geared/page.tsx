@@ -273,7 +273,7 @@ export default function FullGearedPage() {
                           <div className="grid grid-cols-2 gap-2 w-full">
                             <div className={clsx(
                               "flex flex-col items-center justify-center py-2 rounded-xl border transition-all duration-500",
-                              char.icc === 1 
+                              !!char.icc 
                                 ? "bg-purple-500/10 border-purple-500/30 text-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.1)]" 
                                 : "bg-slate-50 dark:bg-slate-950/20 border-white/5 opacity-20 grayscale"
                             )}>
@@ -282,7 +282,7 @@ export default function FullGearedPage() {
                             </div>
                             <div className={clsx(
                               "flex flex-col items-center justify-center py-2 rounded-xl border transition-all duration-500",
-                              char.rs === 1 
+                              !!char.rs 
                                 ? "bg-blue-500/10 border-blue-500/30 text-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.1)]" 
                                 : "bg-slate-50 dark:bg-slate-950/20 border-white/5 opacity-20 grayscale"
                             )}>
@@ -375,7 +375,7 @@ export default function FullGearedPage() {
 
                         <div className="flex items-center gap-4 md:gap-8 shrink-0">
                           <div className="flex gap-1.5 md:gap-2">
-                            {char.icc === 1 && (
+                            {!!char.icc && (
                               <div
                                 className="w-6 h-6 md:w-8 md:h-8 rounded-md overflow-hidden border border-purple-500/30 shadow-lg"
                                 title="Full ICC"
@@ -388,7 +388,7 @@ export default function FullGearedPage() {
                                 />
                               </div>
                             )}
-                            {char.rs === 1 && (
+                            {!!char.rs && (
                               <div
                                 className="w-6 h-6 md:w-8 md:h-8 rounded-md overflow-hidden border border-blue-500/30 shadow-lg"
                                 title="Full RS"

@@ -48,8 +48,8 @@ export default function AdminPage() {
     id: null,
     name: "",
     class: "",
-    icc: 0,
-    rs: 0,
+    icc: false,
+    rs: false,
     gs: 0,
     main: ""
   });
@@ -225,7 +225,7 @@ export default function AdminPage() {
       if (!res.ok) throw new Error("Error al guardar");
       
       setStatus({ type: "success", message: "Personaje guardado correctamente" });
-      setCharForm({ id: null, name: "", class: "", icc: 0, rs: 0, gs: 0, main: "" });
+      setCharForm({ id: null, name: "", class: "", icc: false, rs: false, gs: 0, main: "" });
       setSelectedChar(null);
       fetchFullGeared();
     } catch (error: any) {
@@ -1264,7 +1264,7 @@ export default function AdminPage() {
                         <div className="space-y-2 relative">
                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Buscar en EPGP</label>
                           <div className="relative group">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-purple-400 transition-colors" size={18} />
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-purple-400 transition-colors pointer-events-none" size={18} />
                             <input 
                               type="text" 
                               placeholder="Nombre del main o alter..."
@@ -1350,12 +1350,12 @@ export default function AdminPage() {
                             <div className="relative">
                               <input 
                                 type="checkbox" 
-                                checked={charForm.icc === 1}
-                                onChange={(e) => setCharForm({...charForm, icc: e.target.checked ? 1 : 0})}
-                                className="peer sr-only"
+                                checked={!!charForm.icc}
+                                onChange={(e) => setCharForm({...charForm, icc: e.target.checked})}
+                                className="peer absolute inset-0 opacity-0 cursor-pointer z-10"
                               />
                               <div className="w-6 h-6 bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 rounded-lg peer-checked:bg-purple-600 peer-checked:border-purple-600 transition-all flex items-center justify-center">
-                                <CheckCircle2 className="text-slate-900 dark:text-white scale-0 peer-checked:scale-100 transition-transform" size={14} />
+                                <CheckCircle2 className={clsx("text-slate-900 dark:text-white transition-transform", !!charForm.icc ? "scale-100" : "scale-0")} size={14} />
                               </div>
                             </div>
                             <span className="text-xs font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest group-hover:text-slate-900 dark:text-white transition-colors">Full ICC</span>
@@ -1365,12 +1365,12 @@ export default function AdminPage() {
                             <div className="relative">
                               <input 
                                 type="checkbox" 
-                                checked={charForm.rs === 1}
-                                onChange={(e) => setCharForm({...charForm, rs: e.target.checked ? 1 : 0})}
-                                className="peer sr-only"
+                                checked={!!charForm.rs}
+                                onChange={(e) => setCharForm({...charForm, rs: e.target.checked})}
+                                className="peer absolute inset-0 opacity-0 cursor-pointer z-10"
                               />
                               <div className="w-6 h-6 bg-slate-50 dark:bg-slate-950 border-2 border-slate-200 dark:border-slate-800 rounded-lg peer-checked:bg-blue-600 peer-checked:border-blue-600 transition-all flex items-center justify-center">
-                                <CheckCircle2 className="text-slate-900 dark:text-white scale-0 peer-checked:scale-100 transition-transform" size={14} />
+                                <CheckCircle2 className={clsx("text-slate-900 dark:text-white transition-transform", !!charForm.rs ? "scale-100" : "scale-0")} size={14} />
                               </div>
                             </div>
                             <span className="text-xs font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest group-hover:text-slate-900 dark:text-white transition-colors">Full RS</span>
@@ -1390,7 +1390,7 @@ export default function AdminPage() {
                             <button 
                               type="button"
                               onClick={() => {
-                                setCharForm({ id: null, name: "", class: "", icc: 0, rs: 0, gs: 0, main: "" });
+                                setCharForm({ id: null, name: "", class: "", icc: false, rs: false, gs: 0, main: "" });
                                 setSelectedChar(null);
                               }}
                               className="px-6 bg-slate-100 dark:bg-slate-800 hover:bg-slate-700 text-slate-900 dark:text-white font-black rounded-2xl transition-all uppercase tracking-widest text-[10px]"
@@ -1461,10 +1461,10 @@ export default function AdminPage() {
                                 </td>
                                 <td className="px-8 py-5">
                                   <div className="flex gap-2">
-                                    {char.icc === 1 && (
+                                    {!!char.icc && (
                                       <span className="px-2 py-0.5 bg-purple-500/10 text-purple-400 border border-purple-500/20 rounded text-[9px] font-black uppercase tracking-widest">ICC</span>
                                     )}
-                                    {char.rs === 1 && (
+                                    {!!char.rs && (
                                       <span className="px-2 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded text-[9px] font-black uppercase tracking-widest">RS</span>
                                     )}
                                   </div>
