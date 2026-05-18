@@ -37,11 +37,13 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <Script id="wowhead-config" strategy="beforeInteractive">
-          {`const whTooltips = { colorLinks: true, iconizeLinks: true, renameLinks: true };`}
+        <Script id="ultimowow-config" strategy="beforeInteractive">
+          {`const whTooltips = { colorLinks: true, iconizeLinks: true, renameLinks: true };
+            const aowow_tooltips = { colorLinks: true, iconizeLinks: true, renameLinks: true };
+            const aowow_control = { mode: 2, applyto: 3 };`}
         </Script>
         <Script
-          src="https://wow.zamimg.com/js/tooltips.js"
+          src="https://wotlk.ultimowow.com/static/widgets/power.js"
           strategy="afterInteractive"
         />
       </head>

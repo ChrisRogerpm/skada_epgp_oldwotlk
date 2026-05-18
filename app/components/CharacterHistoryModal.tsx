@@ -168,7 +168,7 @@ export default function CharacterHistoryModal({ mainName, alters = [], isOpen, o
                                   return (
                                     <a
                                       key={i}
-                                      href={`https://www.wowhead.com/wotlk/search?q=${encodeURIComponent(itemName)}`}
+                                      href={`https://wotlk.ultimowow.com/es/?search=${encodeURIComponent(itemName)}`}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       className="text-emerald-400 hover:text-emerald-300 underline decoration-emerald-500/30"

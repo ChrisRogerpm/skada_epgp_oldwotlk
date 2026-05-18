@@ -116,7 +116,7 @@ export default function RaidCard({ raid, viewMode, halionIndex }: RaidCardProps)
   const theme = getRaidTheme(raid.boss_name);
   const Icon = theme.icon;
   const displayShort = halionIndex ? `${theme.short} #${halionIndex}` : theme.short;
-  const [isExpanded, setIsExpanded] = useState(!raid.boss_name.toLowerCase().includes("halion"));
+  const [isExpanded, setIsExpanded] = useState(true);
 
   useEffect(() => {
     if (isExpanded && typeof window !== "undefined" && (window as any).$WowheadPower) {
@@ -228,13 +228,12 @@ export default function RaidCard({ raid, viewMode, halionIndex }: RaidCardProps)
                       </div>
                     )}
                     <a
-                      href={`https://www.wowhead.com/wotlk/es/item=${item.id_item}/${item.items.name}`}
-                      data-wowhead="domain=es"
+                      href={`https://wotlk.ultimowow.com/es/?item=${item.id_item}`}
                       target="_blank"
                       rel="noreferrer"
                       className="text-[14px] font-semibold hover:brightness-125 transition-all whitespace-nowrap icontinyl q4"
                     >
-                      {item.id_item}
+                      {item.items.name}
                     </a>
                   </div>
                 </div>

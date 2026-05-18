@@ -400,7 +400,7 @@ export default function RulesPage() {
 
                               <div className="flex gap-4 relative z-10">
                                 <a
-                                  href={`https://www.wowhead.com/wotlk/search?q=${encodeURIComponent(item.item)}`}
+                                  href={`https://wotlk.ultimowow.com/es/?search=${encodeURIComponent(item.item)}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="w-14 h-14 rounded-lg overflow-hidden border-2 border-slate-200 dark:border-slate-800 group-hover:border-emerald-500/40 transition-colors bg-white dark:bg-slate-900 shrink-0 relative"
