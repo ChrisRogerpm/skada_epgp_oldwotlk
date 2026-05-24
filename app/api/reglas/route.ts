@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { SupabaseReglasRepository } from "@/src/infrastructure/repositories/SupabaseReglasRepository";
 import { GetReglasUseCase } from "@/src/application/useCases/GetReglasUseCase";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 300;
+
 
 export async function GET() {
   console.log("Reglas API: Iniciando revisión de Beneficios y Perjuicios...");

@@ -3,8 +3,8 @@ import { getOrSetCache } from "@/src/infrastructure/cache/cache";
 import { SupabaseEpgpRepository } from "@/src/infrastructure/repositories/SupabaseEpgpRepository";
 import { GetEpgpLogsUseCase } from "@/src/application/useCases/GetEpgpLogsUseCase";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 300;
+
 
 export async function GET(request: Request) {
   try {

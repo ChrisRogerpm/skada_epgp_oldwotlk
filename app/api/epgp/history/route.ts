@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { SupabaseEpgpRepository } from "@/src/infrastructure/repositories/SupabaseEpgpRepository";
 import { GetEpgpHistoryByNamesUseCase } from "@/src/application/useCases/GetEpgpHistoryByNamesUseCase";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 300;
+
 
 export async function GET(request: Request) {
   try {

@@ -919,7 +919,7 @@ export default function AdminPage() {
                                           <div key={iIdx} className="bg-slate-50 dark:bg-slate-950/60 border border-white/5 rounded-[1.5rem] p-6 grid grid-cols-1 md:grid-cols-12 gap-6 items-start group/item hover:border-black/10 dark:border-white/10 hover:bg-white dark:bg-slate-900/60 transition-all shadow-inner">
                                             <div className="md:col-span-1 flex justify-center">
                                               <div className="relative group/icon cursor-pointer">
-                                                <Image 
+                                                <Image unoptimized 
                                                   src={item.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"} 
                                                   alt="icon" 
                                                   width={56}
@@ -1062,7 +1062,7 @@ export default function AdminPage() {
                                   <div key={iIdx} className="bg-slate-50 dark:bg-slate-950/40 border border-white/5 rounded-2xl p-4 space-y-4 group/bene hover:bg-white dark:bg-slate-900/60 transition-all">
                                     <div className="flex items-center gap-4">
                                       <div className="relative group/icon shrink-0">
-                                        <Image 
+                                        <Image unoptimized 
                                           src={item.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"} 
                                           alt="icon" 
                                           width={48}
@@ -1170,7 +1170,7 @@ export default function AdminPage() {
                                   <div key={iIdx} className="bg-slate-50 dark:bg-slate-950/40 border border-white/5 rounded-2xl p-4 space-y-4 group/perj hover:bg-white dark:bg-slate-900/60 transition-all">
                                     <div className="flex items-center gap-4">
                                       <div className="relative group/icon shrink-0">
-                                        <Image 
+                                        <Image unoptimized 
                                           src={item.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"} 
                                           alt="icon" 
                                           width={48}
@@ -1285,7 +1285,7 @@ export default function AdminPage() {
                                 >
                                   <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 border border-black/10 dark:border-white/10 overflow-hidden shrink-0">
                                     {char.url_icono ? (
-                                      <Image src={char.url_icono} alt="icon" width={32} height={32} className="w-full h-full object-cover" />
+                                      <Image unoptimized src={char.url_icono} alt="icon" width={32} height={32} className="w-full h-full object-cover" />
                                     ) : (
                                       <div className="w-full h-full flex items-center justify-center text-slate-600 font-bold text-[10px]">
                                         {char.nombre_alter[0]}
@@ -1436,7 +1436,7 @@ export default function AdminPage() {
                                   <div className="flex items-center gap-4">
                                     <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border border-black/10 dark:border-white/10 flex items-center justify-center overflow-hidden">
                                       {CLASS_ICONS[char.class.toUpperCase()] ? (
-                                        <Image 
+                                        <Image unoptimized 
                                           src={CLASS_ICONS[char.class.toUpperCase()]} 
                                           alt={char.class} 
                                           width={40} 

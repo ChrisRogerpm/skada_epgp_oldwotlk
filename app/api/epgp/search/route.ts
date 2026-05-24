@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { SupabaseEpgpRepository } from "@/src/infrastructure/repositories/SupabaseEpgpRepository";
 import { SearchEpgpCharactersUseCase } from "@/src/application/useCases/SearchEpgpCharactersUseCase";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

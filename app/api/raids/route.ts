@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { SupabaseRaidsRepository } from "@/src/infrastructure/repositories/SupabaseRaidsRepository";
 import { GetRaidsByDateUseCase } from "@/src/application/useCases/GetRaidsByDateUseCase";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 300;
+
 
 export async function GET(request: Request) {
   try {

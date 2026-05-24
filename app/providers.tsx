@@ -10,8 +10,8 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 0,
-            refetchOnWindowFocus: false, // No recargar al cambiar de pestaña
+            staleTime: 5 * 60 * 1000,
+            refetchOnWindowFocus: false,
           },
         },
       })

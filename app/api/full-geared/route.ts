@@ -5,7 +5,7 @@ import { CreateFullGearedCharacterUseCase } from "@/src/application/useCases/Cre
 import { UpdateFullGearedCharacterUseCase } from "@/src/application/useCases/UpdateFullGearedCharacterUseCase";
 import { DeleteFullGearedCharacterUseCase } from "@/src/application/useCases/DeleteFullGearedCharacterUseCase";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export async function GET(request: Request) {
   try {

@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { SupabaseLogsRepository } from "@/src/infrastructure/repositories/SupabaseLogsRepository";
 import { GetLogsUseCase } from "@/src/application/useCases/GetLogsUseCase";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 300;
+
 
 export async function GET(request: Request) {
   try {

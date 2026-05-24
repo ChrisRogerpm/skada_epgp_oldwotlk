@@ -313,7 +313,7 @@ export default function EPGPPage() {
                         <tr onClick={() => toggleRow(member.main)} className={`group cursor-pointer transition-colors ${member.main === myCharacter ? 'bg-blue-900/10' : 'hover:bg-slate-100 dark:bg-slate-800/30'}`}>
                           <td className="px-4 py-3 flex items-center gap-3">
                             <div className={`relative w-8 h-8 rounded border overflow-hidden bg-slate-100 dark:bg-slate-800 ${member.main === myCharacter ? 'border-blue-400 shadow-sm' : 'border-slate-300 dark:border-slate-700'}`}>
-                              <Image 
+                              <Image unoptimized 
                                 src={member.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"} 
                                 alt={member.class} 
                                 width={32}
@@ -340,7 +340,7 @@ export default function EPGPPage() {
                         {expandedRows.has(member.main) && member.alters && member.alters.length > 0 && (
                           <tr className={`border-b border-slate-200 dark:border-slate-800/50 ${member.main === myCharacter ? 'bg-blue-900/5' : 'bg-white dark:bg-slate-900/80'}`}>
                             <td colSpan={5} className="px-4 py-3"><div className="pl-12 grid grid-cols-2 sm:grid-cols-4 gap-2 animate-in fade-in slide-in-from-top-2 duration-200">{member.alters.map((alt) => (<div key={alt.name} className="flex items-center gap-2.5 bg-slate-50 dark:bg-slate-950/60 p-2 rounded-lg border border-slate-200 dark:border-slate-800/60"><div className="w-6 h-6 rounded overflow-hidden border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 shrink-0 relative">
-                              <Image 
+                              <Image unoptimized 
                                 src={alt.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"} 
                                 alt={alt.class} 
                                 width={24}
@@ -390,7 +390,7 @@ export default function EPGPPage() {
                           <td className="px-4 py-2.5">
                             <div className="flex items-center gap-2.5">
                               <div className="relative w-6 h-6 rounded border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 shrink-0 shadow-sm">
-                                {charInfo ? <Image src={charInfo.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"} alt={charInfo.class} width={24} height={24} className="object-cover w-full h-full" /> : <Users size={14} className="text-slate-500 p-1" />}
+                                {charInfo ? <Image unoptimized src={charInfo.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"} alt={charInfo.class} width={24} height={24} className="object-cover w-full h-full" /> : <Users size={14} className="text-slate-500 p-1" />}
                               </div>
                               <div className="flex items-center gap-2">
                                 <span className={`font-semibold text-sm ${charInfo ? getClassColor(charInfo.class) : 'text-blue-300'}`}>{log.personaje}</span>

@@ -81,7 +81,7 @@ export default function RaidCompositionGrid({ participants, viewMode }: RaidComp
                     />
 
                     <div className="relative w-5 h-5 shrink-0 overflow-hidden rounded shadow-sm border border-black/20">
-                      <Image
+                      <Image unoptimized
                         src={classIcon}
                         alt={player.player_class}
                         layout="fill"

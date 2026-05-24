@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { SupabaseListaNegraRepository } from "@/src/infrastructure/repositories/SupabaseListaNegraRepository";
 import { GetListaNegraUseCase } from "@/src/application/useCases/GetListaNegraUseCase";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 300;
+
 
 export async function GET() {
   try {

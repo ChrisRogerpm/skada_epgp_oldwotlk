@@ -197,7 +197,7 @@ export default function RaidCard({ raid, viewMode, halionIndex }: RaidCardProps)
                   className="group/item flex items-center gap-4 bg-white dark:bg-slate-900/60 backdrop-blur-xl rounded-xl pl-2 pr-5 py-2 border border-purple-500/20 hover:border-purple-500/50 hover:bg-slate-100 dark:bg-slate-800/80 transition-all duration-300 shadow-xl shadow-purple-500/5"
                 >
                   <div className="relative w-10 h-10 rounded-lg border border-purple-500/30 overflow-hidden shadow-lg shrink-0">
-                    <Image
+                    <Image unoptimized
                       src={item.items.icon}
                       alt="item"
                       fill
@@ -210,7 +210,7 @@ export default function RaidCard({ raid, viewMode, halionIndex }: RaidCardProps)
                       <div className="flex items-center gap-2 mt-0.5">
                         {item.class && (
                           <div className="w-4.5 h-4.5 relative rounded border border-black/40 shadow-sm shrink-0">
-                            <Image
+                            <Image unoptimized
                               src={
                                 CLASS_ICONS[classUpper] || DEFAULT_ICONS.UNKNOWN
                               }

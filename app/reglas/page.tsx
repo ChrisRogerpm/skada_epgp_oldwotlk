@@ -405,7 +405,7 @@ export default function RulesPage() {
                                   rel="noopener noreferrer"
                                   className="w-14 h-14 rounded-lg overflow-hidden border-2 border-slate-200 dark:border-slate-800 group-hover:border-emerald-500/40 transition-colors bg-white dark:bg-slate-900 shrink-0 relative"
                                 >
-                                  <Image
+                                  <Image unoptimized
                                     src={item.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"}
                                     alt={item.item}
                                     width={56}
@@ -523,7 +523,7 @@ export default function RulesPage() {
                               <div className="flex items-center gap-3">
                                 {item.icon && (
                                   <div className="w-8 h-8 rounded border border-slate-300 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-900 shrink-0 relative">
-                                    <Image
+                                    <Image unoptimized
                                       src={item.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"}
                                       alt="Icon"
                                       width={32}
@@ -575,7 +575,7 @@ export default function RulesPage() {
                               <div className="flex items-center gap-3">
                                 {item.icon && (
                                   <div className="w-8 h-8 rounded border border-slate-300 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-900 shrink-0 relative">
-                                    <Image
+                                    <Image unoptimized
                                       src={item.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"}
                                       alt="Icon"
                                       width={32}

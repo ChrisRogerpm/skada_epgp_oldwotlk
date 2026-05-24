@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { SupabaseEpgpRepository } from "@/src/infrastructure/repositories/SupabaseEpgpRepository";
 import { GetEpgpRosterUseCase } from "@/src/application/useCases/GetEpgpRosterUseCase";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
 
 export async function GET() {
   try {
