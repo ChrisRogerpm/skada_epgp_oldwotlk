@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/src/infrastructure/config/supabase';
-import { parseRaidCompositionText } from '@/src/infrastructure/services/raidCompositionParser';
 import { syncRaidItemsTask } from '@/src/infrastructure/services/syncRaidItems';
 
 const timeToSeconds = (timeStr: string) => {
@@ -9,20 +8,32 @@ const timeToSeconds = (timeStr: string) => {
 };
 
 import { validateSyncRequest } from '@/src/infrastructure/utils/auth';
+import { readSyncPayload } from '@/src/infrastructure/utils/syncBody';
+
+interface RaidActorPayload {
+  name: string;
+  class: string;
+  group: number;
+}
+
+interface RaidCompositionEncounterPayload {
+  name: string;
+  endtime: number;
+  endtimeReal: string;
+  peruDate: string;
+  peruTime: string;
+  actors: RaidActorPayload[];
+}
 
 export async function POST(request: Request) {
   try {
     const authError = validateSyncRequest(request);
     if (authError) return authError;
 
-    const fileOwner = request.headers.get('x-officer-name') || undefined;
-
-    const body = await request.text();
-    if (!body || body.trim() === '') {
+    const allEncounters = await readSyncPayload<RaidCompositionEncounterPayload[]>(request);
+    if (!allEncounters) {
       return NextResponse.json({ error: 'Empty payload' }, { status: 400 });
     }
-
-    const allEncounters = parseRaidCompositionText(body, fileOwner);
 
     if (allEncounters.length === 0) {
       return NextResponse.json({ message: 'No valid encounters found', uploaded: 0 });

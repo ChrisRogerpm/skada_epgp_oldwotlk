@@ -238,7 +238,7 @@ export default function FullGearedPage() {
                             />
                             <div className="w-14 h-14 rounded-xl bg-white dark:bg-slate-900 border border-black/10 dark:border-white/10 flex items-center justify-center overflow-hidden relative z-10 shadow-xl group-hover:border-white/30 transition-all">
                               {CLASS_ICONS[char.class.toUpperCase()] ? (
-                                <img
+                                <Image
                                   src={CLASS_ICONS[char.class.toUpperCase()]}
                                   alt={char.class}
                                   width={56}
@@ -277,7 +277,7 @@ export default function FullGearedPage() {
                                 ? "bg-purple-500/10 border-purple-500/30 text-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.1)]" 
                                 : "bg-slate-50 dark:bg-slate-950/20 border-white/5 opacity-20 grayscale"
                             )}>
-                              <img src={RAID_ICONS.ICC} alt="ICC" width={20} height={20} className="rounded mb-0.5" />
+                              <Image src={RAID_ICONS.ICC} alt="Icecrown Citadel Heroico completado" width={20} height={20} className="rounded mb-0.5" />
                               <span className="text-[7px] font-black uppercase tracking-wider">ICC HEROIC</span>
                             </div>
                             <div className={clsx(
@@ -286,7 +286,7 @@ export default function FullGearedPage() {
                                 ? "bg-blue-500/10 border-blue-500/30 text-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.1)]" 
                                 : "bg-slate-50 dark:bg-slate-950/20 border-white/5 opacity-20 grayscale"
                             )}>
-                              <img src={RAID_ICONS.RS} alt="RS" width={20} height={20} className="rounded mb-0.5" />
+                              <Image src={RAID_ICONS.RS} alt="Ruby Sanctum Heroico completado" width={20} height={20} className="rounded mb-0.5" />
                               <span className="text-[7px] font-black uppercase tracking-wider">RS HEROIC</span>
                             </div>
                           </div>
@@ -348,7 +348,7 @@ export default function FullGearedPage() {
                           
                           <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 border border-white/5 flex items-center justify-center overflow-hidden shrink-0 shadow-lg">
                             {CLASS_ICONS[char.class.toUpperCase()] ? (
-                              <img
+                              <Image
                                 src={CLASS_ICONS[char.class.toUpperCase()]}
                                 alt={char.class}
                                 width={36}
@@ -380,9 +380,9 @@ export default function FullGearedPage() {
                                 className="w-6 h-6 md:w-8 md:h-8 rounded-md overflow-hidden border border-purple-500/30 shadow-lg"
                                 title="Full ICC"
                               >
-                                <img
+                                <Image
                                   src={RAID_ICONS.ICC}
-                                  alt="ICC"
+                                  alt="Icecrown Citadel Heroico completado"
                                   width={32}
                                   height={32}
                                 />
@@ -393,9 +393,9 @@ export default function FullGearedPage() {
                                 className="w-6 h-6 md:w-8 md:h-8 rounded-md overflow-hidden border border-blue-500/30 shadow-lg"
                                 title="Full RS"
                               >
-                                <img
+                                <Image
                                   src={RAID_ICONS.RS}
-                                  alt="RS"
+                                  alt="Ruby Sanctum Heroico completado"
                                   width={32}
                                   height={32}
                                 />

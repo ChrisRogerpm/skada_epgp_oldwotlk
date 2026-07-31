@@ -1,26 +1,23 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/src/infrastructure/config/supabase";
 import {
-  parseLogEntries,
+  EPGPLogEntry,
   generateLogId,
 } from "@/src/infrastructure/services/epgpParser";
 import { syncRaidItemsTask } from "@/src/infrastructure/services/syncRaidItems";
 
 import { validateSyncRequest } from "@/src/infrastructure/utils/auth";
+import { readSyncPayload } from "@/src/infrastructure/utils/syncBody";
 
 export async function POST(request: Request) {
   try {
     const authError = validateSyncRequest(request);
     if (authError) return authError;
 
-    // 2. Get Lua block text from body
-    const body = await request.text();
-    if (!body || body.trim() === "") {
+    const entries = await readSyncPayload<EPGPLogEntry[]>(request);
+    if (!entries) {
       return NextResponse.json({ error: "Empty payload" }, { status: 400 });
     }
-
-    // 3. Parse entries
-    const entries = parseLogEntries(body);
     if (entries.length === 0) {
       return NextResponse.json({
         message: "No entries found in payload",
@@ -28,25 +25,13 @@ export async function POST(request: Request) {
       });
     }
 
-    // 4. Generate keys and handle same-file duplicates
+    // Generate keys and handle same-file duplicates
+    // (el filtro de ventana temporal ya lo aplicó el cliente vía LOGS_TIME_LIMIT_MONTHS)
     const allEntries = [];
     const seen = new Set();
     const fileOccurrenceCount = new Map();
 
-    // Time limit: last X months (optional, hardcoded to 6 for example, or removed if handled by client)
-    const timeLimit = new Date();
-    timeLimit.setMonth(timeLimit.getMonth() - 6);
-    const timeLimitTs = timeLimit.getTime();
-
-    const parseToTs = (e: any) => {
-      const [dd, mm, yyyy] = e.fecha.split("/");
-      return new Date(`${yyyy}-${mm}-${dd}T${e.hour}`).getTime();
-    };
-
     for (const entry of entries) {
-      // Filtro de 6 meses
-      if (parseToTs(entry) < timeLimitTs) continue;
-
       const baseHash = generateLogId(entry);
       const count = (fileOccurrenceCount.get(baseHash) || 0) + 1;
       fileOccurrenceCount.set(baseHash, count);

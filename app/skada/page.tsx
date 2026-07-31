@@ -6,7 +6,7 @@ import LogsTable from "../components/LogsTable";
 import { Sword } from "lucide-react";
 
 export default function SkadaPage() {
-  const { logs, loading, error, filters, setFilters } = useRaidLogs();
+  const { logs, sessions, loading, error, filters, setFilters } = useRaidLogs();
 
   return (
     <main className="min-h-screen bg-white dark:bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-100 via-white to-white dark:from-slate-900 dark:via-slate-950 dark:to-black text-slate-800 dark:text-slate-200 p-4 md:p-8 lg:p-12 font-sans selection:bg-emerald-500/30">
@@ -27,7 +27,7 @@ export default function SkadaPage() {
 
         {/* Content */}
         <section className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-          <Filters filters={filters} setFilters={setFilters} />
+          <Filters filters={filters} setFilters={setFilters} sessions={sessions} />
           <LogsTable logs={logs} loading={loading} error={error} metric={filters.metric} />
         </section>
       </div>

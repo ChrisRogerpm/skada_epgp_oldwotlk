@@ -1,21 +1,36 @@
 "use client";
 
 import { useRef } from "react";
-import { FilterState, RAID_INSTANCES, BOSSES, BOSSES_TRANSLATIONS } from "../types/RaidLog";
-import { Calendar, Map, Skull, Activity, Search } from "lucide-react";
+import { FilterState, RAID_INSTANCES, BOSSES_BY_INSTANCE, BOSSES_TRANSLATIONS } from "../types/RaidLog";
+import { Calendar, Map, Skull, Activity, Search, Clock } from "lucide-react";
 
 interface FiltersProps {
   filters: FilterState;
   setFilters: (filters: FilterState) => void;
+  sessions: { endtime: number; label: string }[];
 }
 
-export default function Filters({ filters, setFilters }: FiltersProps) {
+export default function Filters({ filters, setFilters, sessions }: FiltersProps) {
   const dateInputRef = useRef<HTMLInputElement>(null);
+
+  const availableBosses = BOSSES_BY_INSTANCE[filters.raidInstance] || [];
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
+
+    if (name === "raidInstance") {
+      const bossesForInstance = BOSSES_BY_INSTANCE[value] || [];
+      setFilters({ ...filters, raidInstance: value, boss: bossesForInstance[0] || "" });
+      return;
+    }
+
+    if (name === "session") {
+      setFilters({ ...filters, session: value ? Number(value) : null });
+      return;
+    }
+
     setFilters({ ...filters, [name]: value });
   };
 
@@ -84,13 +99,34 @@ export default function Filters({ filters, setFilters }: FiltersProps) {
             onChange={handleChange}
             className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all appearance-none cursor-pointer"
           >
-            {BOSSES.map((boss) => (
+            {availableBosses.map((boss) => (
               <option key={boss} value={boss}>
                 {BOSSES_TRANSLATIONS[boss] || boss}
               </option>
             ))}
           </select>
         </div>
+
+        {/* Session (solo si hay 2+ sesiones del mismo jefe ese día) */}
+        {sessions.length > 1 && (
+          <div className="flex flex-col space-y-2">
+            <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2">
+              <Clock size={14} className="text-emerald-400" /> Sesión
+            </label>
+            <select
+              name="session"
+              value={filters.session ?? ""}
+              onChange={handleChange}
+              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-2.5 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all appearance-none cursor-pointer"
+            >
+              {sessions.map((s) => (
+                <option key={s.endtime} value={s.endtime}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Metric */}
         <div className="flex flex-col space-y-2">

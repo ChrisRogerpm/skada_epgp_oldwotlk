@@ -65,29 +65,6 @@ export const TALENT_TREES: any = {
 
 export const EXCLUDED_CLASSES = new Set(["BOSS", "MONSTER"]);
 
-export const TARGET_BOSSES = [
-  "Lord Marrowgar", "Lord Tuétano", "Lady Deathwhisper", "Lady Susurramuerte",
-  "Icecrown Gunship Battle", "Batalla aérea en Corona de Hielo", "Batalla Aérea",
-  "Deathbringer Saurfang", "Libramorte Colmillosauro", "Festergut", "Panzachancro",
-  "Rotface", "Caraputrea", "Professor Putricide", "Profesor Putricidio",
-  "Blood Prince Council", "Consejo de Príncipes de Sangre", "Blood-Queen Lana'thel",
-  "Reina de Sangre Lana'thel", "Valithria Dreamwalker", "Valithria Caminasueños",
-  "Sindragosa", "The Lich King", "El Rey Exánime", "Rey Exánime", "Halion",
-  "Halion the Twilight Destroyer", "Halion el Destructor Crepuscular",
-  "XT-002 Deconstructor", "Desarmador XA-002", "Yogg-Saron"
-];
-
-export const BOSS_TRANSLATIONS: any = {
-  "Lord Tuétano": "Lord Marrowgar", "Lady Susurramuerte": "Lady Deathwhisper",
-  "Batalla aérea en Corona de Hielo": "Icecrown Gunship Battle", "Batalla Aérea": "Icecrown Gunship Battle",
-  "Libramorte Colmillosauro": "Deathbringer Saurfang", Panzachancro: "Festergut", Caraputrea: "Rotface",
-  "Profesor Putricidio": "Professor Putricide", "Consejo de Príncipes de Sangre": "Blood Prince Council",
-  "Reina de Sangre Lana'thel": "Blood-Queen Lana'thel", "Valithria Caminasueños": "Valithria Dreamwalker",
-  "El Rey Exánime": "The Lich King", "Rey Exánime": "The Lich King",
-  "Halion the Twilight Destroyer": "Halion", "Halion el Destructor Crepuscular": "Halion",
-  "Desarmador XA-002": "XT-002 Deconstructor",
-};
-
 // ============================================================================
 // HELPERS
 // ============================================================================
@@ -138,155 +115,79 @@ export function formatPeruTime(timestamp: number) {
 }
 
 // ============================================================================
-// PARSER
+// SYNC PAYLOAD (JSON ya parseado por el cliente)
 // ============================================================================
 
-export function parseSkadaText(content: string) {
-  const lines = content.split('\n');
-  const encounters: any[] = [];
-  let depth = 0;
-  let currentEncounter: any = null;
-  let inActorsPhase = false;
-  let actorsDepth = -1;
-  let currentActor: any = null;
-  let actorDepth = -1;
+export interface SkadaParticipantPayload {
+  character: string;
+  class: string;
+  talent: string;
+  damage: number;
+  healing: number;
+  time: number;
+}
 
-  for (const line of lines) {
-    const prevDepth = depth;
-    depth += (line.match(/\{/g) ?? []).length - (line.match(/\}/g) ?? []).length;
+export interface SkadaEncounterPayload {
+  name: string;
+  date: string;
+  endtime: number;
+  peruHour: number;
+  difficulty?: number;
+  diffString?: string;
+  participants: SkadaParticipantPayload[];
+}
 
-    if (prevDepth === 1 && depth === 2) {
-      currentEncounter = { name: "Unknown", mobname: "", endtime: 0, damage: [] };
-      inActorsPhase = false;
-    }
+export function buildSkadaEncounterRecord(encounter: SkadaEncounterPayload) {
+  const validParticipants = (encounter.participants || []).filter(
+    (p) => !EXCLUDED_CLASSES.has(p.class),
+  );
 
-    if (currentEncounter) {
-      let match;
-      if (depth === 2) {
-        if ((match = line.match(/\["name"\]\s*=\s*"(.*)",/))) currentEncounter.name = match[1];
-        else if ((match = line.match(/\["mobname"\]\s*=\s*"(.*)",/))) currentEncounter.mobname = match[1];
-        else if ((match = line.match(/\["endtime"\]\s*=\s*([0-9]+),/))) currentEncounter.endtime = parseInt(match[1], 10);
-        else if ((match = line.match(/\["(?:difficulty|raid_difficulty|mode|diff)"\]\s*=\s*(?:([0-9]+)|"(.*)"),/))) {
-          if (match[1]) currentEncounter.difficulty = parseInt(match[1], 10);
-          else if (match[2]) currentEncounter.diffString = match[2];
-        }
-      }
+  const damageList = validParticipants
+    .filter((p) => p.damage > 0)
+    .sort((a, b) => b.damage - a.damage)
+    .map((p, index) => {
+      const talent = resolveTalentBranch(p.class, p.talent);
+      const dps = p.time > 0 ? p.damage / p.time : 0;
+      return {
+        Rank: index + 1,
+        Character: p.character,
+        Class: p.class,
+        Talent: talent,
+        Icon: resolveIconUrl(p.class, talent),
+        Amount: formatNumber(p.damage),
+        DPS: formatNumber(dps),
+      };
+    });
 
-      if (!inActorsPhase && line.match(/\["actors"\]\s*=\s*\{/)) {
-        inActorsPhase = true;
-        actorsDepth = depth;
-      } else if (inActorsPhase && depth < actorsDepth) {
-        inActorsPhase = false;
-      }
+  const healingList = validParticipants
+    .filter((p) => p.healing > 0)
+    .sort((a, b) => b.healing - a.healing)
+    .slice(0, 4)
+    .map((p, index) => {
+      const talent = resolveTalentBranch(p.class, p.talent);
+      return {
+        Rank: index + 1,
+        Character: p.character,
+        Class: p.class,
+        Talent: talent,
+        Icon: resolveIconUrl(p.class, talent),
+        Amount: formatNumber(p.healing),
+      };
+    });
 
-      if (inActorsPhase) {
-        if (prevDepth === actorsDepth && depth === actorsDepth + 1) {
-          if ((match = line.match(/\["(.*)"\]\s*=\s*\{/))) {
-            currentActor = { name: match[1], class: "UNKNOWN", talent: "Unknown", amount: 0, heal: 0, absorb: 0, time: 0 };
-            actorDepth = depth;
-          }
-        }
-        if (currentActor) {
-          if (depth === actorDepth) {
-            if ((match = line.match(/\["class"\]\s*=\s*"(.*)",/))) currentActor.class = match[1];
-            else if ((match = line.match(/\["talent"\]\s*=\s*"(.*)",/))) currentActor.talent = match[1];
-            else if ((match = line.match(/\["damage"\]\s*=\s*([0-9]+),/))) currentActor.amount = parseInt(match[1], 10);
-            else if ((match = line.match(/\["heal"\]\s*=\s*([0-9]+),/))) currentActor.heal = parseInt(match[1], 10);
-            else if ((match = line.match(/\["absorb"\]\s*=\s*([0-9]+),/))) currentActor.absorb = parseInt(match[1], 10);
-            else if ((match = line.match(/\["time"\]\s*=\s*([0-9.]+),/))) currentActor.time = parseFloat(match[1]);
-          }
-          if (depth < actorDepth) {
-            if (currentActor.amount > 0 || currentActor.heal + currentActor.absorb > 0) {
-              currentEncounter.damage.push({ ...currentActor });
-            }
-            currentActor = null;
-            actorDepth = -1;
-          }
-        }
-      }
-    }
-
-    if (prevDepth === 2 && depth === 1 && currentEncounter) {
-      const validParticipants = currentEncounter.damage.filter((a: any) => !EXCLUDED_CLASSES.has(a.class));
-      if (validParticipants.length > 0) {
-        const damageList = validParticipants
-          .filter((a: any) => a.amount > 0)
-          .sort((a: any, b: any) => b.amount - a.amount)
-          .map((actor: any, index: number) => {
-            const talent = resolveTalentBranch(actor.class, actor.talent);
-            const dps = actor.time > 0 ? actor.amount / actor.time : 0;
-            return {
-              Rank: index + 1, Character: actor.name, Class: actor.class,
-              Talent: talent, Icon: resolveIconUrl(actor.class, talent),
-              Amount: formatNumber(actor.amount), DPS: formatNumber(dps),
-            };
-          });
-
-        const healingList = validParticipants
-          .map((actor: any) => ({ ...actor, totalHealing: actor.heal + actor.absorb }))
-          .filter((a: any) => a.totalHealing > 0)
-          .sort((a: any, b: any) => b.totalHealing - a.totalHealing)
-          .slice(0, 4)
-          .map((actor: any, index: number) => {
-            const talent = resolveTalentBranch(actor.class, actor.talent);
-            return {
-              Rank: index + 1, Character: actor.name, Class: actor.class,
-              Talent: talent, Icon: resolveIconUrl(actor.class, talent),
-              Amount: formatNumber(actor.totalHealing),
-            };
-          });
-
-        let bossName = currentEncounter.mobname || currentEncounter.name;
-        if (BOSS_TRANSLATIONS[bossName]) bossName = BOSS_TRANSLATIONS[bossName];
-
-        const peruTime = formatPeruTime(currentEncounter.endtime);
-
-        encounters.push({
-          name: bossName,
-          date: peruTime.isoDate,
-          endtime: currentEncounter.endtime,
-          peruHour: peruTime.hour,
-          difficulty: currentEncounter.difficulty,
-          diffString: currentEncounter.diffString,
-          Damage: damageList,
-          Healing: healingList,
-        });
-      }
-      currentEncounter = null;
-    }
-  }
-
-  const relevant = encounters
-    .filter((e) => {
-      if (!TARGET_BOSSES.includes(e.name)) return false;
-      const isUlduarBoss = ["XT-002 Deconstructor", "Desarmador XA-002", "Yogg-Saron"].includes(e.name);
-      const is25H = e.difficulty === 4 || e.diffString === "25h";
-      const is25N = e.difficulty === 2 || e.diffString === "25n" || e.diffString === "25" || e.diffString === "25 Player" || e.diffString === "25 Jugadores";
-      const isValidDifficulty = isUlduarBoss ? (is25H || is25N) : is25H;
-      if (!isValidDifficulty) return false;
-      if (e.peruHour < 19) return false;
-      return true;
-    })
-    .sort((a, b) => a.endtime - b.endtime);
-
-  const bossGroups = new Map();
-  for (const enc of relevant) {
-    if (!bossGroups.has(enc.name)) bossGroups.set(enc.name, []);
-    bossGroups.get(enc.name).push(enc);
-  }
-
-  const results = [];
-  for (const [name, encs] of bossGroups) {
-    if (name === "The Lich King" && encs.length > 1) {
-      results.push(encs[encs.length - 2]);
-    } else {
-      results.push(encs[encs.length - 1]);
-    }
-  }
-  return results;
+  return {
+    name: encounter.name,
+    date: encounter.date,
+    endtime: encounter.endtime,
+    peruHour: encounter.peruHour,
+    difficulty: encounter.difficulty,
+    diffString: encounter.diffString,
+    Damage: damageList,
+    Healing: healingList,
+  };
 }
 
 export function generateSkadaEncounterId(item: any) {
-  const key = `${item.date}|${item.name}|${item.difficulty || 0}`;
+  const key = `${item.date}|${item.name}|${item.difficulty || 0}|${item.endtime}`;
   return crypto.createHash("md5").update(key).digest("hex");
 }

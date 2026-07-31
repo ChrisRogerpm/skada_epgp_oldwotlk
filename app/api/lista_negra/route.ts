@@ -1,16 +1,19 @@
 import { NextResponse } from "next/server";
 import { SupabaseListaNegraRepository } from "@/src/infrastructure/repositories/SupabaseListaNegraRepository";
 import { GetListaNegraUseCase } from "@/src/application/useCases/GetListaNegraUseCase";
-
-export const revalidate = 300;
-
+import { getOrSetCache } from "@/src/infrastructure/cache/cache";
 
 export async function GET() {
   try {
-    const repository = new SupabaseListaNegraRepository();
-    const useCase = new GetListaNegraUseCase(repository);
-
-    const data = await useCase.execute();
+    const data = await getOrSetCache(
+      "lista_negra",
+      async () => {
+        const repository = new SupabaseListaNegraRepository();
+        const useCase = new GetListaNegraUseCase(repository);
+        return useCase.execute();
+      },
+      5 * 60 * 1000,
+    );
 
     return NextResponse.json(data);
   } catch (error: any) {

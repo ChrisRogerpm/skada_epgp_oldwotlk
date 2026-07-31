@@ -1,14 +1,19 @@
 import { NextResponse } from "next/server";
 import { SupabaseEpgpRepository } from "@/src/infrastructure/repositories/SupabaseEpgpRepository";
 import { GetEpgpRosterUseCase } from "@/src/application/useCases/GetEpgpRosterUseCase";
-
-export const revalidate = 300;
+import { getOrSetCache } from "@/src/infrastructure/cache/cache";
 
 export async function GET() {
   try {
-    const repository = new SupabaseEpgpRepository();
-    const useCase = new GetEpgpRosterUseCase(repository);
-    const result = await useCase.execute();
+    const result = await getOrSetCache(
+      "epgp_roster",
+      async () => {
+        const repository = new SupabaseEpgpRepository();
+        const useCase = new GetEpgpRosterUseCase(repository);
+        return useCase.execute();
+      },
+      3 * 60 * 1000,
+    );
 
     return NextResponse.json(result);
   } catch (error: any) {

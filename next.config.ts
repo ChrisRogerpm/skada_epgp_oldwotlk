@@ -2,7 +2,7 @@ import { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    unoptimized: true,
+    minimumCacheTTL: 2678400, // 31 días: los íconos de items/clases son inmutables
     remotePatterns: [
       {
         protocol: "https",

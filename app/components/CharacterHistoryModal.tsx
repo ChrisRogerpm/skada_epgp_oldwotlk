@@ -2,17 +2,25 @@
 
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { 
-  X, History, TrendingUp, Shield, Loader2, Calendar, 
+import {
+  X, History, TrendingUp, Shield, Loader2, Calendar,
   ArrowUpCircle, ArrowDownCircle, Info
 } from "lucide-react";
-import { 
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, 
-  Tooltip, ResponsiveContainer 
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer
 } from "recharts";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import clsx from "clsx";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Transaction {
   id: string | number;
@@ -58,8 +66,6 @@ export default function CharacterHistoryModal({ mainName, alters = [], isOpen, o
     }
   }, [isOpen, history]);
 
-  if (!isOpen) return null;
-
   // Ordenar cronológicamente antes de procesar el gráfico
   const chronologicalHistory = [...history].sort((a, b) => {
     return parseDate(a.fecha, a.hour).getTime() - parseDate(b.fecha, b.hour).getTime();
@@ -81,26 +87,30 @@ export default function CharacterHistoryModal({ mainName, alters = [], isOpen, o
   const displayHistory = [...chronologicalHistory].reverse();
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-100 dark:bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="w-full max-w-4xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
-        
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent
+        showCloseButton={false}
+        className="w-full max-w-4xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] p-0 gap-0"
+      >
         {/* Header */}
-        <div className="p-6 md:p-8 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900/50">
+        <DialogHeader className="p-6 md:p-8 border-b border-slate-200 dark:border-slate-800 flex-row items-center justify-between bg-white dark:bg-slate-900/50 space-y-0">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 flex items-center justify-center text-emerald-400">
               <Shield size={28} />
             </div>
             <div>
-              <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">{mainName}</h3>
-              <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">
+              <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">{mainName}</DialogTitle>
+              <DialogDescription className="text-xs text-slate-500 font-bold uppercase tracking-widest">
                 Bitácora Global ({allNames.length} Personajes)
-              </p>
+              </DialogDescription>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:bg-slate-800 rounded-full transition-colors">
-            <X size={24} className="text-slate-500" />
-          </button>
-        </div>
+          <DialogClose asChild>
+            <button aria-label="Cerrar" className="p-2 hover:bg-slate-100 dark:bg-slate-800 rounded-full transition-colors">
+              <X size={24} className="text-slate-500" />
+            </button>
+          </DialogClose>
+        </DialogHeader>
 
         <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-8">
           {isLoading ? (
@@ -216,8 +226,8 @@ export default function CharacterHistoryModal({ mainName, alters = [], isOpen, o
         <div className="p-4 bg-slate-50 dark:bg-slate-950/50 border-t border-slate-200 dark:border-slate-800 text-center">
           <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">Sistema de Auditoría EPGP • Old Legends</p>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

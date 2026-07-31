@@ -18,6 +18,7 @@ export class SupabaseLogsRepository implements ILogsRepository {
     return data.map((item: any) => ({
       name: item.name,
       date: item.date,
+      endtime: item.data?.endtime,
       Damage: item.data?.Damage || [],
       Healing: item.data?.Healing || [],
     }));

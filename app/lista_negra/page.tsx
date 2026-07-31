@@ -18,6 +18,18 @@ import {
 } from "lucide-react";
 import { BlacklistEntry } from "../types/BlacklistEntry";
 import clsx from "clsx";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
 
 export default function ListaNegraPage() {
   const [data, setData] = useState<BlacklistEntry[]>([]);
@@ -139,10 +151,10 @@ export default function ListaNegraPage() {
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-500 group-focus-within:text-red-500 transition-colors">
               <Search size={18} />
             </div>
-            <input
+            <Input
               type="text"
               placeholder="Escribe el nombre del personaje para buscar..."
-              className="block w-full pl-11 pr-4 py-3 bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-white placeholder-slate-500 focus:outline-none focus:ring-4 focus:ring-red-500/10 focus:border-red-500/40 transition-all backdrop-blur-sm text-base"
+              className="block w-full h-auto pl-11 pr-4 py-3 bg-white dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 rounded-xl placeholder-slate-500 focus-visible:ring-4 focus-visible:ring-red-500/10 focus-visible:border-red-500/40 backdrop-blur-sm text-base"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -191,9 +203,9 @@ export default function ListaNegraPage() {
                   {/* Mobile View: Cards */}
                   <div className="grid grid-cols-1 gap-4 md:hidden">
                     {paginatedData.map((entry) => (
-                      <div
+                      <Card
                         key={entry.id}
-                        className="bg-white dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-slate-800 rounded-2xl p-4 hover:border-red-500/30 transition-all"
+                        className="gap-0 bg-white dark:bg-slate-900/40 backdrop-blur-md border border-slate-200 dark:border-slate-800 rounded-2xl p-4 hover:border-red-500/30 transition-all"
                       >
                         <div className="flex items-center gap-4 mb-3">
                           <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-red-500 shadow-inner">
@@ -225,36 +237,36 @@ export default function ListaNegraPage() {
                             <span>{formatLimaTime(entry.created_at)}</span>
                           </div>
                         </div>
-                      </div>
+                      </Card>
                     ))}
                   </div>
 
                   {/* Desktop View: Table */}
                   <div className="hidden md:block overflow-hidden rounded-3xl border border-slate-200 dark:border-slate-800/80 bg-slate-50 dark:bg-slate-950/40 backdrop-blur-md shadow-2xl">
-                    <table className="w-full text-left border-collapse">
-                      <thead>
-                        <tr className="bg-white dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800">
-                          <th className="py-4 px-8 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-white dark:bg-slate-900/80 border-slate-200 dark:border-slate-800">
+                          <TableHead className="py-4 px-8 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
                             Personaje
-                          </th>
-                          <th className="py-4 px-8 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                          </TableHead>
+                          <TableHead className="py-4 px-8 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
                             Motivo / Razón
-                          </th>
-                          <th className="py-4 px-8 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                          </TableHead>
+                          <TableHead className="py-4 px-8 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
                             Fecha de Registro
-                          </th>
-                          <th className="py-4 px-8 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 text-right">
+                          </TableHead>
+                          <TableHead className="py-4 px-8 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 text-right">
                             Estado
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-800/30">
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody className="divide-y divide-slate-800/30">
                         {paginatedData.map((entry) => (
-                          <tr
+                          <TableRow
                             key={entry.id}
-                            className="group hover:bg-red-500/[0.02] transition-colors"
+                            className="group hover:bg-red-500/[0.02]"
                           >
-                            <td className="py-4 px-8">
+                            <TableCell className="py-4 px-8">
                               <div className="flex items-center gap-4">
                                 <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-red-500 group-hover:scale-110 group-hover:bg-red-500/10 transition-all duration-300 shadow-lg">
                                   <ShieldAlert size={20} />
@@ -265,13 +277,13 @@ export default function ListaNegraPage() {
                                   </span>
                                 </div>
                               </div>
-                            </td>
-                            <td className="py-4 px-8">
+                            </TableCell>
+                            <TableCell className="py-4 px-8">
                               <p className="text-slate-600 dark:text-slate-400 text-sm line-clamp-2 max-w-xs group-hover:text-slate-700 dark:text-slate-300 transition-colors">
                                 {entry.reason || "Sin motivo especificado"}
                               </p>
-                            </td>
-                            <td className="py-4 px-8">
+                            </TableCell>
+                            <TableCell className="py-4 px-8">
                               <div className="flex flex-col">
                                 <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 font-bold mb-0.5">
                                   <Calendar
@@ -289,17 +301,17 @@ export default function ListaNegraPage() {
                                   </span>
                                 </div>
                               </div>
-                            </td>
-                            <td className="py-4 px-8 text-right">
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[9px] font-black uppercase tracking-widest shadow-sm">
+                            </TableCell>
+                            <TableCell className="py-4 px-8 text-right">
+                              <Badge className="gap-1.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 uppercase tracking-widest shadow-sm">
                                 <span className="w-1 h-1 rounded-full bg-red-500 animate-pulse" />
                                 Baneado
-                              </span>
-                            </td>
-                          </tr>
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
                         ))}
-                      </tbody>
-                    </table>
+                      </TableBody>
+                    </Table>
                   </div>
 
                   {/* Pagination Section */}
@@ -315,21 +327,22 @@ export default function ListaNegraPage() {
                       </div>
 
                       <div className="flex items-center gap-2 order-1 sm:order-2">
-                        <button
+                        <Button
+                          variant="outline"
                           onClick={() =>
                             setCurrentPage((prev) => Math.max(prev - 1, 1))
                           }
                           disabled={currentPage === 1}
                           className={clsx(
-                            "flex items-center gap-2 px-5 py-3 rounded-2xl border font-black uppercase text-xs tracking-widest transition-all",
+                            "h-auto gap-2 px-5 py-3 rounded-2xl font-black uppercase text-xs tracking-widest active:scale-95",
                             currentPage === 1
-                              ? "border-slate-200 dark:border-slate-800 text-slate-700 bg-white dark:bg-slate-900/20 cursor-not-allowed"
-                              : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-white hover:bg-slate-100 dark:bg-slate-800 hover:border-slate-600 active:scale-95",
+                              ? "border-slate-200 dark:border-slate-800 text-slate-700 bg-white dark:bg-slate-900/20"
+                              : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 hover:border-slate-600",
                           )}
                         >
                           <ChevronLeft size={16} />
                           Anterior
-                        </button>
+                        </Button>
 
                         <div className="hidden lg:flex items-center gap-1 px-4">
                           {/* Dots or simple pages for space */}
@@ -350,23 +363,26 @@ export default function ListaNegraPage() {
                               return null;
                             }
                             return (
-                              <button
+                              <Button
                                 key={p}
+                                variant="ghost"
+                                aria-current={currentPage === p ? "page" : undefined}
                                 onClick={() => setCurrentPage(p)}
                                 className={clsx(
-                                  "w-10 h-10 rounded-xl text-xs font-black transition-all",
+                                  "w-10 h-10 rounded-xl text-xs font-black",
                                   currentPage === p
-                                    ? "bg-red-500 text-slate-900 dark:text-white shadow-[0_0_15px_rgba(239,68,68,0.4)]"
-                                    : "text-slate-500 hover:text-slate-900 dark:text-white hover:bg-slate-100 dark:bg-slate-800",
+                                    ? "bg-red-500 text-slate-900 dark:text-white shadow-[0_0_15px_rgba(239,68,68,0.4)] hover:bg-red-500 hover:text-slate-900 dark:hover:text-white"
+                                    : "text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800",
                                 )}
                               >
                                 {p}
-                              </button>
+                              </Button>
                             );
                           })}
                         </div>
 
-                        <button
+                        <Button
+                          variant="outline"
                           onClick={() =>
                             setCurrentPage((prev) =>
                               Math.min(prev + 1, totalPages),
@@ -374,15 +390,15 @@ export default function ListaNegraPage() {
                           }
                           disabled={currentPage === totalPages}
                           className={clsx(
-                            "flex items-center gap-2 px-5 py-3 rounded-2xl border font-black uppercase text-xs tracking-widest transition-all",
+                            "h-auto gap-2 px-5 py-3 rounded-2xl font-black uppercase text-xs tracking-widest active:scale-95",
                             currentPage === totalPages
-                              ? "border-slate-200 dark:border-slate-800 text-slate-700 bg-white dark:bg-slate-900/20 cursor-not-allowed"
-                              : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:text-white hover:bg-slate-100 dark:bg-slate-800 hover:border-slate-600 active:scale-95",
+                              ? "border-slate-200 dark:border-slate-800 text-slate-700 bg-white dark:bg-slate-900/20"
+                              : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 hover:border-slate-600",
                           )}
                         >
                           Siguiente
                           <ChevronRight size={16} />
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   )}

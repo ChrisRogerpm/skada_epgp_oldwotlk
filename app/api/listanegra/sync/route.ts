@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { supabase } from '@/src/infrastructure/config/supabase';
-import { parseIgnoreMoreText } from '@/src/infrastructure/services/ignoreMoreParser';
 
 import { validateSyncRequest } from '@/src/infrastructure/utils/auth';
+import { readSyncPayload } from '@/src/infrastructure/utils/syncBody';
+
+interface IgnoreEntryPayload {
+  name: string;
+  reason: string | null;
+}
 
 const generateIgnoreId = (playerName: string) => {
   const key = playerName.toLowerCase();
@@ -20,12 +25,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing x-officer-name header' }, { status: 400 });
     }
 
-    const body = await request.text();
-    if (!body || body.trim() === '') {
+    const entries = await readSyncPayload<IgnoreEntryPayload[]>(request);
+    if (!entries) {
       return NextResponse.json({ error: 'Empty payload' }, { status: 400 });
     }
 
-    const entries = parseIgnoreMoreText(body);
     const localEntriesMap = new Map();
 
     for (const entry of entries) {

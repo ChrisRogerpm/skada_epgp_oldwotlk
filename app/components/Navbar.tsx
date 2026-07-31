@@ -6,6 +6,7 @@ import { Sword, BarChart2, ScrollText, Settings, UserX, Users, Shield, Menu, X, 
 import { useState, useEffect } from "react";
 import clsx from "clsx";
 import { ThemeToggle } from "./ThemeToggle";
+import { Button } from "@/components/ui/button";
 
 const NAV_ITEMS = [
   { href: "/skada", label: "Skada", icon: Sword },
@@ -48,19 +49,23 @@ export default function Navbar() {
             {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
               const active = pathname.startsWith(href);
               return (
-                <Link
+                <Button
                   key={href}
-                  href={href}
+                  asChild
+                  variant="ghost"
+                  aria-current={active ? "page" : undefined}
                   className={clsx(
-                    "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all font-display",
+                    "h-auto gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest font-display",
                     active
-                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-lg"
-                      : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 border border-transparent",
+                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-lg hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400"
+                      : "text-slate-500 hover:text-slate-800 dark:text-slate-200 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 border border-transparent",
                   )}
                 >
-                  <Icon size={14} />
-                  {label}
-                </Link>
+                  <Link href={href}>
+                    <Icon size={14} />
+                    {label}
+                  </Link>
+                </Button>
               );
             })}
           </div>
@@ -72,12 +77,16 @@ export default function Navbar() {
           
           {/* Mobile Menu Toggle */}
           <div className="lg:hidden">
-            <button 
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label={isOpen ? "Cerrar menú" : "Abrir menú"}
+              aria-expanded={isOpen}
               onClick={() => setIsOpen(!isOpen)}
-              className="p-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-900 dark:text-white bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 rounded-xl border border-slate-200 dark:border-white/5 transition-all"
+              className="rounded-xl border-slate-200 dark:border-white/5 bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
             >
               {isOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -91,19 +100,23 @@ export default function Navbar() {
           {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
             const active = pathname.startsWith(href);
             return (
-              <Link
+              <Button
                 key={href}
-                href={href}
+                asChild
+                variant="ghost"
+                aria-current={active ? "page" : undefined}
                 className={clsx(
-                  "flex items-center gap-4 px-6 py-4 rounded-2xl text-sm font-black uppercase tracking-widest transition-all",
+                  "w-full h-auto justify-start gap-4 px-6 py-4 rounded-2xl text-sm font-black uppercase tracking-widest",
                   active
-                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400"
                     : "text-slate-700 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 bg-slate-50 dark:bg-white/[0.02]"
                 )}
               >
-                <Icon size={18} />
-                {label}
-              </Link>
+                <Link href={href}>
+                  <Icon size={18} />
+                  {label}
+                </Link>
+              </Button>
             );
           })}
         </div>

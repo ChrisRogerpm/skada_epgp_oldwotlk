@@ -3,6 +3,15 @@
 import { RaidLog } from "../types/RaidLog";
 import LogRow from "./LogRow";
 import { Ghost, Search } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
 
 interface LogsTableProps {
   logs: RaidLog[];
@@ -12,11 +21,11 @@ interface LogsTableProps {
 }
 
 const SkeletonRow = ({ metric }: { metric: "Damage" | "Healing" }) => (
-  <tr className="border-b border-slate-200 dark:border-slate-800/50 animate-pulse">
-    <td className="py-2 px-4">
+  <TableRow className="border-slate-200 dark:border-slate-800/50 animate-pulse">
+    <TableCell className="py-2 px-4">
       <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800/50"></div>
-    </td>
-    <td className="py-2 px-4">
+    </TableCell>
+    <TableCell className="py-2 px-4">
       <div className="flex items-center space-x-2">
         <div className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800/50"></div>
         <div className="space-y-2">
@@ -24,83 +33,80 @@ const SkeletonRow = ({ metric }: { metric: "Damage" | "Healing" }) => (
           <div className="h-2 w-16 bg-slate-100 dark:bg-slate-800/50 rounded"></div>
         </div>
       </div>
-    </td>
-    <td className="py-2 px-4">
+    </TableCell>
+    <TableCell className="py-2 px-4">
       <div className="h-4 w-16 bg-slate-100 dark:bg-slate-800/50 rounded-md"></div>
-    </td>
-    <td className="py-2 px-4">
+    </TableCell>
+    <TableCell className="py-2 px-4">
       <div className="h-4 w-20 bg-slate-100 dark:bg-slate-800/50 rounded"></div>
-    </td>
+    </TableCell>
     {metric === "Damage" && (
-      <td className="py-2 px-4">
+      <TableCell className="py-2 px-4">
         <div className="h-4 w-16 bg-slate-100 dark:bg-slate-800/50 rounded"></div>
-      </td>
+      </TableCell>
     )}
-  </tr>
+  </TableRow>
 );
 
 export default function LogsTable({ logs, loading, error, metric = "Damage" }: LogsTableProps) {
   if (error) {
     return (
-      <div className="w-full flex-1 flex flex-col items-center justify-center p-12 bg-red-950/20 border border-red-900/50 rounded-xl text-center backdrop-blur-sm">
-        <div className="text-red-500 bg-red-950/50 p-4 rounded-full mb-4">
+      <Card className="w-full flex-1 items-center justify-center p-12 bg-red-950/20 border-red-900/50 text-center backdrop-blur-sm">
+        <div className="text-red-500 bg-red-950/50 p-4 rounded-full mb-4 mx-auto w-fit">
           <Ghost size={32} />
         </div>
         <h3 className="text-xl font-bold text-red-400 mb-2">
           Error al cargar los datos
         </h3>
-        <p className="text-red-300/70 max-w-md">{error}</p>
-      </div>
+        <p className="text-red-300/70 max-w-md mx-auto">{error}</p>
+      </Card>
     );
   }
 
   return (
-    <div className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl overflow-hidden backdrop-blur-sm bg-opacity-70 flex flex-col">
-      <div className="overflow-x-auto">
-        <table className="w-full text-left whitespace-nowrap border-collapse">
-          <thead className="bg-slate-50 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-xs uppercase tracking-wider font-semibold">
-            <tr>
-              <th className="py-3 px-4 w-16">Rango</th>
-              <th className="py-3 px-4">Personaje</th>
-              <th className="py-3 px-4">Clase</th>
-              <th className="py-3 px-4">Cantidad</th>
-              {metric === "Damage" && <th className="py-3 px-4">DPS</th>}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-800/50 relative">
-            {loading && (
-              <>
-                {Array.from({ length: 10 }).map((_, i) => (
-                  <SkeletonRow key={`skeleton-${i}`} metric={metric} />
-                ))}
-              </>
-            )}
+    <Card className="w-full border-slate-200 dark:border-slate-800 shadow-2xl bg-opacity-70 p-0">
+      <Table className="whitespace-nowrap">
+        <TableHeader className="bg-slate-50 dark:bg-slate-950/80 text-slate-600 dark:text-slate-400 text-xs uppercase tracking-wider font-semibold [&_tr]:border-slate-200 dark:[&_tr]:border-slate-800">
+          <TableRow>
+            <TableHead className="py-3 px-4 w-16">Rango</TableHead>
+            <TableHead className="py-3 px-4">Personaje</TableHead>
+            <TableHead className="py-3 px-4">Clase</TableHead>
+            <TableHead className="py-3 px-4">Cantidad</TableHead>
+            {metric === "Damage" && <TableHead className="py-3 px-4">DPS</TableHead>}
+          </TableRow>
+        </TableHeader>
+        <TableBody className="divide-y divide-slate-800/50 relative">
+          {loading && (
+            <>
+              {Array.from({ length: 10 }).map((_, i) => (
+                <SkeletonRow key={`skeleton-${i}`} metric={metric} />
+              ))}
+            </>
+          )}
 
-            {!loading && logs.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-4 py-20 text-center text-slate-600 dark:text-slate-400">
-                  <div className="flex flex-col items-center justify-center gap-2">
-                    <Search size={32} className="text-slate-500 mb-1" />
-                    <p className="text-xl font-semibold text-slate-700 dark:text-slate-300">No se encontraron personajes</p>
-                    <p className="text-sm">Intenta ajustar los filtros para ver otros resultados.</p>
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              !loading &&
-              logs.map((log, i) => (
-                <LogRow
-                  key={`${log.Character}-${log.Rank}-${log.date}-${i}`}
-                  log={log}
-                  index={i}
-                  metric={metric}
-                />
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
+          {!loading && logs.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={5} className="px-4 py-20 text-center text-slate-600 dark:text-slate-400">
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <Search size={32} className="text-slate-500 mb-1" />
+                  <p className="text-xl font-semibold text-slate-700 dark:text-slate-300">No se encontraron personajes</p>
+                  <p className="text-sm">Intenta ajustar los filtros para ver otros resultados.</p>
+                </div>
+              </TableCell>
+            </TableRow>
+          ) : (
+            !loading &&
+            logs.map((log, i) => (
+              <LogRow
+                key={`${log.Character}-${log.Rank}-${log.date}-${i}`}
+                log={log}
+                metric={metric}
+              />
+            ))
+          )}
+        </TableBody>
+      </Table>
+    </Card>
   );
 }
 

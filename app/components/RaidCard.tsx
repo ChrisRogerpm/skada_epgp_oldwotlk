@@ -5,6 +5,7 @@ import RaidCompositionGrid from "./RaidCompositionGrid";
 import { Clock, Shield, Swords, Ghost, Gem, Users, ChevronDown, ChevronUp } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { Card } from "@/components/ui/card";
 
 import { CLASS_HEX, CLASS_ICONS, DEFAULT_ICONS } from "@/src/domain/constants/constants";
 
@@ -127,8 +128,8 @@ export default function RaidCard({ raid, viewMode, halionIndex }: RaidCardProps)
   }, [raid.items, isExpanded]);
 
   return (
-    <div
-      className={`group relative bg-slate-50 dark:bg-slate-950/40 rounded-2xl border ${theme.borderColor} overflow-hidden mb-10 transition-colors backdrop-blur-md shadow-lg`}
+    <Card
+      className={`group relative gap-0 p-0 bg-slate-50 dark:bg-slate-950/40 rounded-2xl border ${theme.borderColor} overflow-hidden mb-10 transition-colors backdrop-blur-md shadow-lg`}
     >
       {/* Dynamic Background Glow */}
       <div
@@ -136,9 +137,18 @@ export default function RaidCard({ raid, viewMode, halionIndex }: RaidCardProps)
       />
 
       {/* Header */}
-      <div 
-        className="relative border-b border-slate-200 dark:border-slate-800/50 bg-white dark:bg-slate-900/20 px-8 py-6 flex flex-wrap items-center justify-between gap-6 cursor-pointer hover:bg-white dark:bg-slate-900/40 transition-colors"
+      <div
+        className="relative border-b border-slate-200 dark:border-slate-800/50 bg-white dark:bg-slate-900/20 px-8 py-6 flex flex-wrap items-center justify-between gap-6 cursor-pointer hover:bg-white dark:bg-slate-900/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-500"
         onClick={() => setIsExpanded(!isExpanded)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setIsExpanded(!isExpanded);
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-expanded={isExpanded}
       >
         <div className="flex items-center gap-5">
           <div
@@ -197,10 +207,11 @@ export default function RaidCard({ raid, viewMode, halionIndex }: RaidCardProps)
                   className="group/item flex items-center gap-4 bg-white dark:bg-slate-900/60 backdrop-blur-xl rounded-xl pl-2 pr-5 py-2 border border-purple-500/20 hover:border-purple-500/50 hover:bg-slate-100 dark:bg-slate-800/80 transition-all duration-300 shadow-xl shadow-purple-500/5"
                 >
                   <div className="relative w-10 h-10 rounded-lg border border-purple-500/30 overflow-hidden shadow-lg shrink-0">
-                    <Image unoptimized
+                    <Image
                       src={item.items.icon}
-                      alt="item"
+                      alt={item.items.name}
                       fill
+                      sizes="40px"
                       className="object-cover opacity-80 group-hover/item:opacity-100 transition-opacity"
                     />
                   </div>
@@ -210,12 +221,13 @@ export default function RaidCard({ raid, viewMode, halionIndex }: RaidCardProps)
                       <div className="flex items-center gap-2 mt-0.5">
                         {item.class && (
                           <div className="w-4.5 h-4.5 relative rounded border border-black/40 shadow-sm shrink-0">
-                            <Image unoptimized
+                            <Image
                               src={
                                 CLASS_ICONS[classUpper] || DEFAULT_ICONS.UNKNOWN
                               }
                               alt={item.class}
                               fill
+                              sizes="18px"
                             />
                           </div>
                         )}
@@ -252,6 +264,6 @@ export default function RaidCard({ raid, viewMode, halionIndex }: RaidCardProps)
       </div>
         </div>
       )}
-    </div>
+    </Card>
   );
 }

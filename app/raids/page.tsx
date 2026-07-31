@@ -7,6 +7,8 @@ import { RaidsByDateResponse } from "../types/RaidComposition";
 import RaidCard from "../components/RaidCard";
 import { format, addDays, subDays, getDay, parseISO, isSameDay } from "date-fns";
 import { es } from "date-fns/locale";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function RaidsPage() {
   const now = new Date();
@@ -94,26 +96,30 @@ export default function RaidsPage() {
                  Visualización
                </label>
                <div className="flex bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl p-1 backdrop-blur-md shadow-lg">
-                 <button
+                 <Button
+                   variant="ghost"
+                   aria-pressed={viewMode === "vertical"}
                    onClick={() => setViewMode("vertical")}
-                   className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black tracking-widest uppercase transition-all font-display ${
-                     viewMode === "vertical" 
-                       ? "bg-emerald-500/20 text-emerald-400 shadow-inner" 
+                   className={`h-auto gap-2 px-4 py-2 rounded-lg text-xs font-black tracking-widest uppercase font-display ${
+                     viewMode === "vertical"
+                       ? "bg-emerald-500/20 text-emerald-400 shadow-inner hover:bg-emerald-500/20 hover:text-emerald-400"
                        : "text-slate-500 hover:text-slate-700 dark:text-slate-300"
                    }`}
                  >
                    <LayoutGrid size={14} /> Grid
-                 </button>
-                 <button
+                 </Button>
+                 <Button
+                   variant="ghost"
+                   aria-pressed={viewMode === "horizontal"}
                    onClick={() => setViewMode("horizontal")}
-                   className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black tracking-widest uppercase transition-all font-display ${
-                     viewMode === "horizontal" 
-                       ? "bg-emerald-500/20 text-emerald-400 shadow-inner" 
+                   className={`h-auto gap-2 px-4 py-2 rounded-lg text-xs font-black tracking-widest uppercase font-display ${
+                     viewMode === "horizontal"
+                       ? "bg-emerald-500/20 text-emerald-400 shadow-inner hover:bg-emerald-500/20 hover:text-emerald-400"
                        : "text-slate-500 hover:text-slate-700 dark:text-slate-300"
                    }`}
                  >
                    <StretchHorizontal size={14} /> Filas
-                 </button>
+                 </Button>
                </div>
             </div>
 
@@ -122,20 +128,20 @@ export default function RaidsPage() {
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2 font-display">
                 <Calendar size={12} className="text-emerald-500" /> Filtrar por fecha
               </label>
-              <button
+              <div
                 onClick={openDatePicker}
-                className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 hover:border-emerald-500/50 hover:bg-white dark:bg-slate-900/80 transition-all backdrop-blur-md shadow-lg group flex items-center gap-3"
+                className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 hover:border-emerald-500/50 hover:bg-white dark:hover:bg-slate-900/80 transition-all backdrop-blur-md shadow-lg group flex items-center gap-3 cursor-pointer"
               >
-                <Calendar size={16} className="text-emerald-400" />
-                <span className="sr-only">Seleccionar fecha</span>
-                <input
+                <Calendar size={16} className="text-emerald-400 pointer-events-none" />
+                <Input
                   ref={dateInputRef}
                   type="date"
+                  aria-label="Seleccionar fecha"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="bg-transparent border-none text-slate-800 dark:text-slate-100 font-bold focus:ring-0 outline-none w-32 cursor-pointer"
+                  className="h-auto bg-transparent border-none p-0 text-slate-800 dark:text-slate-100 font-bold shadow-none focus-visible:ring-0 outline-none w-32 cursor-pointer"
                 />
-              </button>
+              </div>
             </div>
           </div>
         </header>
@@ -157,13 +163,15 @@ export default function RaidsPage() {
                 const isToday = todayDateStr === day.dateStr;
                 
                 return (
-                  <button
+                  <Button
                     key={day.dateStr}
+                    variant="ghost"
+                    aria-pressed={isActive}
                     onClick={() => setSelectedDate(day.dateStr)}
-                    className={`relative flex flex-col items-center gap-1 p-3 rounded-2xl border transition-all duration-300 group ${
-                      isActive 
-                        ? "bg-emerald-500/10 border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.15)] scale-[1.02]" 
-                        : "bg-white dark:bg-slate-900/40 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:bg-slate-800/60"
+                    className={`h-auto relative flex-col items-center gap-1 p-3 rounded-2xl border duration-300 group ${
+                      isActive
+                        ? "bg-emerald-500/10 border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.15)] scale-[1.02] hover:bg-emerald-500/10"
+                        : "bg-white dark:bg-slate-900/40 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800/60"
                     }`}
                   >
                     {isToday && !isActive && (
@@ -182,7 +190,7 @@ export default function RaidsPage() {
                     <div className={`w-8 h-1 rounded-full mt-1 transition-all duration-500 ${
                       isActive ? "bg-emerald-500 opacity-100" : "bg-white/5 opacity-0 group-hover:opacity-10"
                     }`} />
-                  </button>
+                  </Button>
                 );
               })}
             </div>

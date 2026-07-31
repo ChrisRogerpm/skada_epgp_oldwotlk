@@ -1,22 +1,21 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/src/infrastructure/config/supabase';
-import { parseRosterEntries, buildPrincipals } from '@/src/infrastructure/services/epgpParser';
+import { buildRosterRecords, RosterPrincipalPayload } from '@/src/infrastructure/services/epgpParser';
 
 import { validateSyncRequest } from '@/src/infrastructure/utils/auth';
+import { readSyncPayload } from '@/src/infrastructure/utils/syncBody';
 
 export async function POST(request: Request) {
   try {
     const authError = validateSyncRequest(request);
     if (authError) return authError;
 
-    const body = await request.text();
-    if (!body || body.trim() === '') {
+    const payload = await readSyncPayload<RosterPrincipalPayload[]>(request);
+    if (!payload) {
       return NextResponse.json({ error: 'Empty payload' }, { status: 400 });
     }
 
-    // 1. Parse Data
-    const entries = parseRosterEntries(body);
-    const result = buildPrincipals(entries);
+    const result = buildRosterRecords(payload);
 
     if (result.length === 0) {
       return NextResponse.json({ message: 'No valid roster entries found in payload', uploaded: 0 });

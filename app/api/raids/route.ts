@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { SupabaseRaidsRepository } from "@/src/infrastructure/repositories/SupabaseRaidsRepository";
 import { GetRaidsByDateUseCase } from "@/src/application/useCases/GetRaidsByDateUseCase";
-
-export const revalidate = 300;
-
+import { getOrSetCache } from "@/src/infrastructure/cache/cache";
 
 export async function GET(request: Request) {
   try {
@@ -14,10 +12,15 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Date is required" }, { status: 400 });
     }
 
-    const repository = new SupabaseRaidsRepository();
-    const useCase = new GetRaidsByDateUseCase(repository);
-
-    const result = await useCase.execute(date);
+    const result = await getOrSetCache(
+      `raids_${date}`,
+      async () => {
+        const repository = new SupabaseRaidsRepository();
+        const useCase = new GetRaidsByDateUseCase(repository);
+        return useCase.execute(date);
+      },
+      5 * 60 * 1000,
+    );
 
     return NextResponse.json(result);
   } catch (error) {

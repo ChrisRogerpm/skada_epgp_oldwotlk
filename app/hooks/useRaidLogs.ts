@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useDebounce } from "use-debounce";
-import { RaidLog, FilterState } from "../types/RaidLog";
+import { RaidLog, FilterState, getRaidInstanceForBoss, formatSessionTime } from "../types/RaidLog";
 import { LogsResponseSchema } from "@/src/domain/schemas/schemas";
 
 export function useRaidLogs() {
@@ -14,6 +14,7 @@ export function useRaidLogs() {
     boss: "Lord Marrowgar",
     metric: "Damage",
     search: "",
+    session: null,
   });
 
   // Debounce the search input by 300ms
@@ -43,7 +44,8 @@ export function useRaidLogs() {
           Icon: entry.Icon ?? undefined,
           date: encounter.date,
           boss: encounter.name,
-          raidInstance: "Icecrown Citadel",
+          endtime: encounter.endtime,
+          raidInstance: getRaidInstanceForBoss(encounter.name),
         })) as RaidLog[];
       });
 
@@ -52,8 +54,9 @@ export function useRaidLogs() {
     enabled: !!filters.date,
   });
 
-  // Filtros locales: instancia, jefe y búsqueda (debounced)
-  const filteredLogs = logs.filter((log) => {
+  // Logs del jefe/instancia elegidos, sin filtrar aún por sesión ni búsqueda
+  // (varias sesiones del mismo jefe pueden caer el mismo día, ver features.md)
+  const logsForSelectedBoss = logs.filter((log) => {
     if (
       filters.raidInstance &&
       filters.raidInstance !== "all" &&
@@ -62,6 +65,30 @@ export function useRaidLogs() {
       return false;
     }
     if (filters.boss && filters.boss !== "all" && log.boss !== filters.boss) {
+      return false;
+    }
+    return true;
+  });
+
+  // Sesiones distintas (por endtime) disponibles para el jefe/instancia/fecha actuales
+  const sessions = useMemo(() => {
+    const uniqueEndtimes = [...new Set(logsForSelectedBoss.map((l) => l.endtime))].sort(
+      (a, b) => a - b,
+    );
+    return uniqueEndtimes.map((endtime) => ({ endtime, label: formatSessionTime(endtime) }));
+  }, [logsForSelectedBoss]);
+
+  // Si la sesión elegida ya no está disponible (cambió el jefe/fecha), recaer en la primera
+  useEffect(() => {
+    const stillValid = filters.session != null && sessions.some((s) => s.endtime === filters.session);
+    const fallback = sessions[0]?.endtime ?? null;
+    if (!stillValid && fallback !== filters.session) {
+      setFilters((prev) => ({ ...prev, session: fallback }));
+    }
+  }, [sessions, filters.session]);
+
+  const filteredLogs = logsForSelectedBoss.filter((log) => {
+    if (filters.session != null && log.endtime !== filters.session) {
       return false;
     }
     if (
@@ -75,6 +102,7 @@ export function useRaidLogs() {
 
   return {
     logs: filteredLogs,
+    sessions,
     loading: isLoading,
     error: error instanceof Error ? error.message : null,
     filters,

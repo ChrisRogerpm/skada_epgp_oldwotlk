@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { SupabaseLogsRepository } from "@/src/infrastructure/repositories/SupabaseLogsRepository";
 import { GetLogsUseCase } from "@/src/application/useCases/GetLogsUseCase";
-
-export const revalidate = 300;
-
+import { getOrSetCache } from "@/src/infrastructure/cache/cache";
 
 export async function GET(request: Request) {
   try {
@@ -12,10 +10,16 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get("limit") || "100", 10);
     const offset = parseInt(searchParams.get("offset") || "0", 10);
 
-    const repository = new SupabaseLogsRepository();
-    const useCase = new GetLogsUseCase(repository);
-
-    const result = await useCase.execute(date, limit, offset);
+    const cacheKey = `logs_${date}_${limit}_${offset}`;
+    const result = await getOrSetCache(
+      cacheKey,
+      async () => {
+        const repository = new SupabaseLogsRepository();
+        const useCase = new GetLogsUseCase(repository);
+        return useCase.execute(date, limit, offset);
+      },
+      5 * 60 * 1000,
+    );
 
     return NextResponse.json(result);
   } catch (error) {

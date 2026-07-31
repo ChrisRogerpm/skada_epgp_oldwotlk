@@ -3,9 +3,6 @@ import { getOrSetCache } from "@/src/infrastructure/cache/cache";
 import { SupabaseEpgpRepository } from "@/src/infrastructure/repositories/SupabaseEpgpRepository";
 import { GetEpgpLogsUseCase } from "@/src/application/useCases/GetEpgpLogsUseCase";
 
-export const revalidate = 300;
-
-
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -33,7 +30,7 @@ export async function GET(request: Request) {
     const cacheKey = `epgp_logs_${effectiveDate.replace(/\//g, "-")}`;
     const result = await getOrSetCache(cacheKey, async () => {
       return await useCase.execute({ fecha: fechaFilter });
-    }, 0); // Caché deshabilitado
+    }, 2 * 60 * 1000);
 
     return NextResponse.json(result);
   } catch (error: any) {

@@ -1,25 +1,20 @@
 import { NextResponse } from "next/server";
 import { SupabaseReglasRepository } from "@/src/infrastructure/repositories/SupabaseReglasRepository";
 import { GetReglasUseCase } from "@/src/application/useCases/GetReglasUseCase";
-
-export const revalidate = 300;
-
+import { getOrSetCache } from "@/src/infrastructure/cache/cache";
 
 export async function GET() {
-  console.log("Reglas API: Iniciando revisión de Beneficios y Perjuicios...");
   try {
-    const repository = new SupabaseReglasRepository();
-    const useCase = new GetReglasUseCase(repository);
-
-    const result = await useCase.execute();
-
-    // To preserve the exact console.log as before
-    const beneficiosCount = result[1].Beneficios.length;
-    const perjuiciosCount = result[2].Perjuicios.length;
-    console.log(
-      `Reglas API: Beneficios (${beneficiosCount}), Perjuicios (${perjuiciosCount})`,
+    const result = await getOrSetCache(
+      "reglas",
+      async () => {
+        const repository = new SupabaseReglasRepository();
+        const useCase = new GetReglasUseCase(repository);
+        return useCase.execute();
+      },
+      5 * 60 * 1000,
     );
-    
+
     return NextResponse.json(result);
   } catch (error) {
     console.error("Error crítico:", error);

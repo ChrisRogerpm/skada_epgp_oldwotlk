@@ -1,25 +1,26 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/src/infrastructure/config/supabase";
 import {
-  parseSkadaText,
+  buildSkadaEncounterRecord,
   generateSkadaEncounterId,
+  SkadaEncounterPayload,
 } from "@/src/infrastructure/services/skadaParser";
 
 import { validateSyncRequest } from '@/src/infrastructure/utils/auth';
+import { readSyncPayload } from '@/src/infrastructure/utils/syncBody';
 
 export async function POST(request: Request) {
   try {
     const authError = validateSyncRequest(request);
     if (authError) return authError;
 
-    // 2. Get Lua block text from body
-    const body = await request.text();
-    if (!body || body.trim() === "") {
+    const payload = await readSyncPayload<SkadaEncounterPayload[]>(request);
+    if (!payload) {
       return NextResponse.json({ error: "Empty payload" }, { status: 400 });
     }
 
-    // 3. Parse encounters
-    const encounters = parseSkadaText(body);
+    // Reconstruir Damage/Healing (ranking, talento, ícono, formateo) a partir de los participantes crudos
+    const encounters = payload.map(buildSkadaEncounterRecord);
     if (encounters.length === 0) {
       return NextResponse.json({
         message: "No relevant encounters found in payload",
@@ -27,7 +28,9 @@ export async function POST(request: Request) {
       });
     }
 
-    // 4. Map to SQL structure and generate keys
+    // 4. Map to SQL structure and generate keys.
+    // La key incluye el endtime, así que dos sesiones del mismo jefe/dificultad el mismo
+    // día quedan con keys distintas (filas separadas) en vez de colisionar.
     const allParsed = [];
     for (const encounter of encounters) {
       const keyHash = generateSkadaEncounterId(encounter);
@@ -41,27 +44,39 @@ export async function POST(request: Request) {
       });
     }
 
-    // 5. Fetch existing keys from Supabase
-    const keysToCheck = allParsed.map((e) => e.key);
-    const existingKeysSet = new Set();
+    // Descartar duplicados dentro del mismo payload (misma key)
+    const dedupedParsed = [...new Map(allParsed.map((e) => [e.key, e])).values()];
+
+    // 5. Detectar qué ya está sincronizado comparando date+name+difficulty+endtime reales
+    // contra las filas existentes (no solo por key: el histórico previo a este cambio
+    // se guardó con una key que no incluía el endtime, así que comparar por key a secas
+    // podría bloquear una sesión nueva y distinta que cae el mismo día).
+    const uniqueDates = [...new Set(dedupedParsed.map((e) => e.date))];
+    const existingSignatures = new Set<string>();
     const chunkSize = 500;
 
-    for (let i = 0; i < keysToCheck.length; i += chunkSize) {
-      const chunk = keysToCheck.slice(i, i + chunkSize);
+    for (let i = 0; i < uniqueDates.length; i += chunkSize) {
+      const chunk = uniqueDates.slice(i, i + chunkSize);
       const { data, error } = await supabase
         .from("skada")
-        .select("key")
-        .in("key", chunk);
+        .select("date, name, data")
+        .in("date", chunk);
 
       if (error) {
         throw new Error(`Database error: ${error.message}`);
       }
 
-      data?.forEach((row) => existingKeysSet.add(row.key));
+      data?.forEach((row: any) => {
+        const signature = `${row.date}|${row.name}|${row.data?.difficulty || 0}|${row.data?.endtime}`;
+        existingSignatures.add(signature);
+      });
     }
 
     // 6. Filter new encounters
-    const newEncounters = allParsed.filter((e) => !existingKeysSet.has(e.key));
+    const newEncounters = dedupedParsed.filter((e) => {
+      const signature = `${e.date}|${e.name}|${e.data.difficulty || 0}|${e.data.endtime}`;
+      return !existingSignatures.has(signature);
+    });
 
     if (newEncounters.length === 0) {
       return NextResponse.json({

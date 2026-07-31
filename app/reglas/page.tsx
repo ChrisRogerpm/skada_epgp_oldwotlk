@@ -20,6 +20,11 @@ import {
   CheckCircle2,
   XCircle,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Table, TableBody, TableRow, TableCell } from "@/components/ui/table";
 
 interface LootItem {
   category: string;
@@ -258,57 +263,63 @@ export default function RulesPage() {
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto">
             {/* Tabs */}
             <div className="flex bg-white dark:bg-slate-900/80 p-1.5 rounded-xl border border-slate-300 dark:border-slate-700/60 shadow-inner w-full sm:w-auto">
-              <button
+              <Button
+                variant="ghost"
+                aria-pressed={activeTab === "loot"}
                 onClick={() => {
                   setActiveTab("loot");
                   setSearchTerm("");
                 }}
-                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                className={`h-auto flex-1 sm:flex-none gap-2 px-4 py-2 rounded-lg text-sm font-semibold ${
                   activeTab === "loot"
-                    ? "bg-slate-100 dark:bg-slate-800 text-emerald-400 shadow-md border border-slate-300 dark:border-slate-700/50"
-                    : "text-slate-500 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:bg-slate-800/50"
+                    ? "bg-slate-100 dark:bg-slate-800 text-emerald-400 shadow-md border border-slate-300 dark:border-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-400"
+                    : "text-slate-500 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50"
                 }`}
               >
                 <Trophy size={16} /> Loteo
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="ghost"
+                aria-pressed={activeTab === "benefits"}
                 onClick={() => {
                   setActiveTab("benefits");
                   setSearchTerm("");
                 }}
-                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                className={`h-auto flex-1 sm:flex-none gap-2 px-4 py-2 rounded-lg text-sm font-semibold ${
                   activeTab === "benefits"
-                    ? "bg-slate-100 dark:bg-slate-800 text-emerald-400 shadow-md border border-slate-300 dark:border-slate-700/50"
-                    : "text-slate-500 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:bg-slate-800/50"
+                    ? "bg-slate-100 dark:bg-slate-800 text-emerald-400 shadow-md border border-slate-300 dark:border-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-400"
+                    : "text-slate-500 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50"
                 }`}
               >
                 <TrendingUp size={16} /> Beneficios
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="ghost"
+                aria-pressed={activeTab === "penalties"}
                 onClick={() => {
                   setActiveTab("penalties");
                   setSearchTerm("");
                 }}
-                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                className={`h-auto flex-1 sm:flex-none gap-2 px-4 py-2 rounded-lg text-sm font-semibold ${
                   activeTab === "penalties"
-                    ? "bg-slate-100 dark:bg-slate-800 text-emerald-400 shadow-md border border-slate-300 dark:border-slate-700/50"
-                    : "text-slate-500 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:bg-slate-800/50"
+                    ? "bg-slate-100 dark:bg-slate-800 text-emerald-400 shadow-md border border-slate-300 dark:border-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-400"
+                    : "text-slate-500 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50"
                 }`}
               >
                 <TrendingDown size={16} /> Perjuicios
-              </button>
+              </Button>
             </div>
 
             <div className="relative group w-full sm:w-64">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
                 <Search className="h-4 w-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
               </div>
-              <input
+              <Input
                 type="text"
                 placeholder="Buscar..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-white dark:bg-slate-900/80 border border-slate-300 dark:border-slate-700/60 rounded-xl py-2 pl-9 pr-4 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all shadow-inner"
+                className="w-full h-auto bg-white dark:bg-slate-900/80 border-slate-300 dark:border-slate-700/60 rounded-xl py-2 pl-9 pr-4 text-sm placeholder-slate-500 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500/50 shadow-inner"
               />
             </div>
           </div>
@@ -321,17 +332,20 @@ export default function RulesPage() {
               Filtrar Categoría:
             </span>
             {categories.map((cat: any) => (
-              <button
+              <Button
                 key={cat}
+                variant="ghost"
+                size="xs"
+                aria-pressed={selectedCategory === cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border ${
+                className={`rounded-full font-bold uppercase tracking-wider border ${
                   selectedCategory === cat
-                    ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-[0_0_10px_rgba(16,185,129,0.1)]"
-                    : "bg-white dark:bg-slate-900/50 text-slate-500 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:border-slate-700 hover:text-slate-700 dark:text-slate-300"
+                    ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-[0_0_10px_rgba(16,185,129,0.1)] hover:bg-emerald-500/20 hover:text-emerald-400"
+                    : "bg-white dark:bg-slate-900/50 text-slate-500 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:text-slate-700 dark:hover:text-slate-300"
                 }`}
               >
                 {cat}
-              </button>
+              </Button>
             ))}
           </div>
         )}
@@ -341,13 +355,15 @@ export default function RulesPage() {
           {activeTab === "loot" && (
             <div className="space-y-6 animate-in fade-in duration-300">
               {filteredLoot.map((raidRule: any) => (
-                <section
+                <Card
                   key={raidRule.raid}
-                  className="bg-white dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800/60 overflow-hidden shadow-xl backdrop-blur-sm"
+                  className="gap-0 p-0 bg-white dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800/60 overflow-hidden shadow-xl backdrop-blur-sm"
                 >
-                  <button
+                  <Button
+                    variant="ghost"
+                    aria-expanded={expandedRaids.has(raidRule.raid)}
                     onClick={() => toggleRaid(raidRule.raid)}
-                    className="w-full flex items-center justify-between p-4 md:p-6 bg-slate-50 dark:bg-slate-950/40 hover:bg-white dark:bg-slate-900/60 transition-colors text-left"
+                    className="h-auto w-full justify-between rounded-none p-4 md:p-6 bg-slate-50 dark:bg-slate-950/40 hover:bg-white dark:hover:bg-slate-900/60 text-left"
                   >
                     <div className="flex items-center gap-4">
                       <div className="p-2 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
@@ -363,16 +379,16 @@ export default function RulesPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
-                      <span className="hidden sm:inline-block text-[10px] font-bold text-slate-500 bg-white dark:bg-slate-900/80 px-2 py-1 rounded border border-slate-200 dark:border-slate-800">
+                      <Badge className="hidden sm:inline-flex font-bold bg-white dark:bg-slate-900/80 text-slate-500 border border-slate-200 dark:border-slate-800">
                         {raidRule.items.length} ÍTEMS
-                      </span>
+                      </Badge>
                       {expandedRaids.has(raidRule.raid) ? (
                         <ChevronUp className="text-slate-500" />
                       ) : (
                         <ChevronDown className="text-slate-500" />
                       )}
                     </div>
-                  </button>
+                  </Button>
 
                   {expandedRaids.has(raidRule.raid) && (
                     <div className="p-4 md:p-6 space-y-4 animate-in slide-in-from-top-2 duration-200">
@@ -405,7 +421,7 @@ export default function RulesPage() {
                                   rel="noopener noreferrer"
                                   className="w-14 h-14 rounded-lg overflow-hidden border-2 border-slate-200 dark:border-slate-800 group-hover:border-emerald-500/40 transition-colors bg-white dark:bg-slate-900 shrink-0 relative"
                                 >
-                                  <Image unoptimized
+                                  <Image
                                     src={item.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"}
                                     alt={item.item}
                                     width={56}
@@ -427,8 +443,8 @@ export default function RulesPage() {
                                     >
                                       {item.item}
                                     </h3>
-                                    <div
-                                      className={`flex items-center gap-1.5 px-2 py-0.5 rounded border ${
+                                    <Badge
+                                      className={`gap-1.5 rounded border ${
                                         canAfford === true
                                           ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
                                           : canAfford === false
@@ -446,19 +462,19 @@ export default function RulesPage() {
                                       {canAfford === false && (
                                         <XCircle size={10} />
                                       )}
-                                    </div>
+                                    </Badge>
                                   </div>
 
                                   <div className="flex items-center gap-2 mb-2">
-                                    <span
-                                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                                    <Badge
+                                      className={`rounded font-bold uppercase tracking-wider ${
                                         isBIS
                                           ? "bg-orange-500/20 text-orange-400 border border-orange-500/30"
                                           : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                                       }`}
                                     >
                                       {item.category}
-                                    </span>
+                                    </Badge>
                                   </div>
 
                                   {item.requirement.length > 0 ? (
@@ -495,7 +511,7 @@ export default function RulesPage() {
                       </div>
                     </div>
                   )}
-                </section>
+                </Card>
               ))}
             </div>
           )}
@@ -503,29 +519,29 @@ export default function RulesPage() {
           {activeTab === "benefits" && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-300">
               {filteredBenefits.map((cat: any, idx: number) => (
-                <div
+                <Card
                   key={idx}
-                  className="bg-white dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800/60 overflow-hidden shadow-xl backdrop-blur-sm flex flex-col"
+                  className="gap-0 p-0 bg-white dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800/60 overflow-hidden shadow-xl backdrop-blur-sm flex flex-col"
                 >
                   <div className="p-4 bg-emerald-500/10 border-b border-slate-200 dark:border-slate-800/60 flex items-center gap-3">
                     <TrendingUp className="text-emerald-500 dark:text-emerald-400" size={18} />
                     <h2 className="font-bold text-slate-900 dark:text-slate-100">{cat.category}</h2>
                   </div>
                   <div className="p-2 flex-1">
-                    <table className="w-full text-left">
-                      <tbody className="divide-y divide-slate-800/40">
+                    <Table>
+                      <TableBody className="divide-y divide-slate-800/40">
                         {cat.items.map((item: any, iIdx: number) => (
-                          <tr
+                          <TableRow
                             key={iIdx}
-                            className="hover:bg-emerald-500/5 transition-colors"
+                            className="hover:bg-emerald-500/5"
                           >
-                            <td className="px-3 py-3">
+                            <TableCell className="px-3 py-3">
                               <div className="flex items-center gap-3">
                                 {item.icon && (
                                   <div className="w-8 h-8 rounded border border-slate-300 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-900 shrink-0 relative">
-                                    <Image unoptimized
+                                    <Image
                                       src={item.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"}
-                                      alt="Icon"
+                                      alt={item.descripcion}
                                       width={32}
                                       height={32}
                                       className="w-full h-full object-cover"
@@ -536,18 +552,18 @@ export default function RulesPage() {
                                   {item.descripcion}
                                 </span>
                               </div>
-                            </td>
-                            <td className="px-3 py-3 text-right">
+                            </TableCell>
+                            <TableCell className="px-3 py-3 text-right">
                               <span className="font-mono font-bold text-emerald-400">
                                 +{item.valor}
                               </span>
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
                         ))}
-                      </tbody>
-                    </table>
+                      </TableBody>
+                    </Table>
                   </div>
-                </div>
+                </Card>
               ))}
             </div>
           )}
@@ -555,29 +571,29 @@ export default function RulesPage() {
           {activeTab === "penalties" && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-300">
               {filteredPenalties.map((cat: any, idx: number) => (
-                <div
+                <Card
                   key={idx}
-                  className="bg-white dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800/60 overflow-hidden shadow-xl backdrop-blur-sm flex flex-col"
+                  className="gap-0 p-0 bg-white dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800/60 overflow-hidden shadow-xl backdrop-blur-sm flex flex-col"
                 >
                   <div className="p-4 bg-red-500/10 border-b border-slate-200 dark:border-slate-800/60 flex items-center gap-3">
                     <AlertTriangle className="text-red-500 dark:text-red-400" size={18} />
                     <h2 className="font-bold text-slate-900 dark:text-slate-100">{cat.category}</h2>
                   </div>
                   <div className="p-2 flex-1">
-                    <table className="w-full text-left">
-                      <tbody className="divide-y divide-slate-800/40">
+                    <Table>
+                      <TableBody className="divide-y divide-slate-800/40">
                         {cat.items.map((item: any, iIdx: number) => (
-                          <tr
+                          <TableRow
                             key={iIdx}
-                            className="hover:bg-red-500/5 transition-colors"
+                            className="hover:bg-red-500/5"
                           >
-                            <td className="px-3 py-3">
+                            <TableCell className="px-3 py-3">
                               <div className="flex items-center gap-3">
                                 {item.icon && (
                                   <div className="w-8 h-8 rounded border border-slate-300 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-900 shrink-0 relative">
-                                    <Image unoptimized
+                                    <Image
                                       src={item.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"}
-                                      alt="Icon"
+                                      alt={item.descripcion}
                                       width={32}
                                       height={32}
                                       className="w-full h-full object-cover"
@@ -588,18 +604,18 @@ export default function RulesPage() {
                                   {item.descripcion}
                                 </span>
                               </div>
-                            </td>
-                            <td className="px-3 py-3 text-right">
+                            </TableCell>
+                            <TableCell className="px-3 py-3 text-right">
                               <span className="font-mono font-bold text-red-400">
                                 {item.valor}
                               </span>
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
                         ))}
-                      </tbody>
-                    </table>
+                      </TableBody>
+                    </Table>
                   </div>
-                </div>
+                </Card>
               ))}
             </div>
           )}

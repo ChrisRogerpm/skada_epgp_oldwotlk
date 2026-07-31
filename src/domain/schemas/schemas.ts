@@ -13,6 +13,7 @@ export const RaidLogEntrySchema = z.object({
 export const RaidEncounterPayloadSchema = z.object({
   name: z.string(),
   date: z.string(),
+  endtime: z.number(),
   Damage: z.array(RaidLogEntrySchema).optional(),
   Healing: z.array(RaidLogEntrySchema).optional(),
 });

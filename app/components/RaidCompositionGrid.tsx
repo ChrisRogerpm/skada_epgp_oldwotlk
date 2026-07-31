@@ -4,6 +4,8 @@ import Image from "next/image";
 import { RaidParticipant } from "../types/RaidComposition";
 import { CLASS_HEX, CLASS_ICONS, DEFAULT_ICONS } from "@/src/domain/constants/constants";
 import { useMemo } from "react";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface RaidCompositionGridProps {
   participants: RaidParticipant[];
@@ -37,9 +39,9 @@ export default function RaidCompositionGrid({ participants, viewMode }: RaidComp
           : "flex flex-col gap-4"
       }>
         {sortedGroupNumbers.map((groupNum) => (
-          <div 
-            key={groupNum} 
-            className={`group/group bg-white dark:bg-slate-900/30 rounded-xl border border-slate-200 dark:border-slate-800/50 overflow-hidden shadow-lg transition-all ${
+          <Card
+            key={groupNum}
+            className={`group/group gap-0 p-0 bg-white dark:bg-slate-900/30 rounded-xl border border-slate-200 dark:border-slate-800/50 overflow-hidden shadow-lg transition-all ${
               viewMode === "horizontal" ? "flex flex-col sm:flex-row items-stretch" : ""
             }`}
           >
@@ -81,11 +83,12 @@ export default function RaidCompositionGrid({ participants, viewMode }: RaidComp
                     />
 
                     <div className="relative w-5 h-5 shrink-0 overflow-hidden rounded shadow-sm border border-black/20">
-                      <Image unoptimized
+                      <Image
                         src={classIcon}
                         alt={player.player_class}
-                        layout="fill"
-                        objectFit="cover"
+                        fill
+                        sizes="20px"
+                        className="object-cover"
                       />
                     </div>
                     
@@ -98,18 +101,18 @@ export default function RaidCompositionGrid({ participants, viewMode }: RaidComp
                     
                     {/* Class badge on hover */}
                     <div className="ml-auto opacity-0 translate-x-2 group-hover/player:opacity-100 group-hover/player:translate-x-0 transition-all duration-300">
-                       <span 
-                         className="text-[8px] font-black px-1 py-0.5 rounded border border-current uppercase tracking-tighter"
+                       <Badge
+                         className="rounded border border-current bg-transparent text-[8px] tracking-tighter"
                          style={{ color: hex, backgroundColor: `${hex}1a` }}
                        >
                           {player.player_class.substring(0, 3)}
-                       </span>
+                       </Badge>
                     </div>
                   </div>
                 );
               })}
             </div>
-          </div>
+          </Card>
         ))}
       </div>
     </div>

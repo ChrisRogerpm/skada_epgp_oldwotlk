@@ -4,8 +4,7 @@ import { GetFullGearedCharactersUseCase } from "@/src/application/useCases/GetFu
 import { CreateFullGearedCharacterUseCase } from "@/src/application/useCases/CreateFullGearedCharacterUseCase";
 import { UpdateFullGearedCharacterUseCase } from "@/src/application/useCases/UpdateFullGearedCharacterUseCase";
 import { DeleteFullGearedCharacterUseCase } from "@/src/application/useCases/DeleteFullGearedCharacterUseCase";
-
-export const revalidate = 300;
+import { getOrSetCache } from "@/src/infrastructure/cache/cache";
 
 export async function GET(request: Request) {
   try {
@@ -13,11 +12,17 @@ export async function GET(request: Request) {
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "12");
     const search = searchParams.get("search") || "";
-    
-    const repository = new SupabaseFullGearedRepository();
-    const useCase = new GetFullGearedCharactersUseCase(repository);
 
-    const result = await useCase.execute(page, limit, search);
+    const cacheKey = `full_geared_${page}_${limit}_${search.toLowerCase()}`;
+    const result = await getOrSetCache(
+      cacheKey,
+      async () => {
+        const repository = new SupabaseFullGearedRepository();
+        const useCase = new GetFullGearedCharactersUseCase(repository);
+        return useCase.execute(page, limit, search);
+      },
+      30 * 1000,
+    );
 
     return NextResponse.json(result);
   } catch (error) {
