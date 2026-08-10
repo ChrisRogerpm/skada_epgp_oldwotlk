@@ -1,4 +1,5 @@
 import { IReglasRepository } from "@/src/domain/repositories/IReglasRepository";
+import { RAID_LABEL_TO_CODE } from "@/src/domain/entities/Reglas";
 
 export class GetReglasUseCase {
   constructor(private readonly repository: IReglasRepository) {}
@@ -13,6 +14,11 @@ export class GetReglasUseCase {
       const raidName = row.raid || "Otras Reglas";
       if (!lootMap[raidName]) lootMap[raidName] = { raid: raidName, items: [] };
       lootMap[raidName].items.push({
+        // id/idItem/raidCode: usados por el admin para editar/borrar la fila
+        // y vincular el ítem al catálogo real; el resto del formato no cambia.
+        id: row.id,
+        idItem: row.id_item ?? null,
+        raidCode: RAID_LABEL_TO_CODE[raidName] || null,
         category: row.categoria_item,
         item: row.nombre_item,
         requirement: Array.isArray(row.requisitos)
@@ -47,6 +53,7 @@ export class GetReglasUseCase {
         // Caso B: La fila es un ítem individual (Estructura plana)
         else if (row.descripcion) {
           categoriesMap[catName].items.push({
+            id: row.id,
             descripcion: row.descripcion,
             valor: row.valor,
             icon:
@@ -61,7 +68,7 @@ export class GetReglasUseCase {
 
     const beneficios = processPoints(pointsRows || [], "beneficio");
     const perjuicios = processPoints(pointsRows || [], "perjuicio");
-    
+
     return [
       { "Reglas de Loteo": Object.values(lootMap) },
       { Beneficios: beneficios },

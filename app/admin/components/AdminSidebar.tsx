@@ -5,7 +5,7 @@ import clsx from "clsx";
 import type { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 
-export type AdminSectionId = "skada" | "epgp" | "reglas" | "fullgeared" | "usuarios";
+export type AdminSectionId = "reglas" | "fullgeared" | "loot" | "usuarios";
 
 interface AdminSection {
   id: AdminSectionId;
