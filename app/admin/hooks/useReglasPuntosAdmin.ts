@@ -51,6 +51,7 @@ export function useReglasPuntosAdmin(tipo: PuntoTipo, search: string, onStatus: 
             descripcion: item.descripcion,
             valor: item.valor,
             icon: item.icon,
+            sortOrder: item.sortOrder ?? 0,
           });
         });
       });
@@ -76,7 +77,13 @@ export function useReglasPuntosAdmin(tipo: PuntoTipo, search: string, onStatus: 
       map.get(item.categoria)!.push(item);
     });
 
-    let entries = Array.from(map.entries()).map(([category, categoryItems]) => ({ category, items: categoryItems }));
+    let entries = Array.from(map.entries()).map(([category, categoryItems]) => ({
+      category,
+      // Se reordena acá (no solo al llegar del fetch) para que subir/bajar
+      // se refleje al toque: moveItem cambia el sortOrder en el estado pero
+      // no reordena el array `items` en sí.
+      items: [...categoryItems].sort((a, b) => a.sortOrder - b.sortOrder),
+    }));
     if (search) {
       const lower = search.toLowerCase();
       entries = entries
@@ -151,7 +158,14 @@ export function useReglasPuntosAdmin(tipo: PuntoTipo, search: string, onStatus: 
       setDraftCategories((prev) => prev.filter((c) => c !== category));
       setItems((prev) => [
         ...prev,
-        { id: result.id, categoria: category, descripcion: result.descripcion, valor: result.valor, icon: result.iconUrl },
+        {
+          id: result.id,
+          categoria: category,
+          descripcion: result.descripcion,
+          valor: result.valor,
+          icon: result.iconUrl,
+          sortOrder: result.sortOrder ?? 0,
+        },
       ]);
     } catch (error) {
       onStatus({ type: "error", message: error instanceof Error ? error.message : "Error al agregar el ítem" });
@@ -178,6 +192,59 @@ export function useReglasPuntosAdmin(tipo: PuntoTipo, search: string, onStatus: 
     }
   };
 
+  // Sube/baja un ítem intercambiando su sort_order con el vecino dentro de
+  // la misma categoría (el orden es global en la tabla, pero acá solo nos
+  // importa el orden relativo entre los ítems ya agrupados de esa categoría).
+  const persistOrder = async (item: PuntoUIItem) => {
+    try {
+      const res = await authedFetch("/api/reglas/puntos", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: item.id,
+          tipo,
+          categoria: item.categoria,
+          descripcion: item.descripcion,
+          valor: item.valor,
+          iconUrl: item.icon,
+          sortOrder: item.sortOrder,
+        }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || "Error al guardar el orden");
+    } catch (error) {
+      onStatus({ type: "error", message: error instanceof Error ? error.message : "Error al guardar el orden" });
+      fetchItems();
+    }
+  };
+
+  const moveItem = (id: string, direction: "up" | "down") => {
+    const current = items.find((i) => i.id === id);
+    if (!current) return;
+
+    const siblings = items
+      .filter((i) => i.categoria === current.categoria)
+      .sort((a, b) => a.sortOrder - b.sortOrder);
+    const index = siblings.findIndex((i) => i.id === id);
+    const neighborIndex = direction === "up" ? index - 1 : index + 1;
+    if (neighborIndex < 0 || neighborIndex >= siblings.length) return;
+
+    const neighbor = siblings[neighborIndex];
+    const swappedCurrent = { ...current, sortOrder: neighbor.sortOrder };
+    const swappedNeighbor = { ...neighbor, sortOrder: current.sortOrder };
+
+    setItems((prev) =>
+      prev.map((i) => {
+        if (i.id === swappedCurrent.id) return swappedCurrent;
+        if (i.id === swappedNeighbor.id) return swappedNeighbor;
+        return i;
+      }),
+    );
+
+    persistOrder(swappedCurrent);
+    persistOrder(swappedNeighbor);
+  };
+
   const removeItem = async (id: string) => {
     const previous = items;
     setItems((prev) => prev.filter((i) => i.id !== id));
@@ -200,6 +267,7 @@ export function useReglasPuntosAdmin(tipo: PuntoTipo, search: string, onStatus: 
     addItem,
     updateItemLocal,
     persistItem,
+    moveItem,
     removeItem,
   };
 }

@@ -96,7 +96,7 @@ export default function FullGearedSection({ search, onStatus }: FullGearedSectio
                       >
                         <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 border border-black/10 dark:border-white/10 overflow-hidden shrink-0">
                           {char.url_icono ? (
-                            <Image src={char.url_icono} alt={char.clase} width={32} height={32} className="w-full h-full object-cover" />
+                            <Image src={char.url_icono} alt={char.clase} width={32} height={32} unoptimized className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-slate-600 font-bold text-[10px]">
                               {char.nombre_alter[0]}
@@ -243,7 +243,7 @@ export default function FullGearedSection({ search, onStatus }: FullGearedSectio
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border border-black/10 dark:border-white/10 flex items-center justify-center overflow-hidden">
                             {CLASS_ICONS[char.class.toUpperCase()] ? (
-                              <Image src={CLASS_ICONS[char.class.toUpperCase()]} alt={char.class} width={40} height={40} className="w-full h-full object-cover" />
+                              <Image src={CLASS_ICONS[char.class.toUpperCase()]} alt={char.class} width={40} height={40} unoptimized className="w-full h-full object-cover" />
                             ) : (
                               <span className="text-xs font-black text-purple-400">{char.name[0]}</span>
                             )}

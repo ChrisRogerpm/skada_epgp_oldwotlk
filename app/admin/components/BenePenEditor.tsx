@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import clsx from "clsx";
-import { Plus, Trash2, TrendingDown, TrendingUp, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, Trash2, TrendingDown, TrendingUp, X } from "lucide-react";
 import { PuntoUIItem } from "@/app/types/Reglas";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,7 @@ interface BenePenEditorProps {
   onRemoveItem: (id: string) => void;
   onUpdateItemLocal: (id: string, field: "descripcion" | "icon" | "valor", value: string | number) => void;
   onPersistItem: (id: string) => void;
+  onMoveItem: (id: string, direction: "up" | "down") => void;
 }
 
 // Tailwind necesita ver las clases completas de forma literal en el código fuente
@@ -79,6 +80,7 @@ export default function BenePenEditor({
   onRemoveItem,
   onUpdateItemLocal,
   onPersistItem,
+  onMoveItem,
 }: BenePenEditorProps) {
   const theme = THEME[type];
   const Icon = theme.icon;
@@ -129,11 +131,11 @@ export default function BenePenEditor({
                 <TableRow className="bg-slate-50 dark:bg-slate-950/40">
                   <TableHead className="px-5 py-2.5 text-[9px] font-black text-slate-500 uppercase tracking-widest">Ítem</TableHead>
                   <TableHead className="px-3 py-2.5 text-[9px] font-black text-slate-500 uppercase tracking-widest text-right">Valor</TableHead>
-                  <TableHead className="px-3 py-2.5 w-9"></TableHead>
+                  <TableHead className="px-3 py-2.5 w-16"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody className="divide-y divide-white/5">
-                {cat.items.map((item) => (
+                {cat.items.map((item, index) => (
                   <TableRow key={item.id} className="group/item">
                     <TableCell className="px-5 py-2.5">
                       <div className="flex items-center gap-3">
@@ -152,6 +154,7 @@ export default function BenePenEditor({
                               alt={item.descripcion || theme.title}
                               width={36}
                               height={36}
+                              unoptimized
                               className="w-full h-full object-cover"
                             />
                           </button>
@@ -159,7 +162,7 @@ export default function BenePenEditor({
                           {openIconId === item.id && (
                             <div className="absolute z-50 top-full left-0 mt-2 w-60 bg-white dark:bg-slate-900 border border-black/10 dark:border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-4 space-y-3 animate-in fade-in slide-in-from-top-1">
                               <div className="relative w-16 h-16 mx-auto rounded-xl border border-black/10 dark:border-white/10 overflow-hidden bg-slate-50 dark:bg-slate-950">
-                                <Image src={item.icon || theme.fallbackIcon} alt="" fill sizes="64px" className="object-cover" />
+                                <Image src={item.icon || theme.fallbackIcon} alt="" fill unoptimized sizes="64px" className="object-cover" />
                               </div>
                               <div className="space-y-1.5">
                                 <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">URL del ícono</label>
@@ -210,14 +213,38 @@ export default function BenePenEditor({
                       />
                     </TableCell>
                     <TableCell className="px-3 py-2.5">
-                      <Button
-                        variant="ghost"
-                        size="icon-xs"
-                        onClick={() => onRemoveItem(item.id)}
-                        className="text-slate-500 opacity-0 group-hover/item:opacity-100 hover:text-red-400 active:scale-90"
-                      >
-                        <X size={14} />
-                      </Button>
+                      <div className="flex items-center gap-0.5 opacity-0 group-hover/item:opacity-100">
+                        <div className="flex flex-col">
+                          <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            disabled={index === 0}
+                            onClick={() => onMoveItem(item.id, "up")}
+                            title="Subir"
+                            className="h-4 text-slate-500 hover:text-slate-900 dark:hover:text-white disabled:opacity-20 active:scale-90"
+                          >
+                            <ChevronUp size={12} />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            disabled={index === cat.items.length - 1}
+                            onClick={() => onMoveItem(item.id, "down")}
+                            title="Bajar"
+                            className="h-4 text-slate-500 hover:text-slate-900 dark:hover:text-white disabled:opacity-20 active:scale-90"
+                          >
+                            <ChevronDown size={12} />
+                          </Button>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon-xs"
+                          onClick={() => onRemoveItem(item.id)}
+                          className="text-slate-500 hover:text-red-400 active:scale-90"
+                        >
+                          <X size={14} />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

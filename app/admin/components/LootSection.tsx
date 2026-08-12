@@ -104,7 +104,7 @@ export default function LootSection({ search, onStatus }: LootSectionProps) {
                       >
                         <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 border border-black/10 dark:border-white/10 overflow-hidden shrink-0">
                           {char.url_icono ? (
-                            <Image src={char.url_icono} alt={char.clase} width={32} height={32} className="w-full h-full object-cover" />
+                            <Image src={char.url_icono} alt={char.clase} width={32} height={32} unoptimized className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-slate-600 font-bold text-[10px]">
                               {char.nombre_alter[0]}
@@ -227,7 +227,7 @@ export default function LootSection({ search, onStatus }: LootSectionProps) {
                       <TableCell className="px-8 py-5">
                         <div className="flex items-center gap-3">
                           <div className="relative w-9 h-9 rounded-lg border border-purple-500/30 overflow-hidden shrink-0">
-                            {win.item_icon && <Image src={win.item_icon} alt={win.item_name} fill sizes="36px" className="object-cover" />}
+                            {win.item_icon && <Image src={win.item_icon} alt={win.item_name} fill unoptimized sizes="36px" className="object-cover" />}
                           </div>
                           <span className="text-sm font-bold text-slate-900 dark:text-white truncate max-w-[200px]">{win.item_name}</span>
                         </div>

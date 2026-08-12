@@ -69,4 +69,5 @@ export interface PuntoUIItem {
   descripcion: string;
   valor: number;
   icon: string;
+  sortOrder: number;
 }

@@ -82,7 +82,7 @@ export default function LootHistoryModal({ mainName, alters = [], isOpen, onClos
                 >
                   <div className="relative w-11 h-11 rounded-xl border border-purple-500/30 overflow-hidden shrink-0 shadow-lg">
                     {win.item_icon ? (
-                      <Image src={win.item_icon} alt={win.item_name} fill sizes="44px" className="object-cover" />
+                      <Image src={win.item_icon} alt={win.item_name} fill unoptimized sizes="44px" className="object-cover" />
                     ) : (
                       <div className="w-full h-full bg-slate-800" />
                     )}

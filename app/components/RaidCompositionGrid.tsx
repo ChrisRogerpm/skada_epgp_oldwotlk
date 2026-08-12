@@ -87,6 +87,7 @@ export default function RaidCompositionGrid({ participants, viewMode }: RaidComp
                         src={classIcon}
                         alt={player.player_class}
                         fill
+                        unoptimized
                         sizes="20px"
                         className="object-cover"
                       />

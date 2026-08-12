@@ -74,6 +74,7 @@ export default function ReglasSection({ search, onStatus }: ReglasSectionProps) 
           onRemoveItem={benefits.removeItem}
           onUpdateItemLocal={benefits.updateItemLocal}
           onPersistItem={benefits.persistItem}
+          onMoveItem={benefits.moveItem}
         />
       )}
 
@@ -88,6 +89,7 @@ export default function ReglasSection({ search, onStatus }: ReglasSectionProps) 
           onRemoveItem={penalties.removeItem}
           onUpdateItemLocal={penalties.updateItemLocal}
           onPersistItem={penalties.persistItem}
+          onMoveItem={penalties.moveItem}
         />
       )}
     </div>

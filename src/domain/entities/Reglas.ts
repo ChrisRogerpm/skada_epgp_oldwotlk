@@ -62,6 +62,8 @@ export interface ReglaPuntoInput {
   descripcion: string;
   valor: number;
   iconUrl: string;
+  /** Orden manual (subir/bajar en el admin). Si se omite al crear, el repositorio la agrega al final. */
+  sortOrder?: number;
 }
 
 export interface ReglaPuntoRecord extends ReglaPuntoInput {

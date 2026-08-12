@@ -59,6 +59,10 @@ export class GetReglasUseCase {
             icon:
               row.icon_url ||
               "https://wow.zamimg.com/images/wow/icons/large/inv_misc_coin_02.jpg",
+            // Orden manual (subir/bajar en el admin). El repo ya devuelve las
+            // filas ordenadas por sort_order, así que el array ya sale bien
+            // ordenado; esto solo lo expone para poder armar el swap al mover.
+            sortOrder: row.sort_order ?? 0,
           });
         }
       });

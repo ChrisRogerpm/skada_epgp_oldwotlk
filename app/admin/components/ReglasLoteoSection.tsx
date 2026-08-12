@@ -109,7 +109,7 @@ export default function ReglasLoteoSection({ search, onStatus }: ReglasLoteoSect
                   <TableCell className="px-8 py-4">
                     <div className="flex items-center gap-3">
                       <div className="relative w-10 h-10 rounded-xl border border-orange-500/30 overflow-hidden shrink-0 bg-slate-100 dark:bg-slate-800">
-                        <Image src={rule.icon} alt={rule.name} fill sizes="40px" className="object-cover" />
+                        {rule.icon && <Image src={rule.icon} alt={rule.name} fill unoptimized sizes="40px" className="object-cover" />}
                       </div>
                       <span className="text-sm font-bold text-slate-900 dark:text-white truncate max-w-[220px]">{rule.name}</span>
                     </div>

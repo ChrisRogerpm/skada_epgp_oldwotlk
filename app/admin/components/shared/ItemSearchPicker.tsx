@@ -77,7 +77,7 @@ export default function ItemSearchPicker({
         {selectedItems.length === 0 && fallbackLabel ? (
           <>
             <div className="relative w-8 h-8 rounded-lg border border-amber-500/30 overflow-hidden shrink-0">
-              {fallbackIcon && <Image src={fallbackIcon} alt={fallbackLabel} fill sizes="32px" className="object-cover" />}
+              {fallbackIcon && <Image src={fallbackIcon} alt={fallbackLabel} fill unoptimized sizes="32px" className="object-cover" />}
             </div>
             <span className="truncate">{fallbackLabel}</span>
             <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest shrink-0">sin vincular</span>
@@ -87,7 +87,7 @@ export default function ItemSearchPicker({
         ) : !multiple || selectedItems.length === 1 ? (
           <>
             <div className="relative w-8 h-8 rounded-lg border border-purple-500/30 overflow-hidden shrink-0">
-              <Image src={selectedItems[0].icon} alt={selectedItems[0].name} fill sizes="32px" className="object-cover" />
+              <Image src={selectedItems[0].icon} alt={selectedItems[0].name} fill unoptimized sizes="32px" className="object-cover" />
             </div>
             <span className="truncate">{selectedItems[0].name}</span>
           </>
@@ -127,7 +127,7 @@ export default function ItemSearchPicker({
                   )}
                 >
                   <div className="relative w-8 h-8 rounded-lg border border-purple-500/30 overflow-hidden shrink-0">
-                    <Image src={item.icon} alt={item.name} fill sizes="32px" className="object-cover" />
+                    <Image src={item.icon} alt={item.name} fill unoptimized sizes="32px" className="object-cover" />
                   </div>
                   <span className="text-xs font-bold text-slate-900 dark:text-white truncate flex-1">{item.name}</span>
                   {isSelected && <CheckCircle2 className="text-purple-400 shrink-0" size={16} />}
@@ -160,7 +160,7 @@ export default function ItemSearchPicker({
               className="flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-[10px] font-bold text-purple-400"
             >
               <div className="relative w-4.5 h-4.5 rounded overflow-hidden shrink-0">
-                <Image src={item.icon} alt={item.name} fill sizes="18px" className="object-cover" />
+                <Image src={item.icon} alt={item.name} fill unoptimized sizes="18px" className="object-cover" />
               </div>
               <span className="truncate max-w-[110px]">{item.name}</span>
               <button type="button" onClick={() => onToggle(item.id_item)} className="hover:text-red-400 shrink-0">

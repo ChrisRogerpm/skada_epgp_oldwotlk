@@ -34,6 +34,7 @@ function mapPuntoRecord(row: any): ReglaPuntoRecord {
     descripcion: row.descripcion,
     valor: row.valor,
     iconUrl: row.icon_url,
+    sortOrder: row.sort_order ?? 0,
     updatedAt: row.updated_at,
   };
 }
@@ -54,13 +55,27 @@ export class SupabaseReglasRepository implements IReglasRepository {
   }
 
   async getPuntos(): Promise<ReglaPuntoRow[]> {
-    const { data, error } = await supabase.from("reglas_puntos").select("*");
+    const { data, error } = await supabase.from("reglas_puntos").select("*").order("sort_order", { ascending: true });
 
     if (error) {
       console.error("Error Puntos:", error);
       throw error;
     }
     return data || [];
+  }
+
+  // Ítem nuevo → al final de la lista (orden global, con huecos de 10 para
+  // poder insertar entre dos filas más adelante sin renumerar todo).
+  private async nextPuntoSortOrder(): Promise<number> {
+    const { data, error } = await this.adminClient
+      .from("reglas_puntos")
+      .select("sort_order")
+      .order("sort_order", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) throw error;
+    return (data?.sort_order ?? 0) + 10;
   }
 
   async createLoteo(input: ReglaLoteoInput): Promise<ReglaLoteoRecord> {
@@ -111,6 +126,8 @@ export class SupabaseReglasRepository implements IReglasRepository {
   }
 
   async createPunto(input: ReglaPuntoInput): Promise<ReglaPuntoRecord> {
+    const sortOrder = input.sortOrder ?? (await this.nextPuntoSortOrder());
+
     const { data, error } = await this.adminClient
       .from("reglas_puntos")
       .insert([
@@ -120,6 +137,7 @@ export class SupabaseReglasRepository implements IReglasRepository {
           descripcion: input.descripcion,
           valor: input.valor,
           icon_url: input.iconUrl,
+          sort_order: sortOrder,
         },
       ])
       .select()
@@ -130,16 +148,21 @@ export class SupabaseReglasRepository implements IReglasRepository {
   }
 
   async updatePunto(id: string, input: ReglaPuntoInput): Promise<ReglaPuntoRecord> {
+    const payload: Record<string, unknown> = {
+      tipo: input.tipo,
+      categoria: input.categoria,
+      descripcion: input.descripcion,
+      valor: input.valor,
+      icon_url: input.iconUrl,
+      updated_at: new Date().toISOString(),
+    };
+    // sortOrder es opcional: los guardados normales de descripción/valor/ícono
+    // no la mandan, y no queremos pisarla con 0 por accidente.
+    if (input.sortOrder !== undefined) payload.sort_order = input.sortOrder;
+
     const { data, error } = await this.adminClient
       .from("reglas_puntos")
-      .update({
-        tipo: input.tipo,
-        categoria: input.categoria,
-        descripcion: input.descripcion,
-        valor: input.valor,
-        icon_url: input.iconUrl,
-        updated_at: new Date().toISOString(),
-      })
+      .update(payload)
       .eq("id", id)
       .select()
       .single();

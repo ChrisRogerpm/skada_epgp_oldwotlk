@@ -376,6 +376,7 @@ export default function EPGPPage() {
                                 alt={member.class}
                                 width={32}
                                 height={32}
+                                unoptimized
                                 className="object-cover w-full h-full"
                               />
                             </div>
@@ -414,6 +415,7 @@ export default function EPGPPage() {
                                 alt={alt.class}
                                 width={24}
                                 height={24}
+                                unoptimized
                                 className="object-cover w-full h-full"
                               />
                             </div><div className="flex flex-col min-w-0"><span className={`text-xs font-bold truncate ${getClassColor(alt.class)}`}>{alt.name}</span><span className="text-[9px] text-slate-500 font-semibold uppercase">{alt.class}</span></div></div>))}</div></TableCell>
@@ -459,7 +461,7 @@ export default function EPGPPage() {
                           <TableCell className="px-4 py-2.5">
                             <div className="flex items-center gap-2.5">
                               <div className="relative w-6 h-6 rounded border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 shrink-0 shadow-sm">
-                                {charInfo ? <Image src={charInfo.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"} alt={charInfo.class} width={24} height={24} className="object-cover w-full h-full" /> : <Users size={14} className="text-slate-500 p-1" />}
+                                {charInfo ? <Image src={charInfo.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"} alt={charInfo.class} width={24} height={24} unoptimized className="object-cover w-full h-full" /> : <Users size={14} className="text-slate-500 p-1" />}
                               </div>
                               <div className="flex items-center gap-2">
                                 <span className={`font-semibold text-sm ${charInfo ? getClassColor(charInfo.class) : 'text-blue-300'}`}>{log.personaje}</span>

@@ -14,7 +14,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { tipo, categoria, descripcion, valor, iconUrl } = body;
+    const { tipo, categoria, descripcion, valor, iconUrl, sortOrder } = body;
 
     const repository = new SupabaseReglasRepository();
     const useCase = new CreateReglaPuntoUseCase(repository);
@@ -24,6 +24,7 @@ export async function POST(request: Request) {
       descripcion: descripcion || "",
       valor: Number(valor) || 0,
       iconUrl: iconUrl || "",
+      sortOrder: sortOrder !== undefined ? Number(sortOrder) : undefined,
     });
 
     await invalidateCache("reglas");
@@ -40,7 +41,7 @@ export async function PUT(request: Request) {
 
   try {
     const body = await request.json();
-    const { id, tipo, categoria, descripcion, valor, iconUrl } = body;
+    const { id, tipo, categoria, descripcion, valor, iconUrl, sortOrder } = body;
 
     const repository = new SupabaseReglasRepository();
     const useCase = new UpdateReglaPuntoUseCase(repository);
@@ -50,6 +51,7 @@ export async function PUT(request: Request) {
       descripcion: descripcion || "",
       valor: Number(valor) || 0,
       iconUrl: iconUrl || "",
+      sortOrder: sortOrder !== undefined ? Number(sortOrder) : undefined,
     });
 
     await invalidateCache("reglas");

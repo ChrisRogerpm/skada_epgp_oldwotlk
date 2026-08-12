@@ -31,6 +31,7 @@ export default function LogRow({ log, metric = "Damage" }: LogRowProps) {
               src={log.Icon || DEFAULT_ICONS.UNKNOWN}
               alt={log.Character}
               fill
+              unoptimized
               sizes="28px"
               className="object-cover"
               onError={(e) => {

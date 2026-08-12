@@ -211,6 +211,7 @@ export default function RaidCard({ raid, viewMode, halionIndex }: RaidCardProps)
                       src={item.items.icon}
                       alt={item.items.name}
                       fill
+                      unoptimized
                       sizes="40px"
                       className="object-cover opacity-80 group-hover/item:opacity-100 transition-opacity"
                     />
@@ -227,6 +228,7 @@ export default function RaidCard({ raid, viewMode, halionIndex }: RaidCardProps)
                               }
                               alt={item.class}
                               fill
+                              unoptimized
                               sizes="18px"
                             />
                           </div>

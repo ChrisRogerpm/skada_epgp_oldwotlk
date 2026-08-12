@@ -227,7 +227,7 @@ export default function LootPage() {
                           )}
                         >
                           <div className="relative w-8 h-8 rounded-lg border border-purple-500/30 overflow-hidden shrink-0">
-                            <Image src={item.icon} alt={item.name} fill sizes="32px" className="object-cover" />
+                            <Image src={item.icon} alt={item.name} fill unoptimized sizes="32px" className="object-cover" />
                           </div>
                           <span className="text-xs font-bold text-slate-900 dark:text-white truncate flex-1">{item.name}</span>
                           {isSelected && <CheckCircle2 className="text-purple-400 shrink-0" size={16} />}
@@ -299,7 +299,7 @@ export default function LootPage() {
                           className="flex flex-col items-center gap-1 group/head"
                         >
                           <div className="relative w-8 h-8 rounded-lg border border-purple-500/30 overflow-hidden shrink-0 shadow group-hover/head:border-purple-500/70 transition-colors">
-                            <Image src={item.icon} alt={item.name} fill sizes="32px" className="object-cover" />
+                            <Image src={item.icon} alt={item.name} fill unoptimized sizes="32px" className="object-cover" />
                           </div>
                         </a>
                       </TableHead>
@@ -320,6 +320,7 @@ export default function LootPage() {
                                     src={CLASS_ICONS[classUpper] || DEFAULT_ICONS.UNKNOWN}
                                     alt={winner.class}
                                     fill
+                                    unoptimized
                                     sizes="28px"
                                     className="object-cover"
                                   />
@@ -391,6 +392,7 @@ export default function LootPage() {
                                     src={CLASS_ICONS[classUpper] || DEFAULT_ICONS.UNKNOWN}
                                     alt={member.class}
                                     fill
+                                    unoptimized
                                     sizes="28px"
                                     className="object-cover"
                                   />
@@ -437,6 +439,7 @@ export default function LootPage() {
                                           src={CLASS_ICONS[altClassUpper] || DEFAULT_ICONS.UNKNOWN}
                                           alt={alt.class}
                                           fill
+                                          unoptimized
                                           sizes="24px"
                                           className="object-cover"
                                         />
