@@ -1,30 +1,35 @@
 "use client";
 
 import { useState } from "react";
-import { FileText, Search, Settings, Shield, Trophy, UserCog, Users } from "lucide-react";
+import { Gem, Search, Settings, Shield, Trophy, UserCog } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useAdminAuth } from "./hooks/useAdminAuth";
 import AdminLoginScreen from "./components/AdminLoginScreen";
 import AdminSidebar, { AdminSectionId } from "./components/AdminSidebar";
 import AdminStatusToast from "./components/AdminStatusToast";
 import FullGearedSection from "./components/FullGearedSection";
+import LootSection from "./components/LootSection";
 import ReglasSection from "./components/ReglasSection";
 import UsersSection from "./components/UsersSection";
 import { AdminStatus } from "./types";
 
-const SECTIONS = [
+// La sección de Usuarios solo la ve este correo; el resto de admins ni la
+// ven en el sidebar ni pueden entrar a ella (los permisos reales de
+// escritura los sigue validando /api/admin/users con requireAdmin).
+const USERS_SECTION_EMAIL = "christianrogerpm@gmail.com";
+
+const BASE_SECTIONS = [
   { id: "reglas" as const, label: "Reglas & Loot", icon: Trophy, color: "text-orange-400" },
-  { id: "epgp" as const, label: "Sistema EPGP", icon: Users, color: "text-emerald-400" },
-  { id: "skada" as const, label: "Logs Skada", icon: FileText, color: "text-blue-400" },
   { id: "fullgeared" as const, label: "Full ICC/RS", icon: Shield, color: "text-purple-400" },
-  { id: "usuarios" as const, label: "Usuarios", icon: UserCog, color: "text-cyan-400" },
+  { id: "loot" as const, label: "Registro de Loot", icon: Gem, color: "text-purple-400" },
 ];
+
+const USERS_SECTION = { id: "usuarios" as const, label: "Usuarios", icon: UserCog, color: "text-cyan-400" };
 
 const SECTION_TITLES: Record<AdminSectionId, string> = {
   reglas: "Editor de Reglas",
-  epgp: "Configuración EPGP",
-  skada: "Gestión de Logs",
   fullgeared: "Full ICC & RS",
+  loot: "Registro de Loot",
   usuarios: "Gestión de Usuarios",
 };
 
@@ -45,6 +50,9 @@ export default function AdminPage() {
   const [activeSection, setActiveSection] = useState<AdminSectionId>("reglas");
   const [adminSearch, setAdminSearch] = useState("");
   const [status, setStatus] = useState<AdminStatus | null>(null);
+
+  const canSeeUsers = user?.email === USERS_SECTION_EMAIL;
+  const sections = canSeeUsers ? [...BASE_SECTIONS, USERS_SECTION] : BASE_SECTIONS;
 
   const handleSectionChange = (id: AdminSectionId) => {
     setActiveSection(id);
@@ -93,7 +101,7 @@ export default function AdminPage() {
 
       <div className="max-w-[1600px] mx-auto flex flex-col lg:flex-row min-h-screen relative">
         <AdminSidebar
-          sections={SECTIONS}
+          sections={sections}
           activeSection={activeSection}
           onSectionChange={handleSectionChange}
           user={user}
@@ -109,7 +117,7 @@ export default function AdminPage() {
                 <span className="px-2 py-0.5 rounded text-[9px] md:text-[10px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-widest">Live System</span>
                 <span className="text-slate-600">/</span>
                 <span className="text-slate-600 dark:text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-widest truncate max-w-[150px] md:max-w-none">
-                  {SECTIONS.find((s) => s.id === activeSection)?.label}
+                  {sections.find((s) => s.id === activeSection)?.label}
                 </span>
               </div>
               <h2 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">
@@ -136,13 +144,11 @@ export default function AdminPage() {
               <ReglasSection search={adminSearch} onStatus={setStatus} />
             ) : activeSection === "fullgeared" ? (
               <FullGearedSection search={adminSearch} onStatus={setStatus} />
-            ) : activeSection === "usuarios" ? (
+            ) : activeSection === "loot" ? (
+              <LootSection search={adminSearch} onStatus={setStatus} />
+            ) : activeSection === "usuarios" && canSeeUsers ? (
               <UsersSection search={adminSearch} onStatus={setStatus} />
-            ) : (
-              <div className="bg-white dark:bg-slate-900/40 rounded-[3rem] border border-white/5 p-24 text-center animate-in fade-in duration-1000 shadow-2xl backdrop-blur-3xl relative overflow-hidden group">
-                {/* ... existing development placeholder ... */}
-              </div>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

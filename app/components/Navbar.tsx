@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sword, BarChart2, ScrollText, Settings, UserX, Users, Shield, Menu, X, Download } from "lucide-react";
+import { Sword, BarChart2, ScrollText, Settings, UserX, Users, Shield, Menu, X, Download, Gem } from "lucide-react";
 import { useState, useEffect } from "react";
 import clsx from "clsx";
 import { ThemeToggle } from "./ThemeToggle";
@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: "/raids", label: "Raids", icon: Users },
   { href: "/epgp", label: "Epgp", icon: BarChart2 },
   { href: "/full_geared", label: "Full Gear", icon: Shield },
+  { href: "/loot", label: "Loot", icon: Gem },
   { href: "/reglas", label: "Reglas", icon: ScrollText },
   { href: "/lista_negra", label: "Lista Negra", icon: UserX },
   { href: "/descargas", label: "Descargas", icon: Download },

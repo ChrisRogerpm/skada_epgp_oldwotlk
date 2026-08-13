@@ -243,6 +243,7 @@ export default function FullGearedPage() {
                                   alt={char.class}
                                   width={56}
                                   height={56}
+                                  unoptimized
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
@@ -277,7 +278,7 @@ export default function FullGearedPage() {
                                 ? "bg-purple-500/10 border-purple-500/30 text-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.1)]" 
                                 : "bg-slate-50 dark:bg-slate-950/20 border-white/5 opacity-20 grayscale"
                             )}>
-                              <Image src={RAID_ICONS.ICC} alt="Icecrown Citadel Heroico completado" width={20} height={20} className="rounded mb-0.5" />
+                              <Image src={RAID_ICONS.ICC} alt="Icecrown Citadel Heroico completado" width={20} height={20} unoptimized className="rounded mb-0.5" />
                               <span className="text-[7px] font-black uppercase tracking-wider">ICC HEROIC</span>
                             </div>
                             <div className={clsx(
@@ -286,7 +287,7 @@ export default function FullGearedPage() {
                                 ? "bg-blue-500/10 border-blue-500/30 text-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.1)]" 
                                 : "bg-slate-50 dark:bg-slate-950/20 border-white/5 opacity-20 grayscale"
                             )}>
-                              <Image src={RAID_ICONS.RS} alt="Ruby Sanctum Heroico completado" width={20} height={20} className="rounded mb-0.5" />
+                              <Image src={RAID_ICONS.RS} alt="Ruby Sanctum Heroico completado" width={20} height={20} unoptimized className="rounded mb-0.5" />
                               <span className="text-[7px] font-black uppercase tracking-wider">RS HEROIC</span>
                             </div>
                           </div>
@@ -353,6 +354,7 @@ export default function FullGearedPage() {
                                 alt={char.class}
                                 width={36}
                                 height={36}
+                                unoptimized
                                 className="w-full h-full object-cover"
                               />
                             ) : (
@@ -385,6 +387,7 @@ export default function FullGearedPage() {
                                   alt="Icecrown Citadel Heroico completado"
                                   width={32}
                                   height={32}
+                                  unoptimized
                                 />
                               </div>
                             )}
@@ -398,6 +401,7 @@ export default function FullGearedPage() {
                                   alt="Ruby Sanctum Heroico completado"
                                   width={32}
                                   height={32}
+                                  unoptimized
                                 />
                               </div>
                             )}

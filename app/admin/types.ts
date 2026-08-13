@@ -32,3 +32,25 @@ export interface AdminUserListItem {
   role: "admin" | "user";
   created_at: string;
 }
+
+export interface LootItemOption {
+  id: number;
+  id_item: number;
+  name: string;
+  raid: string;
+  icon: string;
+}
+
+export interface LootWinForm {
+  id: number | null;
+  personaje: string;
+  class: string;
+  raid: string;
+  // Al registrar (id === null) admite varios ítems a la vez; al editar un
+  // registro existente queda forzado a un único elemento.
+  id_items: number[];
+  // Solo se rellena al editar un registro que ya tenía sesión (del sync);
+  // el formulario ya no ofrece elegirla, pero la preserva si existía.
+  id_raids: string;
+  note: string;
+}
