@@ -83,14 +83,19 @@ export default function CharacterHistoryModal({ mainName, alters = [], isOpen, o
     return acc;
   }, []);
 
-  // Volver a ordenar de más reciente a más antiguo para la lista
-  const displayHistory = [...chronologicalHistory].reverse();
+  // Volver a ordenar de más reciente a más antiguo para la lista.
+  // El histórico completo se conserva para el cálculo del gráfico de EP
+  // acumulado (needs the full series to start from the real baseline); la
+  // lista de eventos, en cambio, solo muestra los últimos 100 para no volverse
+  // interminable en personajes con meses de actividad.
+  const MAX_VISIBLE_EVENTS = 100;
+  const displayHistory = [...chronologicalHistory].reverse().slice(0, MAX_VISIBLE_EVENTS);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent
         showCloseButton={false}
-        className="w-full max-w-4xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] p-0 gap-0"
+        className="sm:max-w-4xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] p-0 gap-0"
       >
         {/* Header */}
         <DialogHeader className="p-6 md:p-8 border-b border-slate-200 dark:border-slate-800 flex-row items-center justify-between bg-white dark:bg-slate-900/50 space-y-0">
@@ -158,6 +163,11 @@ export default function CharacterHistoryModal({ mainName, alters = [], isOpen, o
                 <div className="flex items-center gap-2 px-2">
                   <History size={16} className="text-cyan-400" />
                   <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Bitácora Global de Eventos</span>
+                  {chronologicalHistory.length > MAX_VISIBLE_EVENTS && (
+                    <span className="text-[10px] font-bold text-slate-600 normal-case tracking-normal">
+                      (últimos {MAX_VISIBLE_EVENTS} de {chronologicalHistory.length})
+                    </span>
+                  )}
                 </div>
                 <div className="grid gap-3">
                   {displayHistory.map((log, idx) => (

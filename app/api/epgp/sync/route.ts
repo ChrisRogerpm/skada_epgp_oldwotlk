@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { supabase } from "@/src/infrastructure/config/supabase";
 import {
   EPGPLogEntry,
@@ -98,8 +98,12 @@ export async function POST(request: Request) {
       }
     }
 
-    // Trigger Raid Items sync asynchronously
-    syncRaidItemsTask().catch((e) => console.error(e));
+    // Trigger Raid Items sync after the response is sent.
+    // NOTE: a plain fire-and-forget call here gets killed by the serverless
+    // runtime as soon as the response is returned, before the async task
+    // (several sequential awaited Supabase calls) finishes. after() keeps
+    // the function alive until the callback settles.
+    after(() => syncRaidItemsTask().catch((e) => console.error(e)));
 
     return NextResponse.json({
       message: "Sync successful",

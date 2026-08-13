@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { supabase } from '@/src/infrastructure/config/supabase';
 import { syncRaidItemsTask } from '@/src/infrastructure/services/syncRaidItems';
 
@@ -98,7 +98,7 @@ export async function POST(request: Request) {
 
     if (toSync.length === 0) {
       // Still trigger RaidItems background sync just in case
-      syncRaidItemsTask().catch(e => console.error(e));
+      after(() => syncRaidItemsTask().catch(e => console.error(e)));
       return NextResponse.json({ message: 'All compositions are up to date', uploaded: 0 });
     }
 
@@ -170,8 +170,9 @@ export async function POST(request: Request) {
       uploadedCount++;
     }
 
-    // Trigger Raid Items sync asynchronously
-    syncRaidItemsTask().catch(e => console.error(e));
+    // Trigger Raid Items sync after the response is sent (see note in
+    // app/api/epgp/sync/route.ts for why after() is required here).
+    after(() => syncRaidItemsTask().catch(e => console.error(e)));
 
     return NextResponse.json({
       message: 'Composition sync successful',

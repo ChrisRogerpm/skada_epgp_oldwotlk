@@ -32,19 +32,40 @@ export class SupabaseEpgpRepository implements IEpgpRepository {
   }
 
   async getEpgpHistoryByNames(names: string[]): Promise<LogDetail[]> {
-    const { data, error } = await supabase
-      .from("epgp_logs")
-      .select("*")
-      .in("personaje", names)
-      .order("fecha", { ascending: false })
-      .order("hour", { ascending: false });
+    // NOTE: PostgREST caps unpaginated selects at 1000 rows (its default
+    // max-rows) instead of erroring. A character's combined history (main +
+    // alters) across months of raiding regularly exceeds that, so this must
+    // be paged with .range() or the oldest entries silently disappear,
+    // throwing off the accumulated EP chart and the events list.
+    const allLogs: LogDetail[] = [];
+    const pageSize = 1000;
+    for (let page = 0; ; page++) {
+      const from = page * pageSize;
+      const to = from + pageSize - 1;
+      const { data, error } = await supabase
+        .from("epgp_logs")
+        .select("*")
+        // `fecha` is stored as display text "DD/MM/YYYY", so ordering by it
+        // sorts lexicographically (day digit first) instead of
+        // chronologically — e.g. "31/05/2026" would rank above "12/08/2026"
+        // even though August is far more recent. `fecha_date` holds the same
+        // event date as a real ISO "YYYY-MM-DD" value, which sorts correctly.
+        .in("personaje", names)
+        .order("fecha_date", { ascending: false })
+        .order("hour", { ascending: false })
+        .range(from, to);
 
-    if (error) {
-      console.error("Supabase error (getEpgpHistoryByNames):", error);
-      throw new Error(`Error al obtener historial para los personajes: ${error.message}`);
+      if (error) {
+        console.error("Supabase error (getEpgpHistoryByNames):", error);
+        throw new Error(`Error al obtener historial para los personajes: ${error.message}`);
+      }
+      if (!data || data.length === 0) break;
+
+      allLogs.push(...(data as LogDetail[]));
+      if (data.length < pageSize) break;
     }
 
-    return data as LogDetail[];
+    return allLogs;
   }
 
   async searchCharacters(query: string): Promise<any[]> {

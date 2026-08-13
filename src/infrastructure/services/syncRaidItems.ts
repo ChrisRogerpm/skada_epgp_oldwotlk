@@ -1,9 +1,14 @@
-import { supabase } from '@/src/infrastructure/config/supabase';
+import { getSupabaseAdmin } from '@/src/infrastructure/config/supabaseAdmin';
 
 export async function syncRaidItemsTask() {
   console.log("🚀 Starting Background Sync: Raid Items...");
 
   try {
+    // Server-only trusted job (only reached from Bearer-authenticated sync
+    // routes). Uses the service_role client to bypass RLS — the anon client
+    // has no INSERT policy on raid_items and the insert was failing silently
+    // under fire-and-forget.
+    const supabase = getSupabaseAdmin();
     const LOOKBACK_DAYS = 7;
     const today = new Date();
     const dates = [];
@@ -64,12 +69,29 @@ export async function syncRaidItemsTask() {
 
     // Supabase has a limit on .in() array size. But unique characters could be hundreds.
     // It's safer to fetch logs by date and filter characters in memory if there are too many.
-    const { data: allLogs, error: logsErr } = await supabase
-      .from('epgp_logs')
-      .select('fecha, personaje, descripcion')
-      .in('fecha', formattedDates);
+    //
+    // NOTE: PostgREST caps unpaginated selects at 1000 rows (its default
+    // max-rows), silently truncating the rest instead of erroring. A 7-day
+    // window of epgp_logs regularly exceeds that (e.g. one busy raid night
+    // alone can be 700+ rows), so this must be paged with .range() or recent
+    // entries randomly get cut and their items never reach raid_items.
+    const allLogs: { fecha: string; personaje: string; descripcion: string }[] = [];
+    const logsPageSize = 1000;
+    for (let page = 0; ; page++) {
+      const from = page * logsPageSize;
+      const to = from + logsPageSize - 1;
+      const { data: logsPage, error: logsErr } = await supabase
+        .from('epgp_logs')
+        .select('fecha, personaje, descripcion')
+        .in('fecha', formattedDates)
+        .range(from, to);
 
-    if (logsErr) throw new Error(`Logs fetch error: ${logsErr.message}`);
+      if (logsErr) throw new Error(`Logs fetch error: ${logsErr.message}`);
+      if (!logsPage || logsPage.length === 0) break;
+
+      allLogs.push(...logsPage);
+      if (logsPage.length < logsPageSize) break;
+    }
 
     const validWinners: any[] = [];
     const processedKeys = new Set();
