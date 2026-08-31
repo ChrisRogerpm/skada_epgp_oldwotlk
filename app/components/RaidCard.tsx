@@ -7,7 +7,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 
-import { CLASS_HEX, CLASS_ICONS, DEFAULT_ICONS } from "@/src/domain/constants/constants";
+import { CLASS_HEX, CLASS_ICONS, DEFAULT_ICONS, resolveItemDisplayName, resolveWowheadItemId } from "@/src/domain/constants/constants";
 
 interface RaidCardProps {
   raid: RaidInfo;
@@ -200,12 +200,32 @@ export default function RaidCard({ raid, viewMode, halionIndex }: RaidCardProps)
             {raid.items.map((item) => {
               const classUpper = item.class?.toUpperCase() || "";
               const classColor = CLASS_HEX[classUpper] || "#ffffff";
+              const displayName = resolveItemDisplayName(
+                item.items.raid,
+                item.id_item,
+                item.class,
+                item.items.name,
+              );
+              const wowheadItemId = resolveWowheadItemId(
+                item.items.raid,
+                item.id_item,
+                item.class,
+              );
 
               return (
                 <div
                   key={item.id}
-                  className="group/item flex items-center gap-4 bg-white dark:bg-slate-900/60 backdrop-blur-xl rounded-xl pl-2 pr-5 py-2 border border-purple-500/20 hover:border-purple-500/50 hover:bg-slate-100 dark:bg-slate-800/80 transition-all duration-300 shadow-xl shadow-purple-500/5"
+                  className="group/item relative flex items-center gap-4 bg-white dark:bg-slate-900/60 backdrop-blur-xl rounded-xl pl-2 pr-5 py-2 border border-purple-500/20 hover:border-purple-500/50 hover:bg-slate-100 dark:bg-slate-800/80 transition-all duration-300 shadow-xl shadow-purple-500/5"
                 >
+                  {item.valor != null && (
+                    <span
+                      title={`EPGP pagado: ${Math.abs(item.valor)}`}
+                      className="absolute -top-2 -right-2 min-w-4.5 h-4.5 px-1 flex items-center justify-center rounded-full bg-amber-400 text-black text-[9px] font-black leading-none border border-amber-200/60 shadow-md shadow-black/30 z-10"
+                    >
+                      {Math.abs(item.valor)}
+                    </span>
+                  )}
+
                   <div className="relative w-10 h-10 rounded-lg border border-purple-500/30 overflow-hidden shadow-lg shrink-0">
                     <Image
                       src={item.items.icon}
@@ -242,12 +262,12 @@ export default function RaidCard({ raid, viewMode, halionIndex }: RaidCardProps)
                       </div>
                     )}
                     <a
-                      href={`https://wotlk.ultimowow.com/es/?item=${item.id_item}`}
+                      href={`https://wotlk.ultimowow.com/es/?item=${wowheadItemId}`}
                       target="_blank"
                       rel="noreferrer"
                       className="text-[14px] font-semibold hover:brightness-125 transition-all whitespace-nowrap icontinyl q4"
                     >
-                      {item.items.name}
+                      {displayName}
                     </a>
                   </div>
                 </div>

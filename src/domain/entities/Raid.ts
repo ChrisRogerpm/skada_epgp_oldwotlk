@@ -8,6 +8,7 @@ export interface RaidParticipant {
 export interface RaidItem {
   id: number;
   id_raids: number;
+  valor?: number | null;
   items?: any;
   [key: string]: any;
 }

@@ -75,14 +75,14 @@ export async function syncRaidItemsTask() {
     // window of epgp_logs regularly exceeds that (e.g. one busy raid night
     // alone can be 700+ rows), so this must be paged with .range() or recent
     // entries randomly get cut and their items never reach raid_items.
-    const allLogs: { fecha: string; personaje: string; descripcion: string }[] = [];
+    const allLogs: { fecha: string; personaje: string; descripcion: string; valor: number }[] = [];
     const logsPageSize = 1000;
     for (let page = 0; ; page++) {
       const from = page * logsPageSize;
       const to = from + logsPageSize - 1;
       const { data: logsPage, error: logsErr } = await supabase
         .from('epgp_logs')
-        .select('fecha, personaje, descripcion')
+        .select('fecha, personaje, descripcion, valor')
         .in('fecha', formattedDates)
         .range(from, to);
 
@@ -117,6 +117,7 @@ export async function syncRaidItemsTask() {
             id_raids: raid.id,
             personaje: log.personaje,
             class: participant ? participant.player_class : null,
+            valor: log.valor,
           });
         }
       }

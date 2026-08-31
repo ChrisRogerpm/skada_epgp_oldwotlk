@@ -43,7 +43,7 @@ export default function RootLayout({
             const aowow_control = { mode: 2, applyto: 3 };`}
         </Script>
         <Script
-          src="https://wotlk.ultimowow.com/static/widgets/power.js"
+          src="https://wotlk.ultimowow.com/static/widgets/power.js?lang=es"
           strategy="afterInteractive"
         />
       </head>

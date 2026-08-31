@@ -12,6 +12,7 @@ export interface RaidItem {
   id_raids: string;
   personaje: string | null;
   class: string | null;
+  valor: number | null;
   items: itemsDetail
 }
 
