@@ -3,16 +3,17 @@ import { SupabaseReglasRepository } from "@/src/infrastructure/repositories/Supa
 import { validateSyncRequest } from "@/src/infrastructure/utils/auth";
 import { toAddonRules } from "@/src/infrastructure/services/addonRules";
 
-// Reglas de puntos para el addon EPGP (ep_reasons.lua), consumidas por la app de
-// escritorio ScriptSkada. Usa el mismo token que los endpoints de sync, así el cliente
-// ya no necesita credenciales de Supabase embebidas.
+// Reglas para el addon EPGP (ep_reasons.lua), consumidas por la app de escritorio
+// ScriptSkada: reglas de puntos (beneficios/perjuicios) + ítems de loteo. Usa el mismo
+// token que los endpoints de sync, así el cliente no necesita credenciales de Supabase.
 export async function GET(request: Request) {
   const authError = validateSyncRequest(request);
   if (authError) return authError;
 
   try {
-    const rows = await new SupabaseReglasRepository().getPuntos();
-    return NextResponse.json(toAddonRules(rows));
+    const repository = new SupabaseReglasRepository();
+    const [puntos, loteo] = await Promise.all([repository.getPuntos(), repository.getLoteo()]);
+    return NextResponse.json(toAddonRules(puntos, loteo));
   } catch (error) {
     console.error("Error obteniendo reglas para el addon:", error);
     const message = error instanceof Error ? error.message : "Error de servidor";
