@@ -7,7 +7,7 @@ import { toAddonRules } from "@/src/infrastructure/services/addonRules";
 // ScriptSkada: reglas de puntos (beneficios/perjuicios) + ítems de loteo. Usa el mismo
 // token que los endpoints de sync, así el cliente no necesita credenciales de Supabase.
 export async function GET(request: Request) {
-  const authError = validateSyncRequest(request);
+  const authError = await validateSyncRequest(request, "rules:read");
   if (authError) return authError;
 
   try {

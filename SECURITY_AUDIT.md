@@ -2,16 +2,18 @@
 
 Diagnóstico de AppSec sobre el sistema completo (no solo el diff pendiente). Cada hallazgo crítico/alto se confirmó con una prueba de concepto real y reversible contra Supabase de producción (usuarios/filas descartables creados y borrados dentro del mismo script, con verificación final de que no quedó ningún residuo). Nada de esto se explotó de forma dañina — todas las pruebas fueron de solo-verificación con limpieza inmediata.
 
-**Estado general: nada de esto está corregido todavía.** Este archivo es el punto de partida para la próxima sesión.
+**Estado general:** los hallazgos #2 y #3 ya tienen corrección en código y
+migraciones preparadas; falta desplegarlas en el orden documentado en
+`SYNC_TOKENS.md`. Los demás puntos continúan pendientes.
 
 ---
 
 ## Checklist de remediación
 
 - [ ] #1 `profiles`: bloquear auto-escalación de rol (SQL, correr ya)
-- [ ] #2a Código: migrar escrituras de sync (skada/epgproster/raidcomposition/listanegra/epgp) de cliente anon a `getSupabaseAdmin()`
-- [ ] #2b SQL: activar RLS + policy de solo-lectura pública en las 8 tablas abiertas (**correr recién después de #2a**, si no se rompe el sync)
-- [ ] #3 Renombrar `NEXT_PUBLIC_SYNC_API_KEY` → `SYNC_API_KEY` (sin prefijo) y rotar el valor
+- [x] #2a Código: migrar escrituras de sync (skada/epgproster/raidcomposition/listanegra/epgp) de cliente anon a `getSupabaseAdmin()`
+- [x] #2b Migración preparada: activar RLS + policy de solo-lectura pública en las 8 tablas abiertas (**ejecutar después de desplegar #2a**)
+- [x] #3 Reemplazar `NEXT_PUBLIC_SYNC_API_KEY` por tokens individuales almacenados como hash
 - [ ] #4 `npm audit fix --force` / actualizar Next.js a 16.3.0+, correr build + smoke test
 - [ ] #5 Decidir y alinear el gate de la sección "Usuarios" (¿solo un email, o cualquier admin?) entre UI y `requireAdmin`
 
@@ -97,16 +99,13 @@ create policy "<tabla> is public read"
 
 ---
 
-## 🟠 ALTO #3 — Secret de sync nombrado como si fuera público
+## ✅ RESUELTO #3 — Tokens individuales para el sincronizador
 
-`NEXT_PUBLIC_SYNC_API_KEY` protege 5 endpoints de escritura, pero el prefijo `NEXT_PUBLIC_` le dice a Next.js "esto es seguro de mandar al navegador". Hoy no se filtra porque solo se referencia desde código server-only (`src/infrastructure/utils/auth.ts`, importado solo por route handlers) — pero es una trampa para el futuro: alcanza con que alguien importe ese archivo desde un componente cliente, o copie la variable a un componente para debug, para que quede expuesta en el bundle del navegador.
-
-**Solución:**
-```
-# .env
-SYNC_API_KEY=el_mismo_valor_actual   # sin el prefijo NEXT_PUBLIC_
-```
-y en `src/infrastructure/utils/auth.ts`: `process.env.NEXT_PUBLIC_SYNC_API_KEY` → `process.env.SYNC_API_KEY`. Recomendable rotar el valor al hacer el cambio (pudo haber quedado en algún build/deploy previo).
+La API ya no consulta `NEXT_PUBLIC_SYNC_API_KEY`. Los tokens individuales se
+validan por hash contra `sync_api_tokens`, con revocación, expiración, scopes y
+asignación opcional a un oficial. `SYNC_API_KEY` queda disponible únicamente
+como fallback privado durante la migración de las instalaciones existentes y
+debe eliminarse al terminarla. Ver `SYNC_TOKENS.md`.
 
 ---
 

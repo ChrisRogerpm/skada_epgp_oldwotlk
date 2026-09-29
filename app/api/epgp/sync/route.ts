@@ -1,9 +1,6 @@
 import { NextResponse, after } from "next/server";
-import { supabase } from "@/src/infrastructure/config/supabase";
-import {
-  EPGPLogEntry,
-  generateLogId,
-} from "@/src/infrastructure/services/epgpParser";
+import { getSupabaseAdmin } from "@/src/infrastructure/config/supabaseAdmin";
+import { EPGPLogEntry, generateLogId } from "@/src/infrastructure/services/epgpParser";
 import { syncRaidItemsTask } from "@/src/infrastructure/services/syncRaidItems";
 
 import { validateSyncRequest } from "@/src/infrastructure/utils/auth";
@@ -11,8 +8,9 @@ import { readSyncPayload } from "@/src/infrastructure/utils/syncBody";
 
 export async function POST(request: Request) {
   try {
-    const authError = validateSyncRequest(request);
+    const authError = await validateSyncRequest(request, "epgp:write");
     if (authError) return authError;
+    const supabase = getSupabaseAdmin();
 
     const entries = await readSyncPayload<EPGPLogEntry[]>(request);
     if (!entries) {
@@ -63,10 +61,7 @@ export async function POST(request: Request) {
 
     for (let i = 0; i < keysToCheck.length; i += fetchChunkSize) {
       const chunk = keysToCheck.slice(i, i + fetchChunkSize);
-      const { data, error } = await supabase
-        .from("epgp_logs")
-        .select("key")
-        .in("key", chunk);
+      const { data, error } = await supabase.from("epgp_logs").select("key").in("key", chunk);
 
       if (error) {
         throw new Error(`Database error: ${error.message}`);
@@ -111,9 +106,6 @@ export async function POST(request: Request) {
     });
   } catch (error: any) {
     console.error("EPGP Sync API Error:", error);
-    return NextResponse.json(
-      { error: error.message || "Internal Server Error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }

@@ -1,44 +1,49 @@
-import { NextResponse } from 'next/server';
-import { supabase } from '@/src/infrastructure/config/supabase';
-import { buildRosterRecords, RosterPrincipalPayload } from '@/src/infrastructure/services/epgpParser';
+import { NextResponse } from "next/server";
+import { getSupabaseAdmin } from "@/src/infrastructure/config/supabaseAdmin";
+import {
+  buildRosterRecords,
+  RosterPrincipalPayload,
+} from "@/src/infrastructure/services/epgpParser";
 
-import { validateSyncRequest } from '@/src/infrastructure/utils/auth';
-import { readSyncPayload } from '@/src/infrastructure/utils/syncBody';
+import { validateSyncRequest } from "@/src/infrastructure/utils/auth";
+import { readSyncPayload } from "@/src/infrastructure/utils/syncBody";
 
 export async function POST(request: Request) {
   try {
-    const authError = validateSyncRequest(request);
+    const authError = await validateSyncRequest(request, "roster:write");
     if (authError) return authError;
+    const supabase = getSupabaseAdmin();
 
     const payload = await readSyncPayload<RosterPrincipalPayload[]>(request);
     if (!payload) {
-      return NextResponse.json({ error: 'Empty payload' }, { status: 400 });
+      return NextResponse.json({ error: "Empty payload" }, { status: 400 });
     }
 
     const result = buildRosterRecords(payload);
 
     if (result.length === 0) {
-      return NextResponse.json({ message: 'No valid roster entries found in payload', uploaded: 0 });
+      return NextResponse.json({
+        message: "No valid roster entries found in payload",
+        uploaded: 0,
+      });
     }
 
     // 2. Identify stale members
-    const { data: existingData, error: fetchErr } = await supabase
-      .from('epgp')
-      .select('main');
+    const { data: existingData, error: fetchErr } = await supabase.from("epgp").select("main");
 
     if (fetchErr) throw new Error(`DB Fetch Error: ${fetchErr.message}`);
 
-    const existingMains = new Set((existingData || []).map(r => r.main));
+    const existingMains = new Set((existingData || []).map((r) => r.main));
     const newMains = new Set(result.map((entry: any) => entry.main));
 
-    const mainsToDelete = [...existingMains].filter(main => !newMains.has(main));
+    const mainsToDelete = [...existingMains].filter((main) => !newMains.has(main));
 
     // 3. Delete stale members
     if (mainsToDelete.length > 0) {
       const chunkSize = 500;
       for (let i = 0; i < mainsToDelete.length; i += chunkSize) {
         const chunk = mainsToDelete.slice(i, i + chunkSize);
-        const { error: deleteErr } = await supabase.from('epgp').delete().in('main', chunk);
+        const { error: deleteErr } = await supabase.from("epgp").delete().in("main", chunk);
         if (deleteErr) throw new Error(`Delete Error: ${deleteErr.message}`);
       }
     }
@@ -47,18 +52,19 @@ export async function POST(request: Request) {
     const chunkSize = 500;
     for (let i = 0; i < result.length; i += chunkSize) {
       const chunk = result.slice(i, i + chunkSize);
-      const { error: upsertErr } = await supabase.from('epgp').upsert(chunk, { onConflict: 'main' });
+      const { error: upsertErr } = await supabase
+        .from("epgp")
+        .upsert(chunk, { onConflict: "main" });
       if (upsertErr) throw new Error(`Upsert Error: ${upsertErr.message}`);
     }
 
     return NextResponse.json({
-      message: 'Roster sync successful',
+      message: "Roster sync successful",
       uploaded: result.length,
-      deleted: mainsToDelete.length
+      deleted: mainsToDelete.length,
     });
-
   } catch (error: any) {
-    console.error('EPGP Roster Sync API Error:', error);
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    console.error("EPGP Roster Sync API Error:", error);
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }

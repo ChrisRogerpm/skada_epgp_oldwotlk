@@ -1,18 +1,19 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/src/infrastructure/config/supabase";
+import { getSupabaseAdmin } from "@/src/infrastructure/config/supabaseAdmin";
 import {
   buildSkadaEncounterRecord,
   generateSkadaEncounterId,
   SkadaEncounterPayload,
 } from "@/src/infrastructure/services/skadaParser";
 
-import { validateSyncRequest } from '@/src/infrastructure/utils/auth';
-import { readSyncPayload } from '@/src/infrastructure/utils/syncBody';
+import { validateSyncRequest } from "@/src/infrastructure/utils/auth";
+import { readSyncPayload } from "@/src/infrastructure/utils/syncBody";
 
 export async function POST(request: Request) {
   try {
-    const authError = validateSyncRequest(request);
+    const authError = await validateSyncRequest(request, "skada:write");
     if (authError) return authError;
+    const supabase = getSupabaseAdmin();
 
     const payload = await readSyncPayload<SkadaEncounterPayload[]>(request);
     if (!payload) {
@@ -104,9 +105,6 @@ export async function POST(request: Request) {
     });
   } catch (error: any) {
     console.error("Skada Sync API Error:", error);
-    return NextResponse.json(
-      { error: error.message || "Internal Server Error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }

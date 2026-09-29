@@ -12,10 +12,10 @@ import { validateSyncRequest } from "@/src/infrastructure/utils/auth";
  * addon sync.
  *
  * Uses the same Bearer token as the other sync endpoints
- * (NEXT_PUBLIC_SYNC_API_KEY).
+ * (token individual almacenado como hash en sync_api_tokens).
  */
 export async function POST(request: Request) {
-  const authError = validateSyncRequest(request);
+  const authError = await validateSyncRequest(request, "raid-items:write");
   if (authError) return authError;
 
   try {
@@ -23,9 +23,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Raid items sync completed" });
   } catch (error: any) {
     console.error("Manual Raid Items Sync Error:", error);
-    return NextResponse.json(
-      { error: error.message || "Internal Server Error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }

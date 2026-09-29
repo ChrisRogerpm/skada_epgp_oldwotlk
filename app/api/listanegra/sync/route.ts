@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
-import crypto from 'crypto';
-import { supabase } from '@/src/infrastructure/config/supabase';
+import { NextResponse } from "next/server";
+import crypto from "crypto";
+import { getSupabaseAdmin } from "@/src/infrastructure/config/supabaseAdmin";
 
-import { validateSyncRequest } from '@/src/infrastructure/utils/auth';
-import { readSyncPayload } from '@/src/infrastructure/utils/syncBody';
+import { validateSyncRequest } from "@/src/infrastructure/utils/auth";
+import { readSyncPayload } from "@/src/infrastructure/utils/syncBody";
 
 interface IgnoreEntryPayload {
   name: string;
@@ -17,17 +17,18 @@ const generateIgnoreId = (playerName: string) => {
 
 export async function POST(request: Request) {
   try {
-    const authError = validateSyncRequest(request);
+    const authError = await validateSyncRequest(request, "blacklist:write");
     if (authError) return authError;
+    const supabase = getSupabaseAdmin();
 
-    const officerName = request.headers.get('x-officer-name');
+    const officerName = request.headers.get("x-officer-name");
     if (!officerName) {
-      return NextResponse.json({ error: 'Missing x-officer-name header' }, { status: 400 });
+      return NextResponse.json({ error: "Missing x-officer-name header" }, { status: 400 });
     }
 
     const entries = await readSyncPayload<IgnoreEntryPayload[]>(request);
     if (!entries) {
-      return NextResponse.json({ error: 'Empty payload' }, { status: 400 });
+      return NextResponse.json({ error: "Empty payload" }, { status: 400 });
     }
 
     const localEntriesMap = new Map();
@@ -39,22 +40,22 @@ export async function POST(request: Request) {
           key,
           nombre: entry.name,
           reason: entry.reason || "Sin motivo",
-          oficial: officerName
+          oficial: officerName,
         });
       }
     }
 
     // Fetch all existing records from Supabase
     const { data: allExistingData, error: fetchError } = await supabase
-      .from('lista_negra')
-      .select('key, oficial');
+      .from("lista_negra")
+      .select("key, oficial");
 
     if (fetchError) {
       throw new Error(`DB Fetch Error: ${fetchError.message}`);
     }
 
-    const existingKeysSet = new Set(allExistingData?.map(r => r.key) || []);
-    
+    const existingKeysSet = new Set(allExistingData?.map((r) => r.key) || []);
+
     // Find what to insert
     const toInsert = [];
     for (const [key, entry] of localEntriesMap) {
@@ -75,7 +76,7 @@ export async function POST(request: Request) {
 
     // Perform DB Operations
     if (toInsert.length > 0) {
-      const { error: insertError } = await supabase.from('lista_negra').insert(toInsert);
+      const { error: insertError } = await supabase.from("lista_negra").insert(toInsert);
       if (insertError) throw new Error(`Insert Error: ${insertError.message}`);
     }
 
@@ -84,19 +85,18 @@ export async function POST(request: Request) {
       const chunkSize = 500;
       for (let i = 0; i < toDeleteKeys.length; i += chunkSize) {
         const chunk = toDeleteKeys.slice(i, i + chunkSize);
-        const { error: deleteError } = await supabase.from('lista_negra').delete().in('key', chunk);
+        const { error: deleteError } = await supabase.from("lista_negra").delete().in("key", chunk);
         if (deleteError) throw new Error(`Delete Error: ${deleteError.message}`);
       }
     }
 
     return NextResponse.json({
-      message: 'Sync successful',
+      message: "Sync successful",
       inserted: toInsert.length,
-      deleted: toDeleteKeys.length
+      deleted: toDeleteKeys.length,
     });
-
   } catch (error: any) {
-    console.error('Lista Negra Sync API Error:', error);
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    console.error("Lista Negra Sync API Error:", error);
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }

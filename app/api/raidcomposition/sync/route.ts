@@ -1,14 +1,14 @@
-import { NextResponse, after } from 'next/server';
-import { supabase } from '@/src/infrastructure/config/supabase';
-import { syncRaidItemsTask } from '@/src/infrastructure/services/syncRaidItems';
+import { NextResponse, after } from "next/server";
+import { getSupabaseAdmin } from "@/src/infrastructure/config/supabaseAdmin";
+import { syncRaidItemsTask } from "@/src/infrastructure/services/syncRaidItems";
 
 const timeToSeconds = (timeStr: string) => {
   const [h, m, s] = timeStr.split(":").map(Number);
   return h * 3600 + m * 60 + (s || 0);
 };
 
-import { validateSyncRequest } from '@/src/infrastructure/utils/auth';
-import { readSyncPayload } from '@/src/infrastructure/utils/syncBody';
+import { validateSyncRequest } from "@/src/infrastructure/utils/auth";
+import { readSyncPayload } from "@/src/infrastructure/utils/syncBody";
 
 interface RaidActorPayload {
   name: string;
@@ -27,16 +27,17 @@ interface RaidCompositionEncounterPayload {
 
 export async function POST(request: Request) {
   try {
-    const authError = validateSyncRequest(request);
+    const authError = await validateSyncRequest(request, "raidcomposition:write");
     if (authError) return authError;
+    const supabase = getSupabaseAdmin();
 
     const allEncounters = await readSyncPayload<RaidCompositionEncounterPayload[]>(request);
     if (!allEncounters) {
-      return NextResponse.json({ error: 'Empty payload' }, { status: 400 });
+      return NextResponse.json({ error: "Empty payload" }, { status: 400 });
     }
 
     if (allEncounters.length === 0) {
-      return NextResponse.json({ message: 'No valid encounters found', uploaded: 0 });
+      return NextResponse.json({ message: "No valid encounters found", uploaded: 0 });
     }
 
     const uniqueEncountersMap = new Map();
@@ -45,15 +46,18 @@ export async function POST(request: Request) {
     for (const enc of allEncounters) {
       const key = `${enc.peruDate}|${enc.name}`;
       const existingSessions = uniqueEncountersMap.get(key) || [];
-      
+
       const sessionIdx = existingSessions.findIndex(
-        (s: any) => Math.abs(enc.endtime - s.endtime) < SESSION_GAP
+        (s: any) => Math.abs(enc.endtime - s.endtime) < SESSION_GAP,
       );
 
       if (sessionIdx !== -1) {
         if (enc.actors.length > existingSessions[sessionIdx].actors.length) {
           existingSessions[sessionIdx] = enc;
-        } else if (enc.endtime > existingSessions[sessionIdx].endtime && enc.actors.length === existingSessions[sessionIdx].actors.length) {
+        } else if (
+          enc.endtime > existingSessions[sessionIdx].endtime &&
+          enc.actors.length === existingSessions[sessionIdx].actors.length
+        ) {
           existingSessions[sessionIdx] = enc;
         }
       } else {
@@ -66,9 +70,9 @@ export async function POST(request: Request) {
 
     const uniqueDates = [...new Set(finalRaids.map((r: any) => r.peruDate))];
     const { data: existingRaids, error: raidsErr } = await supabase
-      .from('raids')
-      .select('id, raid_date, raid_time, boss_name')
-      .in('raid_date', uniqueDates);
+      .from("raids")
+      .select("id, raid_date, raid_time, boss_name")
+      .in("raid_date", uniqueDates);
 
     if (raidsErr) throw new Error(`Fetch raids error: ${raidsErr.message}`);
 
@@ -88,7 +92,7 @@ export async function POST(request: Request) {
       const isAlreadyRegistered = raidsInDate.some(
         (er: any) =>
           er.boss_name === raid.name &&
-          Math.abs(timeToSeconds(er.raid_time) - localSeconds) < FUZZY_WINDOW
+          Math.abs(timeToSeconds(er.raid_time) - localSeconds) < FUZZY_WINDOW,
       );
 
       if (!isAlreadyRegistered) {
@@ -98,8 +102,8 @@ export async function POST(request: Request) {
 
     if (toSync.length === 0) {
       // Still trigger RaidItems background sync just in case
-      after(() => syncRaidItemsTask().catch(e => console.error(e)));
-      return NextResponse.json({ message: 'All compositions are up to date', uploaded: 0 });
+      after(() => syncRaidItemsTask().catch((e) => console.error(e)));
+      return NextResponse.json({ message: "All compositions are up to date", uploaded: 0 });
     }
 
     let uploadedCount = 0;
@@ -109,13 +113,13 @@ export async function POST(request: Request) {
       // Recompute rounded format
       const d = new Date(roundedTs * 1000);
       d.setUTCHours(d.getUTCHours() - 5);
-      const roundedTime = `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}:${String(d.getUTCSeconds()).padStart(2, '0')}`;
+      const roundedTime = `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}:${String(d.getUTCSeconds()).padStart(2, "0")}`;
       const isoDate = raid.peruDate;
       const raidIdKey = `${isoDate}_${roundedTime.replace(/:/g, "-")}_${raid.name.replace(/\s+/g, "-")}`;
 
       // Upsert Raid
       const { data: raidUpsertData, error: upsertErr } = await supabase
-        .from('raids')
+        .from("raids")
         .upsert(
           {
             raid_id_key: raidIdKey,
@@ -124,9 +128,9 @@ export async function POST(request: Request) {
             boss_name: raid.name,
             raid_time_real: raid.endtimeReal,
           },
-          { onConflict: 'raid_id_key' }
+          { onConflict: "raid_id_key" },
         )
-        .select('id')
+        .select("id")
         .single();
 
       if (upsertErr) throw new Error(`Upsert error for ${raid.name}: ${upsertErr.message}`);
@@ -134,7 +138,7 @@ export async function POST(request: Request) {
       const raidUuid = raidUpsertData.id;
 
       // Group Assignment
-      const groupCounts: any = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0 };
+      const groupCounts: any = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0 };
       for (const actor of raid.actors) {
         if (actor.group !== -1) groupCounts[actor.group]++;
       }
@@ -163,24 +167,23 @@ export async function POST(request: Request) {
       const chunkSize = 500;
       for (let i = 0; i < participantsData.length; i += chunkSize) {
         const chunk = participantsData.slice(i, i + chunkSize);
-        const { error: partErr } = await supabase.from('raid_participants').insert(chunk);
+        const { error: partErr } = await supabase.from("raid_participants").insert(chunk);
         if (partErr) throw new Error(`Participants insert error: ${partErr.message}`);
       }
-      
+
       uploadedCount++;
     }
 
     // Trigger Raid Items sync after the response is sent (see note in
     // app/api/epgp/sync/route.ts for why after() is required here).
-    after(() => syncRaidItemsTask().catch(e => console.error(e)));
+    after(() => syncRaidItemsTask().catch((e) => console.error(e)));
 
     return NextResponse.json({
-      message: 'Composition sync successful',
-      uploaded: uploadedCount
+      message: "Composition sync successful",
+      uploaded: uploadedCount,
     });
-
   } catch (error: any) {
-    console.error('Raid Composition Sync API Error:', error);
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    console.error("Raid Composition Sync API Error:", error);
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }

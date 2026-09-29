@@ -9,6 +9,7 @@
     "lint": "eslint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "sync-token": "node --env-file=.env.local scripts/manage-sync-tokens.mjs",
     "test": "vitest run"
   },
   "dependencies": {
