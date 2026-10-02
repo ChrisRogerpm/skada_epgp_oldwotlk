@@ -11,6 +11,10 @@ import { validateSyncRequest } from "@/src/infrastructure/utils/auth";
  * uploaded but never got matched to raid_items) without waiting for the next
  * addon sync.
  *
+ * `?days=N` (1–365, por defecto 7) amplía la ventana: sirve para recalcular
+ * el histórico y limpiar los ítems que la versión anterior duplicaba en cada
+ * jefe de ICC. Solo toca filas con source = 'sync'.
+ *
  * Uses the same Bearer token as the other sync endpoints
  * (token individual almacenado como hash en sync_api_tokens).
  */
@@ -18,11 +22,15 @@ export async function POST(request: Request) {
   const authError = await validateSyncRequest(request, "raid-items:write");
   if (authError) return authError;
 
+  const { searchParams } = new URL(request.url);
+  const days = Math.min(365, Math.max(1, parseInt(searchParams.get("days") || "7", 10) || 7));
+
   try {
-    await syncRaidItemsTask();
-    return NextResponse.json({ message: "Raid items sync completed" });
-  } catch (error: any) {
+    const result = await syncRaidItemsTask({ lookbackDays: days });
+    return NextResponse.json({ message: "Raid items sync completed", days, ...result });
+  } catch (error) {
     console.error("Manual Raid Items Sync Error:", error);
-    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Internal Server Error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

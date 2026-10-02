@@ -1,6 +1,9 @@
 export interface AdminStatus {
   type: "success" | "error";
   message: string;
+  description?: string;
+  /** Acción opcional del aviso (p. ej. "Deshacer"). */
+  action?: { label: string; onClick: () => void };
 }
 
 export interface EpgpSearchResult {

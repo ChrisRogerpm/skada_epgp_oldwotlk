@@ -1,264 +1,419 @@
 "use client";
 
-import { useState, useRef, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Calendar, Users, Loader2, AlertCircle, Sparkles, LayoutGrid, StretchHorizontal, ChevronLeft, ChevronRight } from "lucide-react";
-import { RaidsByDateResponse } from "../types/RaidComposition";
-import RaidCard from "../components/RaidCard";
-import { format, addDays, subDays, getDay, parseISO, isSameDay } from "date-fns";
+import {
+  addDays,
+  addMonths,
+  endOfMonth,
+  endOfWeek,
+  format,
+  isSameMonth,
+  parseISO,
+  startOfMonth,
+  startOfWeek,
+} from "date-fns";
 import { es } from "date-fns/locale";
+import { CalendarX2, Check, ChevronLeft, ChevronRight, Copy, TriangleAlert } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Card, CardAction, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { ClassIcon } from "@/components/wow/class-icon";
+import { CharacterName } from "@/components/wow/character-name";
+import { ItemIcon, itemNameClass } from "@/components/wow/item-icon";
+import type { RaidParticipant, RaidsByDateResponse } from "../types/RaidComposition";
+import type { RaidOption } from "../types/Loot";
+import { BOSSES_TRANSLATIONS } from "../types/RaidLog";
+import { resolveItemDisplayName, resolveWowheadItemId } from "@/src/domain/constants/constants";
+import { cn } from "@/lib/utils";
+import { groupSessions, instanceBosses, sessionLabel } from "@/lib/raids";
+import { formatPoints, itemQuality, itemUrl, refreshWowheadLinks } from "@/lib/wow";
+
+const WEEKDAYS = ["L", "M", "X", "J", "V", "S", "D"];
 
 export default function RaidsPage() {
-  const now = new Date();
-  const todayDateStr = format(now, "yyyy-MM-dd");
+  const today = format(new Date(), "yyyy-MM-dd");
+  const [pickedDate, setPickedDate] = useState<string | null>(null);
+  const [pickedMonth, setPickedMonth] = useState<Date | null>(null);
+  const [sessionKey, setSessionKey] = useState<string | null>(null);
 
-  const [selectedDate, setSelectedDate] = useState(todayDateStr);
-  const [viewMode, setViewMode] = useState<"vertical" | "horizontal">("vertical");
-  const dateInputRef = useRef<HTMLInputElement>(null);
+  // Días con raid (para los puntos del calendario).
+  const { data: raidOptions = [], isFetched: optionsFetched } = useQuery<RaidOption[]>({
+    queryKey: ["raidOptions"],
+    queryFn: async () => {
+      const res = await fetch("/api/loot/raids?limit=1000");
+      if (!res.ok) throw new Error("Error al obtener las raids");
+      return res.json();
+    },
+  });
+  const raidDays = useMemo(() => new Set(raidOptions.map((r) => r.raid_date)), [raidOptions]);
+  // Sin elección del usuario se abre el último día con raid.
+  const latestRaidDay = useMemo(() => [...raidDays].sort().at(-1), [raidDays]);
+  const selectedDate = pickedDate ?? latestRaidDay ?? today;
+  const month = pickedMonth ?? startOfMonth(parseISO(selectedDate));
+  const setMonth = (fn: (m: Date) => Date) => setPickedMonth(fn(month));
 
-  // Calculate the start of the raid week based on selectedDate (most recent Wednesday relative to that date)
-  const raidWeekDays = useMemo(() => {
-    const targetDate = parseISO(selectedDate);
-    const dayOfWeek = getDay(targetDate); // 0 = Sun, 3 = Wed
-    let daysToSubtract = (dayOfWeek - 3 + 7) % 7;
-    const wednesday = subDays(targetDate, daysToSubtract);
-    
-    return Array.from({ length: 7 }).map((_, i) => {
-      const date = addDays(wednesday, i);
-      return {
-        date,
-        dateStr: format(date, "yyyy-MM-dd"),
-        dayName: format(date, "EEEE", { locale: es }),
-        shortName: format(date, "eee", { locale: es }),
-        dayNum: format(date, "dd"),
-      };
-    });
-  }, [selectedDate]);
-
-  const { data, isLoading, error } = useQuery<RaidsByDateResponse>({
+  const {
+    data,
+    isPending: isLoading,
+    error,
+  } = useQuery<RaidsByDateResponse>({
     queryKey: ["raids", selectedDate],
     queryFn: async () => {
-      const response = await fetch(`/api/raids?date=${selectedDate}`);
-      if (!response.ok) throw new Error("Error al obtener las raids");
-      return response.json();
+      const res = await fetch(`/api/raids?date=${selectedDate}`);
+      if (!res.ok) throw new Error("Error al obtener las raids");
+      return res.json();
     },
-    enabled: !!selectedDate,
+    enabled: pickedDate != null || optionsFetched,
   });
 
-  const openDatePicker = () => {
-    dateInputRef.current?.showPicker?.();
-    dateInputRef.current?.focus();
+  const sessions = useMemo(() => groupSessions(data?.raids ?? []), [data]);
+  const session = sessions.find((s) => s.key === sessionKey) ?? sessions[0];
+
+  const calendar: Date[] = [];
+  for (
+    let d = startOfWeek(startOfMonth(month), { weekStartsOn: 1 });
+    d <= endOfWeek(endOfMonth(month), { weekStartsOn: 1 });
+    d = addDays(d, 1)
+  ) {
+    calendar.push(d);
+  }
+
+  const pickDate = (iso: string) => {
+    setPickedDate(iso);
+    setSessionKey(null);
   };
 
-  const selectedDateObj = parseISO(selectedDate);
-  const formattedFullDate = format(selectedDateObj, "EEEE, d 'de' MMMM", { locale: es });
-
   return (
-    <main className="min-h-screen bg-white dark:bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-100 via-white to-white dark:from-slate-900 dark:via-slate-950 dark:to-black text-slate-800 dark:text-slate-200 p-4 md:p-8 lg:p-12 font-sans selection:bg-emerald-500/30 overflow-x-hidden">
-      <div className="max-w-7xl mx-auto space-y-12">
-        {/* Header */}
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-8 border-b border-slate-200 dark:border-slate-800/60 relative">
-          <div className="absolute -top-24 -left-24 w-96 h-96 bg-emerald-500/10 blur-[120px] rounded-full pointer-events-none" />
-          
-          <div className="relative">
-            <div className="flex items-center gap-4 mb-3">
-              <div className="p-3.5 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.1)] relative group">
-                <div className="absolute inset-0 bg-emerald-500/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                <Users className="text-emerald-400 relative z-10" size={32} />
-              </div>
-              <div>
-                <h1 className="text-4xl md:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-emerald-200 to-cyan-400 drop-shadow-2xl animate-in fade-in slide-in-from-left-4 duration-1000 font-display">
-                  Composición de Raids
-                </h1>
-                <div className="flex items-center gap-2 mt-1">
-                  <Sparkles size={14} className="text-emerald-500 animate-pulse" />
-                  <p className="text-slate-600 dark:text-slate-400 text-sm md:text-base font-bold tracking-wide uppercase opacity-80 font-display">
-                    Visualiza la formación de los grupos para cada encuentro.
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="mt-4 flex flex-col gap-2">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] font-display">Fecha Seleccionada</span>
-              <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200 capitalize font-display">
-                {formattedFullDate}
-              </h2>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-end gap-6 relative z-20">
-            {/* View Mode Toggle */}
-            <div className="flex flex-col space-y-3">
-               <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] font-display">
-                 Visualización
-               </label>
-               <div className="flex bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl p-1 backdrop-blur-md shadow-lg">
-                 <Button
-                   variant="ghost"
-                   aria-pressed={viewMode === "vertical"}
-                   onClick={() => setViewMode("vertical")}
-                   className={`h-auto gap-2 px-4 py-2 rounded-lg text-xs font-black tracking-widest uppercase font-display ${
-                     viewMode === "vertical"
-                       ? "bg-emerald-500/20 text-emerald-400 shadow-inner hover:bg-emerald-500/20 hover:text-emerald-400"
-                       : "text-slate-500 hover:text-slate-700 dark:text-slate-300"
-                   }`}
-                 >
-                   <LayoutGrid size={14} /> Grid
-                 </Button>
-                 <Button
-                   variant="ghost"
-                   aria-pressed={viewMode === "horizontal"}
-                   onClick={() => setViewMode("horizontal")}
-                   className={`h-auto gap-2 px-4 py-2 rounded-lg text-xs font-black tracking-widest uppercase font-display ${
-                     viewMode === "horizontal"
-                       ? "bg-emerald-500/20 text-emerald-400 shadow-inner hover:bg-emerald-500/20 hover:text-emerald-400"
-                       : "text-slate-500 hover:text-slate-700 dark:text-slate-300"
-                   }`}
-                 >
-                   <StretchHorizontal size={14} /> Filas
-                 </Button>
-               </div>
-            </div>
-
-            {/* Manual Date Picker */}
-            <div className="flex flex-col space-y-3">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2 font-display">
-                <Calendar size={12} className="text-emerald-500" /> Filtrar por fecha
-              </label>
-              <div
-                onClick={openDatePicker}
-                className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 hover:border-emerald-500/50 hover:bg-white dark:hover:bg-slate-900/80 transition-all backdrop-blur-md shadow-lg group flex items-center gap-3 cursor-pointer"
-              >
-                <Calendar size={16} className="text-emerald-400 pointer-events-none" />
-                <Input
-                  ref={dateInputRef}
-                  type="date"
-                  aria-label="Seleccionar fecha"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="h-auto bg-transparent border-none p-0 text-slate-800 dark:text-slate-100 font-bold shadow-none focus-visible:ring-0 outline-none w-32 cursor-pointer"
-                />
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* Weekly Quick Filter */}
-        <div className="relative z-10">
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black text-emerald-500/70 uppercase tracking-[0.4em] flex items-center gap-2">
-                <Sparkles size={12} /> Semana de Raid Actual
-              </span>
-              <span className="text-[10px] font-medium text-slate-500 uppercase tracking-widest">
-                Miércoles → Martes
-              </span>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-              {raidWeekDays.map((day) => {
-                const isActive = selectedDate === day.dateStr;
-                const isToday = todayDateStr === day.dateStr;
-                
-                return (
-                  <Button
-                    key={day.dateStr}
-                    variant="ghost"
-                    aria-pressed={isActive}
-                    onClick={() => setSelectedDate(day.dateStr)}
-                    className={`h-auto relative flex-col items-center gap-1 p-3 rounded-2xl border duration-300 group ${
-                      isActive
-                        ? "bg-emerald-500/10 border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.15)] scale-[1.02] hover:bg-emerald-500/10"
-                        : "bg-white dark:bg-slate-900/40 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800/60"
-                    }`}
-                  >
-                    {isToday && !isActive && (
-                      <div className="absolute top-2 right-2 w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                    )}
-                    <span className={`text-[10px] font-black uppercase tracking-widest transition-colors ${
-                      isActive ? "text-emerald-400" : "text-slate-500 group-hover:text-slate-600 dark:text-slate-400"
-                    }`}>
-                      {day.dayName}
-                    </span>
-                    <span className={`text-xl font-black transition-all ${
-                      isActive ? "text-slate-900 dark:text-white scale-110" : "text-slate-700 dark:text-slate-300"
-                    }`}>
-                      {day.dayNum}
-                    </span>
-                    <div className={`w-8 h-1 rounded-full mt-1 transition-all duration-500 ${
-                      isActive ? "bg-emerald-500 opacity-100" : "bg-white/5 opacity-0 group-hover:opacity-10"
-                    }`} />
-                  </Button>
-                );
-              })}
-            </div>
+    <div className="flex min-h-[calc(100svh-3.5rem)] flex-col pb-20 md:pb-0 lg:flex-row">
+      <aside
+        aria-label="Calendario de raids"
+        className="flex shrink-0 flex-col gap-4 border-b p-4 lg:w-72 lg:border-r lg:border-b-0"
+      >
+        <div className="flex items-center justify-between">
+          <span className="font-semibold capitalize">
+            {format(month, "MMMM yyyy", { locale: es })}
+          </span>
+          <div className="flex gap-1">
+            <Button
+              variant="outline"
+              size="icon-sm"
+              onClick={() => setMonth((m) => addMonths(m, -1))}
+              aria-label="Mes anterior"
+            >
+              <ChevronLeft />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              onClick={() => setMonth((m) => addMonths(m, 1))}
+              aria-label="Mes siguiente"
+            >
+              <ChevronRight />
+            </Button>
           </div>
         </div>
+        <div className="grid grid-cols-7 gap-0.5 text-center">
+          {WEEKDAYS.map((w) => (
+            <span key={w} className="py-1 text-[11px] text-muted-foreground">
+              {w}
+            </span>
+          ))}
+          {calendar.map((d) => {
+            const iso = format(d, "yyyy-MM-dd");
+            const selected = iso === selectedDate;
+            const hasRaid = raidDays.has(iso);
+            return (
+              <button
+                key={iso}
+                type="button"
+                onClick={() => pickDate(iso)}
+                aria-pressed={selected}
+                aria-label={
+                  format(d, "d 'de' MMMM", { locale: es }) + (hasRaid ? ", con raid" : "")
+                }
+                className={cn(
+                  "flex h-9 flex-col items-center justify-center gap-0.5 rounded-md font-mono text-xs tabular transition-colors",
+                  selected ? "bg-primary text-primary-foreground" : "hover:bg-muted",
+                  !selected && !isSameMonth(d, month) && "text-muted-foreground/50",
+                  !selected && isSameMonth(d, month) && !hasRaid && "text-muted-foreground",
+                  iso === today && !selected && "ring-1 ring-border",
+                )}
+              >
+                {format(d, "d")}
+                <span
+                  className={cn(
+                    "size-1 rounded-full",
+                    hasRaid
+                      ? selected
+                        ? "bg-primary-foreground"
+                        : "bg-primary"
+                      : "bg-transparent",
+                  )}
+                />
+              </button>
+            );
+          })}
+        </div>
 
-        {/* Content */}
-        <section className="relative">
-          {isLoading && (
-            <div className="flex flex-col items-center justify-center py-32 space-y-6">
-              <div className="relative">
-                <div className="absolute inset-0 bg-emerald-500/20 blur-2xl rounded-full animate-pulse" />
-                <Loader2 className="text-emerald-500 animate-spin relative" size={56} />
-              </div>
-              <p className="text-slate-600 dark:text-slate-400 font-black tracking-[0.2em] uppercase text-xs animate-pulse">Consultando el Códice de Batalla...</p>
-            </div>
-          )}
+        <div className="pt-1 text-xs font-medium text-muted-foreground">
+          Raids del {format(parseISO(selectedDate), "dd/MM")}
+        </div>
+        {isLoading ? (
+          <Skeleton className="h-16 w-full" />
+        ) : sessions.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Sin raids este día.</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {sessions.map((s) => {
+              const active = s.key === session?.key;
+              const players = Math.max(...s.encounters.map((e) => e.participants.length));
+              return (
+                <button
+                  key={s.key}
+                  type="button"
+                  onClick={() => setSessionKey(s.key)}
+                  aria-pressed={active}
+                  className={cn(
+                    "flex flex-col gap-0.5 rounded-lg border px-3 py-2.5 text-left transition-colors",
+                    active ? "border-primary/50 bg-primary/5" : "hover:bg-muted",
+                  )}
+                >
+                  <span className="flex items-center justify-between text-sm font-semibold">
+                    {sessionLabel(s, sessions)}
+                    <span className="text-xs font-normal text-muted-foreground">
+                      {s.encounters.reduce((n, e) => n + (e.items?.length ?? 0), 0)} ítems
+                    </span>
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {s.start} · {new Set(s.encounters.map((e) => e.boss_name)).size}/
+                    {instanceBosses(s.short).length || "?"} jefes · {players} jugadores
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </aside>
 
-          {error && (
-            <div className="bg-red-500/5 border border-red-500/20 rounded-3xl p-12 flex flex-col items-center text-center space-y-4 backdrop-blur-sm">
-              <div className="p-4 bg-red-500/10 rounded-full">
-                <AlertCircle className="text-red-400" size={40} />
-              </div>
-              <div>
-                <h2 className="text-xl font-black text-red-400 uppercase tracking-widest">Falla de Red en la Ciudadela</h2>
-                <p className="text-slate-500 mt-2 font-medium">Las señales mágicas están inestables. Inténtalo de nuevo.</p>
-              </div>
-            </div>
-          )}
-
-          {!isLoading && !error && data && data.raids.length === 0 && (
-            <div className="bg-white dark:bg-slate-900/20 border border-slate-200 dark:border-slate-800/40 rounded-3xl p-24 flex flex-col items-center text-center space-y-6 backdrop-blur-sm">
-              <div className="p-6 bg-slate-100 dark:bg-slate-800/40 rounded-full text-slate-600 border border-slate-300 dark:border-slate-700/50 shadow-inner">
-                <Calendar size={48} />
-              </div>
-              <div>
-                <h2 className="text-2xl font-black text-slate-800 dark:text-slate-200 tracking-tight">Sin Reportes de Combate</h2>
-                <p className="text-slate-500 mt-2 font-medium max-w-sm mx-auto">No hay registros para este día. Selecciona otra fecha en la semana de raid.</p>
-              </div>
-            </div>
-          )}
-
-          {!isLoading && !error && data && data.raids.length > 0 && (
-            <div className="space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-              {(() => {
-                let halionCount = 0;
-                return data.raids.map((raid) => {
-                  let currentHalionIndex = undefined;
-                  if (raid.boss_name.toLowerCase().includes("halion")) {
-                    halionCount++;
-                    currentHalionIndex = halionCount;
-                  }
-                  return (
-                    <RaidCard
-                      key={raid.id}
-                      raid={raid}
-                      viewMode={viewMode}
-                      halionIndex={currentHalionIndex}
-                    />
-                  );
-                });
-              })()}
-            </div>
-          )}
-        </section>
+      <div className="flex min-w-0 flex-1 flex-col gap-4 p-4 md:p-6 lg:p-8">
+        {isLoading ? (
+          <>
+            <Skeleton className="h-10 w-72" />
+            <Skeleton className="h-64 w-full" />
+          </>
+        ) : error ? (
+          <Empty className="border py-16">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <TriangleAlert />
+              </EmptyMedia>
+              <EmptyTitle>No se pudieron cargar las raids</EmptyTitle>
+              <EmptyDescription>Inténtalo de nuevo en unos segundos.</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        ) : !session ? (
+          <Empty className="border border-dashed py-16">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <CalendarX2 />
+              </EmptyMedia>
+              <EmptyTitle>Sin raids este día</EmptyTitle>
+              <EmptyDescription>
+                Elige en el calendario un día marcado con un punto.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        ) : (
+          <SessionView
+            key={session.key}
+            session={session}
+            label={sessionLabel(session, sessions)}
+            date={selectedDate}
+          />
+        )}
       </div>
-    </main>
+    </div>
   );
 }
 
+function SessionView({
+  session,
+  label,
+  date,
+}: {
+  session: ReturnType<typeof groupSessions>[number];
+  label: string;
+  date: string;
+}) {
+  // Composición: la del encuentro con más jugadores (la formación completa de la raid).
+  const main = [...session.encounters].sort(
+    (a, b) => b.participants.length - a.participants.length,
+  )[0];
+  const groups = useMemo(() => {
+    const map = new Map<number, RaidParticipant[]>();
+    main.participants.forEach((p) => {
+      if (!map.has(p.player_group)) map.set(p.player_group, []);
+      map.get(p.player_group)!.push(p);
+    });
+    return [...map.entries()].sort((a, b) => a[0] - b[0]);
+  }, [main]);
 
+  const killed = new Set(session.encounters.map((e) => e.boss_name));
+  const bosses = instanceBosses(session.short);
+  const loot = session.encounters.flatMap((e) =>
+    (e.items ?? []).map((it) => ({ ...it, boss: e.boss_name })),
+  );
+
+  useEffect(() => {
+    refreshWowheadLinks();
+  }, [session.key]);
+
+  const copyComposition = async () => {
+    const text = [
+      `${label} · ${date} ${session.start}`,
+      ...groups.map(
+        ([n, players]) => `Grupo ${n}: ${players.map((p) => p.player_name).join(", ")}`,
+      ),
+    ].join("\n");
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Composición copiada", {
+        description: `${main.participants.length} jugadores en ${groups.length} grupos`,
+      });
+    } catch {
+      toast.error("No se pudo copiar al portapapeles");
+    }
+  };
+
+  return (
+    <>
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {label} · {session.start}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {main.participants.length} jugadores · {killed.size}/{bosses.length || killed.size}{" "}
+            jefes · {loot.length} ítems
+          </p>
+        </div>
+        <Button variant="outline" onClick={copyComposition}>
+          <Copy /> Copiar composición
+        </Button>
+      </div>
+
+      {bosses.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {bosses.map((b) => (
+            <span
+              key={b}
+              className={cn(
+                "flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-xs",
+                killed.has(b) ? "text-foreground" : "text-muted-foreground opacity-60",
+              )}
+            >
+              {killed.has(b) && <Check className="size-3.5 text-positive" />}
+              {BOSSES_TRANSLATIONS[b] ?? b}
+            </span>
+          ))}
+        </div>
+      )}
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        {groups.map(([n, players]) => (
+          <section key={n} className="overflow-hidden rounded-xl border bg-card">
+            <div className="flex items-center justify-between border-b px-3 py-2.5 text-xs font-medium text-muted-foreground">
+              <span>Grupo {n}</span>
+              <span className="font-mono tabular">{players.length}/5</span>
+            </div>
+            <ul>
+              {players.map((p) => (
+                <li
+                  key={p.id}
+                  className="flex h-10 items-center gap-2 border-b px-3 last:border-b-0"
+                >
+                  <ClassIcon cls={p.player_class} size={24} />
+                  <CharacterName
+                    cls={p.player_class}
+                    className="truncate text-sm"
+                    title={p.player_name}
+                  >
+                    {p.player_name}
+                  </CharacterName>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
+
+      <Card className="gap-0 py-0">
+        <CardHeader className="border-b py-4">
+          <CardTitle>Botín de esta raid</CardTitle>
+          <CardDescription>Ordenado por jefe</CardDescription>
+          <CardAction className="text-sm text-muted-foreground">{loot.length} ítems</CardAction>
+        </CardHeader>
+        {loot.length === 0 ? (
+          <p className="p-6 text-sm text-muted-foreground">No se registró botín en esta raid.</p>
+        ) : (
+          <div className="grid gap-x-6 px-5 py-1 md:grid-cols-2">
+            {loot.map((item) => {
+              const q = itemQuality(item.id_item);
+              const name = resolveItemDisplayName(
+                item.items.raid,
+                item.id_item,
+                item.class,
+                item.items.name,
+              );
+              return (
+                <div key={item.id} className="flex h-12 items-center gap-2.5 border-b">
+                  <ItemIcon src={item.items.icon} name={name} quality={q} size={30} />
+                  <div className="min-w-0 flex-1 leading-tight">
+                    <a
+                      href={itemUrl(
+                        resolveWowheadItemId(item.items.raid, item.id_item, item.class),
+                      )}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={cn(
+                        "block truncate text-sm font-medium hover:underline",
+                        itemNameClass(q),
+                      )}
+                    >
+                      {name}
+                    </a>
+                    <span className="block truncate text-[11px] text-muted-foreground">
+                      {BOSSES_TRANSLATIONS[item.boss] ?? item.boss}
+                    </span>
+                  </div>
+                  {item.personaje ? (
+                    <CharacterName cls={item.class} className="shrink-0 text-sm">
+                      {item.personaje}
+                    </CharacterName>
+                  ) : (
+                    <span className="shrink-0 text-xs text-muted-foreground">Sin asignar</span>
+                  )}
+                  <span
+                    className="w-14 shrink-0 text-right font-mono text-xs text-muted-foreground tabular"
+                    title="Puntos pagados"
+                  >
+                    {item.valor != null ? `−${formatPoints(Math.abs(item.valor))}` : "—"}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Card>
+    </>
+  );
+}

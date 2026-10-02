@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmDialog } from "@/components/confirm-dialog";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/src/infrastructure/config/supabase";
 import { LootRuleUIItem, RaidCode, REGLAS_RAID_TABS } from "@/app/types/Reglas";
@@ -56,7 +57,8 @@ export function useReglasLoteoAdmin(search: string, onStatus: (status: AdminStat
       const res = await fetch("/api/reglas");
       if (!res.ok) throw new Error("Error al obtener reglas");
       const data = await res.json();
-      const lootSection = data.find((s: Record<string, unknown>) => s["Reglas de Loteo"])?.["Reglas de Loteo"] || [];
+      const lootSection =
+        data.find((s: Record<string, unknown>) => s["Reglas de Loteo"])?.["Reglas de Loteo"] || [];
 
       const flat: LootRuleUIItem[] = [];
       lootSection.forEach((raidGroup: any) => {
@@ -111,7 +113,9 @@ export function useReglasLoteoAdmin(search: string, onStatus: (status: AdminStat
     let list = rules.filter((r) => r.raidCode === activeRaid);
     if (search) {
       const lower = search.toLowerCase();
-      list = list.filter((r) => r.name.toLowerCase().includes(lower) || r.category.toLowerCase().includes(lower));
+      list = list.filter(
+        (r) => r.name.toLowerCase().includes(lower) || r.category.toLowerCase().includes(lower),
+      );
     }
     return list;
   }, [rules, activeRaid, search]);
@@ -181,14 +185,24 @@ export function useReglasLoteoAdmin(search: string, onStatus: (status: AdminStat
       closeDrawer();
       fetchRules();
     } catch (error) {
-      onStatus({ type: "error", message: error instanceof Error ? error.message : "Error al guardar" });
+      onStatus({
+        type: "error",
+        message: error instanceof Error ? error.message : "Error al guardar",
+      });
     } finally {
       setIsSaving(false);
     }
   };
 
   const deleteItem = async (id: string) => {
-    if (!confirm("¿Eliminar esta regla de loteo?")) return;
+    if (
+      !(await confirmDialog({
+        title: "¿Eliminar esta regla de loteo?",
+        confirmLabel: "Eliminar",
+        destructive: true,
+      }))
+    )
+      return;
     try {
       const res = await authedFetch(`/api/reglas/loteo?id=${id}`, { method: "DELETE" });
       const result = await res.json();
@@ -196,7 +210,10 @@ export function useReglasLoteoAdmin(search: string, onStatus: (status: AdminStat
       onStatus({ type: "success", message: "Regla eliminada" });
       fetchRules();
     } catch (error) {
-      onStatus({ type: "error", message: error instanceof Error ? error.message : "Error al eliminar" });
+      onStatus({
+        type: "error",
+        message: error instanceof Error ? error.message : "Error al eliminar",
+      });
     }
   };
 

@@ -1,17 +1,44 @@
 "use client";
 
-import Image from "next/image";
-import clsx from "clsx";
-import { Edit3, Gem, History, Loader2, Plus, Search, Swords, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { CircleAlert, CircleCheck, Gem, History, Loader2, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardAction,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { ItemIcon, itemNameClass } from "@/components/wow/item-icon";
+import { ClassIcon } from "@/components/wow/class-icon";
+import { CharacterName } from "@/components/wow/character-name";
 import { LOOT_RAID_TABS } from "@/app/types/Loot";
+import { BOSSES_TRANSLATIONS } from "@/app/types/RaidLog";
+import { useRoster } from "@/hooks/use-roster";
+import { cn } from "@/lib/utils";
+import { formatPoints, itemQuality } from "@/lib/wow";
 import { useLootAdmin } from "../hooks/useLootAdmin";
 import { AdminStatus } from "../types";
 import ItemSearchPicker from "./shared/ItemSearchPicker";
+import CharacterSearchInput from "./shared/CharacterSearchInput";
+import AdminPagination from "./shared/AdminPagination";
 
 interface LootSectionProps {
   search: string;
@@ -39,10 +66,37 @@ export default function LootSection({ search, onStatus }: LootSectionProps) {
     saveWin,
     deleteWin,
   } = useLootAdmin(search, onStatus);
+  const { memberByName } = useRoster();
+  const [sourceFilter, setSourceFilter] = useState<"all" | "sync" | "manual">("all");
+
+  // Mínimo de loteo de cada ítem (reglas), para avisar si el jugador alcanza.
+  const { data: rules } = useQuery<Record<string, unknown>[]>({
+    queryKey: ["reglas"],
+    queryFn: async () => {
+      const res = await fetch("/api/reglas");
+      if (!res.ok) throw new Error("Error al obtener las reglas");
+      return res.json();
+    },
+  });
+  const minByItem = useMemo(() => {
+    const map = new Map<number, number>();
+    const section = (rules ?? []).find((r) => r["Reglas de Loteo"])?.["Reglas de Loteo"] as
+      { items: { idItem?: number | null; valueMin: number }[] }[] | undefined;
+    section?.forEach((r) => r.items?.forEach((i) => i.idItem && map.set(i.idItem, i.valueMin)));
+    return map;
+  }, [rules]);
 
   // Editar un registro existente siempre es de un solo ítem (es una fila);
   // registrar uno nuevo admite elegir varios de una sola vez.
   const isMultiSelect = !winForm.id;
+  const member = winForm.personaje ? memberByName.get(winForm.personaje.toLowerCase()) : undefined;
+  const count = winForm.id_items.length;
+  const mins = winForm.id_items
+    .map((id) => minByItem.get(id))
+    .filter((v): v is number => v != null);
+  const requiredMin = mins.length ? Math.max(...mins) : null;
+  const visibleWins =
+    sourceFilter === "all" ? wins : wins.filter((w) => (w.source ?? "sync") === sourceFilter);
 
   const toggleItem = (id_item: number) => {
     if (!isMultiSelect) {
@@ -51,280 +105,267 @@ export default function LootSection({ search, onStatus }: LootSectionProps) {
     }
     setWinForm((prev) => ({
       ...prev,
-      id_items: prev.id_items.includes(id_item) ? prev.id_items.filter((id) => id !== id_item) : [...prev.id_items, id_item],
+      id_items: prev.id_items.includes(id_item)
+        ? prev.id_items.filter((id) => id !== id_item)
+        : [...prev.id_items, id_item],
     }));
   };
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-700">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* FORMULARIO DE REGISTRO */}
-        <div className="lg:col-span-1 space-y-6">
-          <Card className="gap-0 bg-white dark:bg-slate-900/60 rounded-[2.5rem] border border-black/10 dark:border-white/10 p-8 shadow-2xl backdrop-blur-xl">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-12 h-12 bg-purple-500/10 rounded-2xl border border-purple-500/20 flex items-center justify-center">
-                <Plus className="text-purple-400" size={24} />
-              </div>
-              <div>
-                <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
-                  {winForm.id ? "Editar Registro" : "Registrar Loot"}
-                </h3>
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Quién ganó qué ítem</p>
-              </div>
-            </div>
-
-            <form onSubmit={saveWin} className="space-y-6">
-              <div className="space-y-2 relative">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Personaje</label>
-                <div className="relative group">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-purple-400 transition-colors pointer-events-none z-10" size={18} />
-                  <Input
-                    type="text"
-                    value={winForm.personaje}
-                    placeholder="Nombre del main o alter..."
-                    onChange={(e) => {
-                      setWinForm({ ...winForm, personaje: e.target.value });
-                      searchCharacters(e.target.value);
-                    }}
-                    className="h-auto w-full bg-slate-50 dark:bg-slate-950/50 border-slate-200 dark:border-slate-800 rounded-2xl py-4 pl-12 pr-4 text-sm focus-visible:ring-purple-500/20 focus-visible:border-purple-500/40 placeholder:text-slate-700"
-                  />
-                  {isSearchingChar && (
-                    <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 animate-spin" size={16} />
-                  )}
-                </div>
-
-                {charSearchResults.length > 0 && (
-                  <div className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-900 border border-black/10 dark:border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.7)] overflow-hidden animate-in fade-in slide-in-from-top-1 max-h-[280px] overflow-y-auto">
-                    {charSearchResults.map((char, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => selectSearchResult(char)}
-                        className="w-full flex items-center gap-3 p-2.5 hover:bg-white/5 transition-colors border-b border-white/5 last:border-none text-left"
-                      >
-                        <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 border border-black/10 dark:border-white/10 overflow-hidden shrink-0">
-                          {char.url_icono ? (
-                            <Image src={char.url_icono} alt={char.clase} width={32} height={32} unoptimized className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-slate-600 font-bold text-[10px]">
-                              {char.nombre_alter[0]}
-                            </div>
-                          )}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs font-black text-slate-900 dark:text-white truncate">{char.nombre_alter}</p>
-                          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-tighter truncate">
-                            {char.main} • {char.clase}
-                          </p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Raid</label>
-                <div className="flex gap-2">
-                  {LOOT_RAID_TABS.map((tab) => (
-                    <Button
-                      key={tab.value}
-                      type="button"
-                      variant="ghost"
-                      aria-pressed={winForm.raid === tab.value}
-                      onClick={() => setWinForm({ ...winForm, raid: tab.value, id_items: [] })}
-                      className={clsx(
-                        "h-auto flex-1 gap-2 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest",
-                        winForm.raid === tab.value
-                          ? "bg-purple-500/10 text-purple-400 shadow-lg border border-purple-500/20 hover:bg-purple-500/10 hover:text-purple-400"
-                          : "text-slate-500 hover:text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800",
-                      )}
-                    >
-                      <Swords size={14} /> {tab.value}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
-                  {isMultiSelect ? "Ítems (podés elegir varios)" : "Ítem"}
-                </label>
-                <div className="mt-2">
-                  <ItemSearchPicker
-                    items={itemOptions}
-                    selectedIds={winForm.id_items}
-                    onToggle={toggleItem}
-                    multiple={isMultiSelect}
-                    triggerLabel={`Selecciona ${isMultiSelect ? "uno o más ítems" : "un ítem"} de ${winForm.raid}...`}
-                    emptyLabel={`Sin ítems para ${winForm.raid}`}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Nota (opcional)</label>
-                <textarea
-                  value={winForm.note}
-                  onChange={(e) => setWinForm({ ...winForm, note: e.target.value })}
-                  placeholder="Contexto adicional, ej. reporte del oficial, loot histórico, etc."
-                  rows={3}
-                  className="h-auto w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-2xl py-3 px-4 text-sm text-slate-900 dark:text-white focus:outline-none focus-visible:border-purple-500/50 resize-none"
-                />
-              </div>
-
-              <div className="flex gap-4 pt-4">
-                <Button
-                  type="submit"
-                  disabled={isSaving || !winForm.personaje || winForm.id_items.length === 0}
-                  className="h-auto flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-slate-900 dark:text-white font-black py-4 rounded-2xl shadow-xl shadow-purple-900/20 uppercase tracking-widest text-xs"
-                >
-                  {isSaving ? <Loader2 className="animate-spin mx-auto" size={20} /> : winForm.id ? "Actualizar" : "Registrar"}
-                </Button>
-
-                {winForm.id && (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={resetForm}
-                    className="h-auto px-6 bg-slate-100 dark:bg-slate-800 hover:bg-slate-700 text-slate-900 dark:text-white font-black rounded-2xl uppercase tracking-widest text-[10px]"
-                  >
-                    Cancelar
-                  </Button>
-                )}
-              </div>
-            </form>
-          </Card>
-        </div>
-
-        {/* LISTADO DE REGISTROS */}
-        <div className="lg:col-span-2 space-y-6">
-          <Card className="gap-0 p-0 bg-white dark:bg-slate-900/40 rounded-[2.5rem] border border-white/5 overflow-hidden shadow-2xl backdrop-blur-sm">
-            <div className="p-8 border-b border-white/5 flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Registros de Loot</h3>
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Sync automático + registros manuales</p>
-              </div>
-              <Badge className="rounded-full bg-white/5 text-slate-600 dark:text-slate-400 uppercase tracking-widest border border-black/10 dark:border-white/10">
-                {totalItems} Registros
-              </Badge>
-            </div>
-
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-slate-50 dark:bg-slate-950/40">
-                    <TableHead className="px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Ítem</TableHead>
-                    <TableHead className="px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Personaje</TableHead>
-                    <TableHead className="px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Raid</TableHead>
-                    <TableHead className="px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Origen</TableHead>
-                    <TableHead className="px-8 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody className="divide-y divide-white/5">
-                  {wins.map((win) => (
-                    <TableRow key={win.id} className="group">
-                      <TableCell className="px-8 py-5">
-                        <div className="flex items-center gap-3">
-                          <div className="relative w-9 h-9 rounded-lg border border-purple-500/30 overflow-hidden shrink-0">
-                            {win.item_icon && <Image src={win.item_icon} alt={win.item_name} fill unoptimized sizes="36px" className="object-cover" />}
-                          </div>
-                          <span className="text-sm font-bold text-slate-900 dark:text-white truncate max-w-[200px]">{win.item_name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="px-8 py-5">
-                        <span className="text-xs font-bold text-slate-600 dark:text-slate-400">{win.personaje}</span>
-                      </TableCell>
-                      <TableCell className="px-8 py-5">
-                        <div className="flex flex-col">
-                          <Badge className="w-fit rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 uppercase tracking-widest">
-                            {win.item_raid}
-                          </Badge>
-                          {win.id_raids ? (
-                            <span className="text-[10px] text-slate-500 mt-1">{win.boss_name} • {win.raid_date}</span>
-                          ) : (
-                            <span
-                              className="flex items-center gap-1 text-[10px] text-amber-500 mt-1 font-bold uppercase"
-                              title={win.note || "Sin sesión de raid registrada"}
-                            >
-                              <History size={10} /> Legacy{win.note ? ` • ${win.note}` : ""}
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="px-8 py-5">
-                        <Badge
-                          className={clsx(
-                            "rounded uppercase tracking-widest border",
-                            win.source === "manual"
-                              ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
-                              : "bg-slate-500/10 text-slate-400 border-slate-500/20",
-                          )}
-                        >
-                          {win.source === "manual" ? "Manual" : "Sync"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="px-8 py-5 text-right">
-                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button variant="ghost" size="icon-sm" onClick={() => editWin(win)} className="text-slate-500 hover:text-slate-900 dark:hover:text-white">
-                            <Edit3 size={16} />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => deleteWin(win.id)}
-                            className="text-slate-500 hover:text-red-400 hover:bg-red-500/10"
-                          >
-                            <Trash2 size={16} />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {wins.length === 0 && !isLoading && (
-                    <TableRow>
-                      <TableCell colSpan={5} className="px-8 py-20 text-center">
-                        <div className="flex flex-col items-center gap-3">
-                          <Gem className="text-slate-700" size={32} />
-                          <p className="text-slate-500 text-xs font-black uppercase tracking-widest">No hay registros de loot</p>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-
-            {totalPages > 1 && (
-              <div className="p-6 border-t border-white/5 flex items-center justify-between">
-                <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">
-                  Página {currentPage} de {totalPages}
+    <div className="grid items-start gap-4 lg:grid-cols-[400px_minmax(0,1fr)]">
+      <Card>
+        <CardHeader>
+          <CardTitle>{winForm.id ? "Editar registro" : "Registrar botín"}</CardTitle>
+          <CardDescription>
+            {winForm.id
+              ? "Corrige el ítem, el personaje o la nota."
+              : "Asigna uno o varios ítems a un jugador."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={saveWin} className="flex flex-col gap-5">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="loot-character">Jugador</Label>
+              <CharacterSearchInput
+                id="loot-character"
+                value={winForm.personaje}
+                valueClass={winForm.class}
+                results={charSearchResults}
+                loading={isSearchingChar}
+                onChange={(text) => {
+                  setWinForm({ ...winForm, personaje: text });
+                  searchCharacters(text);
+                }}
+                onSelect={selectSearchResult}
+              />
+              {member && (
+                <p className="text-xs text-muted-foreground">
+                  {member.main === winForm.personaje ? "Main" : `Alter de ${member.main}`} ·{" "}
+                  <span className="font-mono tabular">{formatPoints(member.amount)} pts</span>
                 </p>
-                <div className="flex gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className="bg-white/5 border border-black/10 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                  >
-                    ←
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                    className="bg-white/5 border border-black/10 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                  >
-                    →
-                  </Button>
-                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label>Raid</Label>
+              <Tabs
+                value={winForm.raid}
+                onValueChange={(v) => setWinForm({ ...winForm, raid: v, id_items: [] })}
+              >
+                <TabsList className="w-full">
+                  {LOOT_RAID_TABS.map((t) => (
+                    <TabsTrigger key={t.value} value={t.value} title={t.label} className="flex-1">
+                      {t.short}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="loot-items">{isMultiSelect ? "Ítems" : "Ítem"}</Label>
+              <ItemSearchPicker
+                id="loot-items"
+                items={itemOptions}
+                selectedIds={winForm.id_items}
+                onToggle={toggleItem}
+                multiple={isMultiSelect}
+                triggerLabel={isMultiSelect ? "Elige uno o más ítems…" : "Elige un ítem…"}
+                emptyLabel={`Sin ítems para ${winForm.raid}`}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="loot-note">
+                Nota <span className="font-normal text-muted-foreground">(opcional)</span>
+              </Label>
+              <Textarea
+                id="loot-note"
+                value={winForm.note}
+                onChange={(e) => setWinForm({ ...winForm, note: e.target.value })}
+                placeholder="Ej.: loot histórico, reporte del oficial…"
+                rows={3}
+              />
+            </div>
+
+            {member && count > 0 && (
+              <div
+                className={cn(
+                  "flex items-start gap-2.5 rounded-lg p-3 text-sm",
+                  requiredMin != null && member.amount < requiredMin
+                    ? "bg-negative/10"
+                    : "bg-muted",
+                )}
+              >
+                {requiredMin != null && member.amount < requiredMin ? (
+                  <CircleAlert className="mt-0.5 size-4 shrink-0 text-negative" />
+                ) : (
+                  <CircleCheck className="mt-0.5 size-4 shrink-0 text-positive" />
+                )}
+                <span>
+                  {member.main} tiene{" "}
+                  <b className="font-mono tabular">{formatPoints(member.amount)} pts</b>.{" "}
+                  {requiredMin == null
+                    ? "Los ítems elegidos no tienen mínimo en las reglas de loteo."
+                    : member.amount >= requiredMin
+                      ? `Alcanza el mínimo de loteo (${formatPoints(requiredMin)} pts).`
+                      : `No alcanza el mínimo de loteo (${formatPoints(requiredMin)} pts).`}
+                </span>
               </div>
             )}
-          </Card>
-        </div>
-      </div>
+
+            <div className="flex justify-end gap-2">
+              {(winForm.id || winForm.personaje || count > 0) && (
+                <Button type="button" variant="outline" onClick={resetForm}>
+                  Cancelar
+                </Button>
+              )}
+              <Button type="submit" disabled={isSaving || !winForm.personaje || count === 0}>
+                {isSaving && <Loader2 className="animate-spin" />}
+                {winForm.id
+                  ? "Guardar cambios"
+                  : count > 1
+                    ? `Registrar ${count} ítems`
+                    : "Registrar ítem"}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card className="gap-0 overflow-hidden py-0">
+        <CardHeader className="border-b py-4">
+          <CardTitle>Registros de botín</CardTitle>
+          <CardDescription>{totalItems} registros · sync automático y manuales</CardDescription>
+          <CardAction>
+            <ToggleGroup
+              type="single"
+              size="sm"
+              value={sourceFilter}
+              onValueChange={(v) => v && setSourceFilter(v as typeof sourceFilter)}
+              aria-label="Origen"
+              className="gap-1"
+            >
+              {(
+                [
+                  ["all", "Todos"],
+                  ["sync", "Sync"],
+                  ["manual", "Manual"],
+                ] as const
+              ).map(([v, l]) => (
+                <ToggleGroupItem
+                  key={v}
+                  value={v}
+                  className="h-7 rounded-full! border! px-3 text-xs data-[state=on]:bg-secondary"
+                >
+                  {l}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+          </CardAction>
+        </CardHeader>
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead>Ítem</TableHead>
+              <TableHead>Jugador</TableHead>
+              <TableHead className="hidden md:table-cell">Jefe · fecha</TableHead>
+              <TableHead>Origen</TableHead>
+              <TableHead className="w-20">
+                <span className="sr-only">Acciones</span>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody className={cn(isLoading && "opacity-60")}>
+            {visibleWins.map((win) => {
+              const q = itemQuality(win.id_item);
+              return (
+                <TableRow key={win.id} className={cn(winForm.id === win.id && "bg-primary/5")}>
+                  <TableCell>
+                    <div className="flex items-center gap-2.5">
+                      <ItemIcon src={win.item_icon} name={win.item_name} quality={q} size={30} />
+                      <span className={cn("max-w-56 truncate font-medium", itemNameClass(q))}>
+                        {win.item_name}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <ClassIcon cls={win.class} size={22} />
+                      <CharacterName cls={win.class}>{win.personaje}</CharacterName>
+                    </div>
+                  </TableCell>
+                  <TableCell className="hidden text-xs text-muted-foreground md:table-cell">
+                    {win.id_raids ? (
+                      <>
+                        <div className="text-foreground">
+                          {BOSSES_TRANSLATIONS[win.boss_name] ?? win.boss_name}
+                        </div>
+                        {win.item_raid} · {win.raid_date}
+                      </>
+                    ) : (
+                      <span
+                        className="flex items-center gap-1 text-amber-600 dark:text-amber-400"
+                        title={win.note || "Sin sesión de raid registrada"}
+                      >
+                        <History className="size-3" /> Histórico{win.note ? ` · ${win.note}` : ""}
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className={
+                        win.source === "manual"
+                          ? "border-amber-500/40 text-amber-600 dark:text-amber-400"
+                          : "text-muted-foreground"
+                      }
+                    >
+                      {win.source === "manual" ? "Manual" : "Sync"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-end gap-0.5">
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => editWin(win)}
+                        aria-label="Editar registro"
+                      >
+                        <Pencil />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        onClick={() => deleteWin(win.id)}
+                        aria-label="Eliminar registro"
+                        className="text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+            {visibleWins.length === 0 && !isLoading && (
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={5}>
+                  <Empty className="py-12">
+                    <EmptyHeader>
+                      <EmptyMedia variant="icon">
+                        <Gem />
+                      </EmptyMedia>
+                      <EmptyTitle>No hay registros de botín</EmptyTitle>
+                    </EmptyHeader>
+                  </Empty>
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+        <AdminPagination page={currentPage} totalPages={totalPages} onChange={setCurrentPage} />
+      </Card>
     </div>
   );
 }

@@ -1,522 +1,705 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
-import Image from "next/image";
-import {
-  BarChart2, Users, Search, ChevronDown, ChevronUp, Calendar, Clock,
-  History, LayoutList, TrendingUp, TrendingDown, Loader2, Grid, List,
-  Maximize2, Minimize2, Star, Filter, CalendarDays, X
-} from "lucide-react";
+import { Fragment, Suspense, useCallback, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useQueries, useQuery } from "@tanstack/react-query";
+import { addDays, format, parseISO } from "date-fns";
+import { ChevronDown, ChevronRight, History, Search, Star, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Table,
-  TableHeader,
   TableBody,
-  TableRow,
-  TableHead,
   TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { PageBody, PageHeader } from "@/components/page-header";
+import { ClientOnly } from "@/components/client-only";
+import { ClassIcon } from "@/components/wow/class-icon";
+import { CharacterName } from "@/components/wow/character-name";
+import { CharacterHistorySheet } from "@/components/epgp/character-history-sheet";
+import { EpgpCompare } from "@/components/epgp/epgp-compare";
+import { ItemDescription } from "@/components/epgp/item-description";
+import { useRoster, type RosterMember } from "@/hooks/use-roster";
+import { useMyCharacter } from "@/hooks/use-my-character";
+import { useNow } from "@/hooks/use-now";
+import { cn } from "@/lib/utils";
+import { EpgpMovement, movementTime, relativeMovementLabel } from "@/lib/epgp";
+import {
+  WOW_CLASSES,
+  dmyToIso,
+  formatPoints,
+  formatSigned,
+  getClassMeta,
+  isoToDmy,
+  limaIsoDate,
+  normalizeClass,
+} from "@/lib/wow";
 
-// Helpers para manejo de fechas
-const getLimaISODate = () => {
-  const now = new Date();
-  const options: Intl.DateTimeFormatOptions = { timeZone: "America/Lima", year: 'numeric', month: '2-digit', day: '2-digit' };
-  const parts = new Intl.DateTimeFormat('en-US', options).formatToParts(now);
-  const find = (type: string) => parts.find(p => p.type === type)?.value;
-  return `${find('year')}-${find('month')}-${find('day')}`;
-};
+type Tab = "roster" | "historial" | "comparar";
+const WEEK = 7;
 
-const isoToLogDate = (iso: string) => {
-  if (!iso) return "";
-  const [y, m, d] = iso.split('-');
-  return `${d}/${m}/${y}`;
-};
-
-const logToIsoDate = (log: string) => {
-  if (!log) return "";
-  const [d, m, y] = log.split('/');
-  return `${y}-${m}-${d}`;
-};
-
-// Interfaces
-interface Alter { name: string; class: string; icon: string; }
-interface RosterMember { main: string; class: string; amount: number; icon: string; alters: Alter[]; }
-interface LogDetail { personaje: string; descripcion: string; valor: number; "EP/GP": string; fecha: string; hour: string; }
-
-const WOW_CLASSES = ["DEATHKNIGHT", "DRUID", "HUNTER", "MAGE", "PALADIN", "PRIEST", "ROGUE", "SHAMAN", "WARLOCK", "WARRIOR"];
-
-import CharacterHistoryModal from "../components/CharacterHistoryModal";
-
-export default function EPGPPage() {
-  const [activeTab, setActiveTab] = useState<"roster" | "history">("roster");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-  
-  // Modal state
-  const [selectedMember, setSelectedMember] = useState<RosterMember | null>(null);
-  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
-
-  const openHistory = (member: RosterMember) => {
-    setSelectedMember(member);
-    setIsHistoryModalOpen(true);
+function logsQuery(dmy: string) {
+  return {
+    queryKey: ["epgpLogs", dmy || "all"],
+    queryFn: async (): Promise<EpgpMovement[]> => {
+      const res = await fetch(`/api/detalleepgp?fecha=${encodeURIComponent(dmy || "all")}`);
+      if (!res.ok) throw new Error("Error al obtener el historial");
+      return res.json();
+    },
   };
-  
-  const [roster, setRoster] = useState<RosterMember[]>([]);
-  const [historyLogs, setHistoryLogs] = useState<LogDetail[]>([]);
-  const [lastUpdatedDate, setLastUpdatedDate] = useState("");
-  const [lastUpdatedHour, setLastUpdatedHour] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+}
 
-  // Timezone & Filtering states
-  const [selectedDate, setSelectedDate] = useState<string>(isoToLogDate(getLimaISODate()));
-  const [sortConfig, setSortConfig] = useState<{ key: 'main' | 'class' | 'amount', direction: 'asc' | 'desc' }>({ key: 'amount', direction: 'desc' });
-  const [historySortConfig, setHistorySortConfig] = useState<{ key: 'fecha' | 'valor', direction: 'asc' | 'desc' }>({ key: 'fecha', direction: 'desc' });
-  const [selectedClasses, setSelectedClasses] = useState<Set<string>>(new Set());
-  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
-  const [myCharacter, setMyCharacter] = useState<string>("");
-  const [showFilters, setShowFilters] = useState(false);
+export default function EpgpPage() {
+  return (
+    <Suspense>
+      <ClientOnly>
+        <EpgpView />
+      </ClientOnly>
+    </Suspense>
+  );
+}
 
-  // Helper functions for UI
-  const getClassColor = (className: string) => {
-    const colors: Record<string, string> = {
-      DEATHKNIGHT: "text-red-600 dark:text-red-500", 
-      DRUID: "text-orange-600 dark:text-orange-400", 
-      HUNTER: "text-green-600 dark:text-green-500",
-      MAGE: "text-cyan-600 dark:text-cyan-300", 
-      PALADIN: "text-pink-600 dark:text-pink-300", 
-      PRIEST: "text-slate-900 dark:text-white",
-      ROGUE: "text-amber-600 dark:text-yellow-200", 
-      SHAMAN: "text-blue-600 dark:text-blue-500", 
-      WARLOCK: "text-purple-600 dark:text-purple-500",
-      WARRIOR: "text-amber-800 dark:text-amber-700",
-    };
-    return colors[className.toUpperCase()] || "text-slate-800 dark:text-slate-200";
-  };
+function EpgpView() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const { roster, ranked, rankOf, memberByName, characterInfo, maxPoints, isLoading } = useRoster();
+  const { myCharacter, toggleMyCharacter } = useMyCharacter();
+  const now = useNow();
 
-  const getClassBgColor = (className: string) => {
-    const colors: Record<string, string> = {
-      DEATHKNIGHT: "bg-red-500", DRUID: "bg-orange-400", HUNTER: "bg-green-500",
-      MAGE: "bg-cyan-300", PALADIN: "bg-pink-300", PRIEST: "bg-slate-300",
-      ROGUE: "bg-yellow-200", SHAMAN: "bg-blue-500", WARLOCK: "bg-purple-500",
-      WARRIOR: "bg-amber-700",
-    };
-    return colors[className] || "bg-blue-500";
-  };
+  const [tab, setTab] = useState<Tab>("roster");
+  const [search, setSearch] = useState("");
+  const [classes, setClasses] = useState<string[]>([]);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [historyDate, setHistoryDate] = useState(() => isoToDmy(limaIsoDate()));
+  const [compare, setCompare] = useState<string[] | null>(null);
 
-  // 1. Carga inicial del Roster y Datos generales
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      try {
-        setIsLoading(true);
-        const epgpRes = await fetch("/api/epgp");
-        const epgpData = await epgpRes.json();
-        if (epgpData) {
-          setRoster(epgpData.roster || []);
-          if (epgpData.date) {
-            const [y, m, d] = epgpData.date.split('-');
-            setLastUpdatedDate(`${d}/${m}/${y}`);
-          }
-          setLastUpdatedHour(epgpData.hour || "");
-        }
-      } catch (error) {
-        console.error("Error fetching EPGP data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchInitialData();
-    const savedChar = localStorage.getItem("my_character");
-    if (savedChar) setMyCharacter(savedChar);
+  // Movimientos de los últimos 7 días (un pedido por día, cacheados) para "7 días" y "Último movimiento".
+  const weekDays = useMemo(() => {
+    const today = parseISO(limaIsoDate());
+    return Array.from({ length: WEEK }, (_, i) =>
+      isoToDmy(format(addDays(today, -i), "yyyy-MM-dd")),
+    );
   }, []);
+  const weekQueries = useQueries({ queries: weekDays.map(logsQuery) });
+  const weekLogs = useMemo(() => weekQueries.flatMap((q) => q.data ?? []), [weekQueries]);
+  const { data: historyLogs = [], isLoading: historyLoading } = useQuery(logsQuery(historyDate));
 
-  // 2. Carga dinámica del historial cuando cambia la fecha
-  useEffect(() => {
-    const fetchLogs = async () => {
-      try {
-        setIsHistoryLoading(true);
-        const queryDate = selectedDate || "all";
-        const logsRes = await fetch(`/api/detalleepgp?fecha=${encodeURIComponent(queryDate)}`);
-        const logsData = await logsRes.json();
-        setHistoryLogs(logsData || []);
-      } catch (error) {
-        console.error("Error fetching logs:", error);
-      } finally {
-        setIsHistoryLoading(false);
-      }
-    };
-    fetchLogs();
-  }, [selectedDate]);
-
-  const handleSetMyCharacter = (name: string) => {
-    const newValue = myCharacter === name ? "" : name;
-    setMyCharacter(newValue);
-    if (newValue) localStorage.setItem("my_character", newValue);
-    else localStorage.removeItem("my_character");
-  };
-
-  const toggleClassFilter = (wowClass: string) => {
-    const newFilters = new Set(selectedClasses);
-    if (newFilters.has(wowClass)) newFilters.delete(wowClass);
-    else newFilters.add(wowClass);
-    setSelectedClasses(newFilters);
-  };
-
-  const processedRoster = useMemo(() => {
-    let filtered = roster;
-    if (selectedClasses.size > 0) {
-      filtered = filtered.filter(member => 
-        selectedClasses.has(member.class.toUpperCase()) || 
-        member.alters?.some(alt => selectedClasses.has(alt.class.toUpperCase()))
-      );
-    }
-    if (searchTerm) {
-      const lowerSearch = searchTerm.toLowerCase();
-      filtered = filtered.filter(member => member.main.toLowerCase().includes(lowerSearch) || member.alters?.some(alt => alt.name.toLowerCase().includes(lowerSearch)));
-    }
-    return [...filtered].sort((a, b) => {
-      let comparison = 0;
-      if (sortConfig.key === 'main') comparison = a.main.localeCompare(b.main);
-      else if (sortConfig.key === 'class') comparison = a.class.localeCompare(b.class);
-      else if (sortConfig.key === 'amount') comparison = a.amount - b.amount;
-      if (a.main === myCharacter) return -1;
-      if (b.main === myCharacter) return 1;
-      return sortConfig.direction === 'asc' ? comparison : -comparison;
-    });
-  }, [roster, searchTerm, selectedClasses, sortConfig, myCharacter]);
-
-  const maxEP = useMemo(() => Math.max(...roster.map(m => m.amount), 1), [roster]);
-
-  const characterInfoMap = useMemo(() => {
-    const map = new Map<string, { icon: string; class: string }>();
-    roster.forEach(member => {
-      map.set(member.main.toLowerCase(), { icon: member.icon, class: member.class });
-      member.alters?.forEach(alt => map.set(alt.name.toLowerCase(), { icon: alt.icon, class: alt.class }));
+  const activity = useMemo(() => {
+    const map = new Map<string, { delta: number; last: number }>();
+    weekLogs.forEach((log) => {
+      const main = memberByName.get(log.personaje.toLowerCase())?.main;
+      if (!main) return;
+      const prev = map.get(main) ?? { delta: 0, last: 0 };
+      map.set(main, {
+        delta: prev.delta + log.valor,
+        last: Math.max(prev.last, movementTime(log)),
+      });
     });
     return map;
-  }, [roster]);
+  }, [weekLogs, memberByName]);
 
-  const processedHistory = useMemo(() => {
-    let filtered = historyLogs;
-    if (searchTerm) {
-      const lowerSearch = searchTerm.toLowerCase();
-      filtered = filtered.filter(log => log.personaje.toLowerCase().includes(lowerSearch) || log.descripcion.toLowerCase().includes(lowerSearch));
-    }
-    return [...filtered].sort((a, b) => {
-      if (historySortConfig.key === 'valor') return historySortConfig.direction === 'asc' ? a.valor - b.valor : b.valor - a.valor;
-      const [da, ma, ya] = a.fecha.split("/").map(Number);
-      const [db, mb, yb] = b.fecha.split("/").map(Number);
-      const [ha, mia, sa] = a.hour.split(":").map(Number);
-      const [hb, mib, sb] = b.hour.split(":").map(Number);
-      const dateA = new Date(ya, ma - 1, da, ha, mia, sa).getTime();
-      const dateB = new Date(yb, mb - 1, db, hb, mib, sb).getTime();
-      return historySortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
+  // La ficha abierta vive en la URL (?personaje=) para poder compartirla y abrirla desde la búsqueda global.
+  const sheetName = searchParams.get("personaje");
+  const sheetMember = sheetName ? (memberByName.get(sheetName.toLowerCase()) ?? null) : null;
+  const openSheet = useCallback(
+    (main: string) =>
+      router.push(`${pathname}?personaje=${encodeURIComponent(main)}`, { scroll: false }),
+    [router, pathname],
+  );
+  const closeSheet = useCallback(
+    () => router.push(pathname, { scroll: false }),
+    [router, pathname],
+  );
+
+  const rows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return roster
+      .filter((m) => {
+        const classOk =
+          classes.length === 0 ||
+          classes.includes(normalizeClass(m.class) ?? "") ||
+          m.alters?.some((a) => classes.includes(normalizeClass(a.class) ?? ""));
+        const searchOk =
+          !q ||
+          m.main.toLowerCase().includes(q) ||
+          m.alters?.some((a) => a.name.toLowerCase().includes(q));
+        return classOk && searchOk;
+      })
+      .sort((a, b) => {
+        if (a.main === myCharacter) return -1;
+        if (b.main === myCharacter) return 1;
+        return b.amount - a.amount;
+      });
+  }, [roster, search, classes, myCharacter]);
+
+  const myMember = myCharacter ? memberByName.get(myCharacter.toLowerCase()) : undefined;
+  const myNames = useMemo(
+    () =>
+      new Set(
+        myMember
+          ? [myMember.main, ...(myMember.alters ?? []).map((a) => a.name)].map((n) =>
+              n.toLowerCase(),
+            )
+          : [],
+      ),
+    [myMember],
+  );
+
+  const history = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return historyLogs
+      .filter(
+        (l) =>
+          !q || l.personaje.toLowerCase().includes(q) || l.descripcion.toLowerCase().includes(q),
+      )
+      .sort((a, b) => movementTime(b) - movementTime(a));
+  }, [historyLogs, search]);
+
+  // Comparar: por defecto mi personaje y los dos primeros del ranking.
+  const compareSelection =
+    compare ??
+    [
+      ...new Set(
+        [myMember?.main, ...ranked.slice(0, 3).map((m) => m.main)].filter(Boolean) as string[],
+      ),
+    ].slice(0, 3);
+
+  const hasFilters = classes.length > 0 || search.length > 0;
+
+  const toggleRow = (main: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(main)) next.delete(main);
+      else next.add(main);
+      return next;
     });
-  }, [historyLogs, searchTerm, historySortConfig]);
 
-  const toggleRow = (mainName: string) => {
-    const newExpanded = new Set(expandedRows);
-    if (newExpanded.has(mainName)) newExpanded.delete(mainName);
-    else newExpanded.add(mainName);
-    setExpandedRows(newExpanded);
-  };
-
-  if (isLoading) return <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center gap-4"><Loader2 className="w-12 h-12 text-blue-500 animate-spin" /><p className="text-slate-600 dark:text-slate-400 font-medium">Cargando EPGP...</p></div>;
+  const rowProps = (m: RosterMember) => ({
+    member: m,
+    rank: rankOf.get(m.main) ?? 0,
+    max: maxPoints,
+    delta: activity.get(m.main)?.delta,
+    last: activity.get(m.main)?.last
+      ? relativeMovementLabel(activity.get(m.main)!.last, now)
+      : undefined,
+    isMe: m.main === myCharacter,
+    onPin: () => toggleMyCharacter(m.main),
+    onHistory: () => openSheet(m.main),
+  });
 
   return (
-    <main className="min-h-screen bg-white dark:bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-100 via-white to-white dark:from-slate-900 dark:via-slate-950 dark:to-black text-slate-800 dark:text-slate-200 p-4 md:p-8 lg:p-12 font-sans">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <header className="flex flex-col xl:flex-row xl:items-end justify-between gap-6 pb-6 border-b border-slate-200 dark:border-slate-800/60">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-blue-500/10 rounded-xl border border-blue-500/20 shadow-md"><BarChart2 className="text-blue-400" size={28} /></div>
-              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-blue-400 dark:to-cyan-400 font-display">Sistema EPGP</h1>
-            </div>
-            <div className="flex flex-wrap items-center gap-3 text-xs md:text-sm text-slate-600 dark:text-slate-400">
-              <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700/50 shadow-sm font-display uppercase tracking-wider"><Calendar size={14} className="text-blue-400" /><span>TZ Lima: {lastUpdatedDate}</span></div>
-              <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700/50 shadow-sm font-display uppercase tracking-wider"><Clock size={14} className="text-blue-400" /><span>{lastUpdatedHour}</span></div>
-              <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700/50 shadow-sm font-display uppercase tracking-wider"><Users size={14} className="text-blue-400" /><span>{roster.length} Jugadores</span></div>
-            </div>
-          </div>
-          <div className="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto">
-            <div className="flex bg-white dark:bg-slate-900/80 p-1.5 rounded-xl border border-slate-300 dark:border-slate-700/60 shadow-inner w-full sm:w-auto">
-              <Button
-                variant="ghost"
-                aria-pressed={activeTab === "roster"}
-                onClick={() => setActiveTab("roster")}
-                className={`h-auto flex-1 sm:flex-none gap-2 px-5 py-2 rounded-lg text-sm font-semibold font-display uppercase tracking-wide ${activeTab === "roster" ? "bg-slate-100 dark:bg-slate-800 text-blue-400 shadow-md border border-slate-300 dark:border-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-400" : "text-slate-500 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50"}`}
-              >
-                <LayoutList size={16} /> Roster
-              </Button>
-              <Button
-                variant="ghost"
-                aria-pressed={activeTab === "history"}
-                onClick={() => setActiveTab("history")}
-                className={`h-auto flex-1 sm:flex-none gap-2 px-5 py-2 rounded-lg text-sm font-semibold font-display uppercase tracking-wide ${activeTab === "history" ? "bg-slate-100 dark:bg-slate-800 text-blue-400 shadow-md border border-slate-300 dark:border-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-400" : "text-slate-500 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50"}`}
-              >
-                <History size={16} /> Historial
-              </Button>
-            </div>
-            <div className="relative group w-full sm:w-64">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10"><Search className="h-4 w-4 text-slate-500 group-focus-within:text-blue-400 transition-colors" /></div>
-              <Input type="text" placeholder="Buscar..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full h-auto bg-white dark:bg-slate-900/80 border-slate-300 dark:border-slate-700/60 rounded-xl py-2 pl-9 pr-4 text-sm placeholder-slate-500 focus-visible:ring-blue-500/50 focus-visible:border-blue-500/50 shadow-inner" />
-            </div>
-            <Button
-              variant="outline"
-              aria-pressed={showFilters}
-              onClick={() => setShowFilters(!showFilters)}
-              className={`rounded-xl flex-shrink-0 ${showFilters || selectedClasses.size > 0 ? "bg-blue-500/20 border-blue-500/50 text-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.1)] hover:bg-blue-500/20 hover:text-blue-400" : "bg-white dark:bg-slate-900/80 border-slate-300 dark:border-slate-700/60 text-slate-600 dark:text-slate-400"}`}
-              title="Filtros"
-            >
-              <Filter size={18} />
-            </Button>
-          </div>
-        </header>
+    <PageBody>
+      <PageHeader
+        title="EPGP"
+        description={`${roster.length} jugadores · los alters suman a su main`}
+        actions={
+          <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
+            <TabsList>
+              <TabsTrigger value="roster">Roster</TabsTrigger>
+              <TabsTrigger value="historial">Historial</TabsTrigger>
+              <TabsTrigger value="comparar">Comparar</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        }
+      />
 
-        {showFilters && (
-          <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 rounded-xl p-4 animate-in fade-in slide-in-from-top-2 duration-200 backdrop-blur-sm shadow-lg space-y-4">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              {activeTab === "roster" ? (
-                <>
-                  <div>
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Filtrar por Clase</p>
-                    <div className="flex flex-wrap gap-1.5">{WOW_CLASSES.map(cls => (
-                      <Button
-                        key={cls}
-                        variant="ghost"
-                        size="xs"
-                        aria-pressed={selectedClasses.has(cls)}
-                        onClick={() => toggleClassFilter(cls)}
-                        className={`font-bold ${selectedClasses.has(cls) ? `${getClassBgColor(cls)} text-slate-950 border-transparent shadow-sm hover:opacity-90` : `bg-slate-100 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700 hover:bg-slate-700 ${getClassColor(cls)}`}`}
+      {tab === "comparar" ? (
+        <EpgpCompare
+          roster={ranked}
+          rankOf={rankOf}
+          selected={compareSelection}
+          onChange={setCompare}
+        />
+      ) : (
+        <>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="relative w-full sm:w-72">
+              <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={
+                  tab === "roster" ? "Buscar personaje o alter…" : "Buscar personaje o descripción…"
+                }
+                aria-label="Buscar"
+                className="h-9 bg-card pl-8"
+              />
+            </div>
+            {tab === "roster" ? (
+              <ToggleGroup
+                type="multiple"
+                value={classes}
+                onValueChange={setClasses}
+                aria-label="Filtrar por clase"
+                className="flex-wrap gap-1 rounded-lg border bg-card p-1 max-md:w-full max-md:flex-nowrap max-md:justify-start max-md:overflow-x-auto"
+              >
+                {WOW_CLASSES.map((c) => (
+                  <Tooltip key={c.key}>
+                    <TooltipTrigger asChild>
+                      <ToggleGroupItem
+                        value={c.key}
+                        aria-label={c.name}
+                        className={cn(
+                          "size-8 min-w-8 rounded-md! p-0 data-[state=on]:bg-transparent",
+                          classes.length > 0 && "data-[state=off]:opacity-50",
+                        )}
+                        style={
+                          classes.includes(c.key)
+                            ? { boxShadow: `inset 0 0 0 1.5px ${c.hex}`, background: `${c.hex}33` }
+                            : undefined
+                        }
                       >
-                        {cls}
-                      </Button>
-                    ))}</div>
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Vista</p>
-                    <div className="flex bg-slate-50 dark:bg-slate-950 rounded-lg p-1 border border-slate-200 dark:border-slate-800">
-                      <Button variant="ghost" size="icon-sm" aria-pressed={viewMode === 'table'} onClick={() => setViewMode('table')} className={viewMode === 'table' ? 'bg-slate-100 dark:bg-slate-800 text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-400' : 'text-slate-500'}><List size={16} /></Button>
-                      <Button variant="ghost" size="icon-sm" aria-pressed={viewMode === 'grid'} onClick={() => setViewMode('grid')} className={viewMode === 'grid' ? 'bg-slate-100 dark:bg-slate-800 text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-400' : 'text-slate-500'}><Grid size={16} /></Button>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="w-full sm:w-auto">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Filtrar por Fecha (Lima TZ)</p>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><CalendarDays size={16} className="text-blue-400" /></div>
-                      <Input
-                        type="date"
-                        value={logToIsoDate(selectedDate)}
-                        onChange={(e) => setSelectedDate(isoToLogDate(e.target.value))}
-                        className="h-auto bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-700 rounded-lg py-2 pl-10 pr-4 text-sm focus-visible:ring-blue-500/50 [color-scheme:dark] cursor-pointer"
-                      />
-                    </div>
-                    {selectedDate && (
-                      <Button
-                        variant="ghost"
-                        onClick={() => setSelectedDate("")}
-                        className="h-auto gap-1.5 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold hover:bg-red-500/20 hover:text-red-400"
-                      >
-                        <X size={14} /> Quitar filtro
-                      </Button>
+                        <ClassIcon cls={c.key} size={22} />
+                      </ToggleGroupItem>
+                    </TooltipTrigger>
+                    <TooltipContent>{c.name}</TooltipContent>
+                  </Tooltip>
+                ))}
+              </ToggleGroup>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Input
+                  type="date"
+                  aria-label="Fecha (Lima)"
+                  value={dmyToIso(historyDate)}
+                  onChange={(e) => setHistoryDate(isoToDmy(e.target.value))}
+                  className="h-9 w-40 bg-card"
+                />
+                <Button
+                  variant={historyDate ? "outline" : "secondary"}
+                  onClick={() => setHistoryDate("")}
+                >
+                  Todas las fechas
+                </Button>
+              </div>
+            )}
+            {hasFilters && (
+              <Button
+                variant="outline"
+                className="border-dashed text-muted-foreground"
+                onClick={() => {
+                  setClasses([]);
+                  setSearch("");
+                }}
+              >
+                <X /> Limpiar filtros
+              </Button>
+            )}
+            <span className="ml-auto text-sm text-muted-foreground">
+              {tab === "roster"
+                ? `${rows.length} de ${roster.length} jugadores`
+                : `${history.length} registros`}
+            </span>
+          </div>
+
+          {tab === "roster" ? (
+            <>
+              {/* Escritorio: tabla completa */}
+              <Card className="hidden gap-0 overflow-hidden p-0 md:flex">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="w-14 text-center">#</TableHead>
+                      <TableHead>Personaje</TableHead>
+                      <TableHead className="hidden lg:table-cell">Clase</TableHead>
+                      <TableHead className="w-[26%]">
+                        <span className="flex items-center gap-1 text-foreground">
+                          Puntos <ChevronDown className="size-3" />
+                        </span>
+                      </TableHead>
+                      <TableHead className="text-right">7 días</TableHead>
+                      <TableHead className="hidden pl-6 xl:table-cell">Último movimiento</TableHead>
+                      <TableHead className="w-24">
+                        <span className="sr-only">Acciones</span>
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {isLoading &&
+                      Array.from({ length: 10 }).map((_, i) => (
+                        <TableRow key={i}>
+                          <TableCell colSpan={7}>
+                            <Skeleton className="h-8 w-full" />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    {!isLoading && rows.length === 0 && (
+                      <TableRow className="hover:bg-transparent">
+                        <TableCell colSpan={7}>
+                          <NoResults />
+                        </TableCell>
+                      </TableRow>
                     )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+                    {rows.map((m) => (
+                      <RosterRow
+                        key={m.main}
+                        {...rowProps(m)}
+                        open={expanded.has(m.main)}
+                        onToggle={() => toggleRow(m.main)}
+                      />
+                    ))}
+                  </TableBody>
+                </Table>
+              </Card>
 
-        <Card className="gap-0 p-0 bg-white dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800/60 overflow-hidden shadow-xl backdrop-blur-sm min-h-[50vh] relative">
-          {isHistoryLoading && activeTab === "history" && (
-            <div className="absolute inset-0 bg-slate-50 dark:bg-slate-950/40 backdrop-blur-[2px] z-50 flex items-center justify-center rounded-2xl">
-              <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
-            </div>
-          )}
-
-          {activeTab === "roster" ? (
-            <div className="overflow-x-auto">
+              {/* Móvil: lista compacta */}
+              <div className="flex flex-col gap-3 md:hidden">
+                {myMember && <MobileMeCard {...rowProps(myMember)} />}
+                <Card className="gap-0 px-4 py-1">
+                  {rows.length === 0 && !isLoading && <NoResults />}
+                  {rows
+                    .filter((m) => m.main !== myCharacter)
+                    .map((m) => (
+                      <MobileRow key={m.main} {...rowProps(m)} />
+                    ))}
+                </Card>
+              </div>
+            </>
+          ) : (
+            <Card className="gap-0 overflow-hidden p-0">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-xs uppercase tracking-wider font-semibold select-none">
-                    <TableHead className="px-4 py-3">Jugador (Main)</TableHead>
-                    <TableHead className="px-4 py-3 text-center">Clase</TableHead>
-                    <TableHead className="px-4 py-3 text-right">EP Actual</TableHead>
-                    <TableHead className="px-4 py-3 text-center">Alters</TableHead>
-                    <TableHead className="px-4 py-3 text-center">Acción</TableHead>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="w-32">Fecha</TableHead>
+                    <TableHead>Personaje</TableHead>
+                    <TableHead>Descripción</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody className="divide-y divide-slate-800/40">
-                  {processedRoster.length > 0 ? (
-                    processedRoster.map((member) => (
-                      <React.Fragment key={member.main}>
-                        <TableRow
-                          onClick={() => toggleRow(member.main)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
-                              e.preventDefault();
-                              toggleRow(member.main);
-                            }
-                          }}
-                          role="button"
-                          tabIndex={0}
-                          aria-expanded={expandedRows.has(member.main)}
-                          className={`group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-500 ${member.main === myCharacter ? 'bg-blue-900/10' : ''}`}
-                        >
-                          <TableCell className="px-4 py-3 flex items-center gap-3">
-                            <div className={`relative w-8 h-8 rounded border overflow-hidden bg-slate-100 dark:bg-slate-800 ${member.main === myCharacter ? 'border-blue-400 shadow-sm' : 'border-slate-300 dark:border-slate-700'}`}>
-                              <Image
-                                src={member.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"}
-                                alt={member.class}
-                                width={32}
-                                height={32}
-                                unoptimized
-                                className="object-cover w-full h-full"
-                              />
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className={`font-semibold text-sm ${getClassColor(member.class)}`}>{member.main}</span>
-                              <Button
-                                variant="ghost"
-                                size="icon-xs"
-                                onClick={(e) => { e.stopPropagation(); openHistory(member); }}
-                                className="ml-1 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20 hover:border-cyan-500/40 hover:text-cyan-400 hover:scale-110 active:scale-95 shadow-sm"
-                                title="Ver bitácora detallada"
-                              >
-                                <History size={14} className="drop-shadow-[0_0_8px_rgba(34,211,238,0.4)]" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                          <TableCell className="px-4 py-3 text-center"><Badge className="rounded font-bold bg-white dark:bg-slate-900/80 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700/50 uppercase">{member.class}</Badge></TableCell>
-                          <TableCell className="px-4 py-3 text-right font-mono font-bold text-slate-800 dark:text-slate-100">{member.amount.toLocaleString()}</TableCell>
-                          <TableCell className="px-4 py-3 text-center"><Badge className="rounded font-semibold bg-white dark:bg-slate-900/80 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700/50">{member.alters?.length || 0}</Badge></TableCell>
-                          <TableCell className="px-4 py-3 text-center">
-                            <Button
-                              variant="ghost"
-                              size="icon-xs"
-                              onClick={(e) => { e.stopPropagation(); handleSetMyCharacter(member.main); }}
-                              className={member.main === myCharacter ? 'text-yellow-400 bg-yellow-400/10 hover:text-yellow-400 hover:bg-yellow-400/10' : 'text-slate-600 hover:text-yellow-400'}
-                            >
-                              <Star size={16} className={member.main === myCharacter ? "fill-yellow-400" : ""} />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                        {expandedRows.has(member.main) && member.alters && member.alters.length > 0 && (
-                          <TableRow className={`border-slate-200 dark:border-slate-800/50 ${member.main === myCharacter ? 'bg-blue-900/5' : 'bg-white dark:bg-slate-900/80'}`}>
-                            <TableCell colSpan={5} className="px-4 py-3"><div className="pl-12 grid grid-cols-2 sm:grid-cols-4 gap-2 animate-in fade-in slide-in-from-top-2 duration-200">{member.alters.map((alt) => (<div key={alt.name} className="flex items-center gap-2.5 bg-slate-50 dark:bg-slate-950/60 p-2 rounded-lg border border-slate-200 dark:border-slate-800/60"><div className="w-6 h-6 rounded overflow-hidden border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 shrink-0 relative">
-                              <Image
-                                src={alt.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"}
-                                alt={alt.class}
-                                width={24}
-                                height={24}
-                                unoptimized
-                                className="object-cover w-full h-full"
-                              />
-                            </div><div className="flex flex-col min-w-0"><span className={`text-xs font-bold truncate ${getClassColor(alt.class)}`}>{alt.name}</span><span className="text-[9px] text-slate-500 font-semibold uppercase">{alt.class}</span></div></div>))}</div></TableCell>
-                          </TableRow>
-                        )}
-                      </React.Fragment>
-                    ))
-                  ) : (
-                    <TableRow><TableCell colSpan={5} className="px-4 py-16 text-center text-slate-600 dark:text-slate-400"><div className="flex flex-col items-center justify-center gap-3"><Search size={32} className="text-slate-600" /><p className="text-lg font-semibold text-slate-700 dark:text-slate-300">No se encontraron personajes</p></div></TableCell></TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <div className="p-4 bg-slate-50 dark:bg-slate-950/40 border-b border-slate-200 dark:border-slate-800/60 flex items-center justify-between">
-                <div className="flex items-center gap-2"><CalendarDays size={18} className="text-blue-400" /><span className="text-sm font-bold text-slate-700 dark:text-slate-300">Registros del {selectedDate || "Todos los tiempos"}</span></div>
-                <span className="text-[10px] font-bold text-slate-500 bg-white dark:bg-slate-900 px-2 py-1 rounded border border-slate-200 dark:border-slate-800">{processedHistory.length} REGISTROS</span>
-              </div>
-              <Table className="text-sm">
-                <TableHeader>
-                  <TableRow className="bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-xs uppercase tracking-wider font-semibold select-none">
-                    <TableHead className="px-4 py-3 w-36">Hora</TableHead>
-                    <TableHead className="px-4 py-3">Personaje</TableHead>
-                    <TableHead className="px-4 py-3">Descripción</TableHead>
-                    <TableHead className="px-4 py-3 text-center">Tipo</TableHead>
-                    <TableHead className="px-4 py-3 text-right w-28">Valor</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody className="divide-y divide-slate-800/40">
-                  {processedHistory.length > 0 ? (
-                    processedHistory.map((log, index) => {
-                      const isPositive = log.valor > 0;
-                      const charInfo = characterInfoMap.get(log.personaje.toLowerCase());
-                      const myCharData = roster.find(r => r.main === myCharacter);
-                      const isMeOrMyAlter = myCharacter && (log.personaje === myCharacter || (myCharData?.alters?.some(a => a.name === log.personaje) ?? false));
-                      return (
-                        <TableRow key={index} className={`relative ${isMeOrMyAlter ? 'bg-blue-900/10' : ''}`}>
-                          <TableCell className="px-4 py-2.5 relative">
-                            {isMeOrMyAlter && <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500 rounded-r-full shadow-lg z-10"></div>}
-                            <div className="flex flex-col leading-tight"><span className="text-slate-700 dark:text-slate-300 font-medium text-xs">{log.hour}</span><span className="text-slate-500 text-[9px]">{log.fecha}</span></div>
-                          </TableCell>
-                          <TableCell className="px-4 py-2.5">
-                            <div className="flex items-center gap-2.5">
-                              <div className="relative w-6 h-6 rounded border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 shrink-0 shadow-sm">
-                                {charInfo ? <Image src={charInfo.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"} alt={charInfo.class} width={24} height={24} unoptimized className="object-cover w-full h-full" /> : <Users size={14} className="text-slate-500 p-1" />}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className={`font-semibold text-sm ${charInfo ? getClassColor(charInfo.class) : 'text-blue-300'}`}>{log.personaje}</span>
-                                <Button
-                                  variant="ghost"
-                                  size="icon-xs"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    // Buscar al miembro para tener sus alters
-                                    const member = roster.find(r =>
-                                      r.main.toLowerCase() === log.personaje.toLowerCase() ||
-                                      r.alters?.some(a => a.name.toLowerCase() === log.personaje.toLowerCase())
-                                    );
-                                    if (member) openHistory(member);
-                                    else openHistory({ main: log.personaje, class: '', amount: 0, icon: '', alters: [] });
-                                  }}
-                                  className="ml-1 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20 hover:border-cyan-500/40 hover:text-cyan-400 hover:scale-110 active:scale-95 shadow-sm"
-                                  title="Ver bitácora detallada"
-                                >
-                                  <History size={13} className="drop-shadow-[0_0_8px_rgba(34,211,238,0.4)]" />
-                                </Button>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell className="px-4 py-2.5"><span className="text-slate-700 dark:text-slate-300 text-sm">{log.descripcion}</span></TableCell>
-                          <TableCell className="px-4 py-2.5 text-center"><Badge className="rounded font-bold bg-white dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700/50 uppercase tracking-wider">EP</Badge></TableCell>
-                          <TableCell className="px-4 py-2.5 text-right"><div className={`flex items-center justify-end gap-1.5 font-mono text-sm font-bold ${isPositive ? 'text-green-400' : 'text-red-400'}`}>{isPositive ? "+" : ""}{log.valor}</div></TableCell>
-                        </TableRow>
-                      );
-                    })
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={5} className="px-4 py-16 text-center">
-                        <div className="flex flex-col items-center justify-center gap-3">
-                          <History size={32} className="text-slate-600" />
-                          <p className="text-lg font-semibold text-slate-700 dark:text-slate-300">
-                            {selectedDate ? "No hay registros para este día" : "Seleccione una fecha para ver el historial"}
-                          </p>
-                        </div>
+                <TableBody>
+                  {historyLoading &&
+                    Array.from({ length: 10 }).map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell colSpan={4}>
+                          <Skeleton className="h-6 w-full" />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  {!historyLoading && history.length === 0 && (
+                    <TableRow className="hover:bg-transparent">
+                      <TableCell colSpan={4}>
+                        <Empty className="py-12">
+                          <EmptyHeader>
+                            <EmptyMedia variant="icon">
+                              <History />
+                            </EmptyMedia>
+                            <EmptyTitle>
+                              {historyDate ? "Sin movimientos ese día" : "Sin movimientos"}
+                            </EmptyTitle>
+                            <EmptyDescription>
+                              Elige otra fecha o revisa todas las fechas.
+                            </EmptyDescription>
+                          </EmptyHeader>
+                        </Empty>
                       </TableCell>
                     </TableRow>
                   )}
+                  {history.map((log, i) => {
+                    const info = characterInfo.get(log.personaje.toLowerCase());
+                    const main = memberByName.get(log.personaje.toLowerCase())?.main;
+                    const mine = myNames.has(log.personaje.toLowerCase());
+                    return (
+                      <TableRow
+                        key={`${log.fecha}-${log.hour}-${i}`}
+                        className={cn(mine && "bg-highlight/5")}
+                      >
+                        <TableCell className="text-xs text-muted-foreground tabular">
+                          <div className="text-foreground">{log.hour.slice(0, 5)}</div>
+                          {log.fecha}
+                        </TableCell>
+                        <TableCell>
+                          <button
+                            type="button"
+                            onClick={() => main && openSheet(main)}
+                            disabled={!main}
+                            className="flex items-center gap-2 rounded-md text-left hover:underline disabled:no-underline"
+                          >
+                            <ClassIcon cls={info?.class} src={info?.icon} size={22} />
+                            <CharacterName cls={info?.class}>{log.personaje}</CharacterName>
+                          </button>
+                        </TableCell>
+                        <TableCell className="whitespace-normal">
+                          <ItemDescription text={log.descripcion} />
+                        </TableCell>
+                        <TableCell
+                          className={cn(
+                            "text-right font-mono font-semibold tabular",
+                            log.valor >= 0 ? "text-positive" : "text-negative",
+                          )}
+                        >
+                          {formatSigned(log.valor)}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
-            </div>
+            </Card>
           )}
-        </Card>
-      </div>
+        </>
+      )}
 
-      <CharacterHistoryModal 
-        mainName={selectedMember?.main || ""} 
-        alters={selectedMember?.alters?.map(a => a.name) || []}
-        isOpen={isHistoryModalOpen} 
-        onClose={() => setIsHistoryModalOpen(false)} 
+      <CharacterHistorySheet
+        member={sheetMember}
+        rank={sheetMember ? rankOf.get(sheetMember.main) : undefined}
+        open={!!sheetMember}
+        onOpenChange={(o) => !o && closeSheet()}
       />
-    </main>
+    </PageBody>
+  );
+}
+
+function NoResults() {
+  return (
+    <Empty className="py-12">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <Search />
+        </EmptyMedia>
+        <EmptyTitle>Sin resultados</EmptyTitle>
+        <EmptyDescription>Prueba con otro nombre o quita el filtro de clase.</EmptyDescription>
+      </EmptyHeader>
+    </Empty>
+  );
+}
+
+interface RowProps {
+  member: RosterMember;
+  rank: number;
+  max: number;
+  delta?: number;
+  last?: string;
+  isMe: boolean;
+  onPin: () => void;
+  onHistory: () => void;
+}
+
+function deltaClass(delta?: number) {
+  return !delta ? "text-muted-foreground" : delta > 0 ? "text-positive" : "text-negative";
+}
+
+function RosterRow({
+  member,
+  rank,
+  max,
+  delta,
+  last,
+  isMe,
+  open,
+  onToggle,
+  onPin,
+  onHistory,
+}: RowProps & { open: boolean; onToggle: () => void }) {
+  const meta = getClassMeta(member.class);
+  const alters = member.alters ?? [];
+  const pct = Math.max(0, Math.min(100, (member.amount / max) * 100));
+
+  return (
+    <Fragment>
+      <TableRow className={cn("h-13", isMe && "bg-highlight/5 hover:bg-highlight/10")}>
+        <TableCell
+          className={cn(
+            "text-center font-mono tabular",
+            rank <= 3 ? "text-highlight" : "text-muted-foreground",
+          )}
+        >
+          {rank}
+        </TableCell>
+        <TableCell>
+          <div className="flex items-center gap-2.5">
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              onClick={onToggle}
+              disabled={!alters.length}
+              aria-expanded={open}
+              aria-label={open ? "Ocultar alters" : "Mostrar alters"}
+              className={cn(!alters.length && "invisible")}
+            >
+              {open ? <ChevronDown /> : <ChevronRight />}
+            </Button>
+            <ClassIcon cls={member.class} src={member.icon} size={30} />
+            <button
+              type="button"
+              onClick={onHistory}
+              className="truncate text-left hover:underline"
+            >
+              <CharacterName cls={member.class} className="font-semibold">
+                {member.main}
+              </CharacterName>
+            </button>
+            {isMe && (
+              <Badge className="rounded-full bg-highlight/15 text-highlight hover:bg-highlight/15">
+                Tú
+              </Badge>
+            )}
+            {alters.length > 0 && (
+              <Badge variant="outline" className="rounded-full font-normal text-muted-foreground">
+                +{alters.length} {alters.length === 1 ? "alter" : "alters"}
+              </Badge>
+            )}
+          </div>
+        </TableCell>
+        <TableCell className="hidden text-muted-foreground lg:table-cell">
+          {meta?.name ?? member.class}
+        </TableCell>
+        <TableCell>
+          <div className="flex items-center gap-3 pr-4">
+            <span className="w-14 text-right font-mono font-semibold tabular">
+              {formatPoints(member.amount)}
+            </span>
+            <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full"
+                style={{ width: `${pct}%`, background: meta?.hex ?? "var(--primary)" }}
+              />
+            </div>
+          </div>
+        </TableCell>
+        <TableCell className={cn("text-right font-mono tabular", deltaClass(delta))}>
+          {delta ? formatSigned(delta) : "0"}
+        </TableCell>
+        <TableCell className="hidden pl-6 text-xs text-muted-foreground xl:table-cell">
+          {last ?? "—"}
+        </TableCell>
+        <TableCell>
+          <div className="flex justify-end gap-0.5">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={onPin}
+                  aria-pressed={isMe}
+                  aria-label="Fijar como mi personaje"
+                >
+                  <Star
+                    className={cn(isMe ? "fill-highlight text-highlight" : "text-muted-foreground")}
+                  />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{isMe ? "Dejar de fijar" : "Fijar como mi personaje"}</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={onHistory}
+                  aria-label="Ver historial"
+                >
+                  <History className="text-muted-foreground" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Ver historial</TooltipContent>
+            </Tooltip>
+          </div>
+        </TableCell>
+      </TableRow>
+      {open &&
+        alters.map((alt) => (
+          <TableRow key={alt.name} className="bg-muted/30 hover:bg-muted/40">
+            <TableCell />
+            <TableCell>
+              <div className="flex items-center gap-2.5 pl-8">
+                <span className="-mt-3 h-3.5 w-3 shrink-0 rounded-bl-sm border-b border-l border-border" />
+                <ClassIcon cls={alt.class} src={alt.icon} size={22} />
+                <CharacterName cls={alt.class} className="text-sm">
+                  {alt.name}
+                </CharacterName>
+                <span className="text-xs text-muted-foreground">alter</span>
+              </div>
+            </TableCell>
+            <TableCell className="hidden text-xs text-muted-foreground lg:table-cell">
+              {getClassMeta(alt.class)?.name ?? alt.class}
+            </TableCell>
+            <TableCell colSpan={4} className="text-xs text-muted-foreground">
+              Comparte puntos con el main
+            </TableCell>
+          </TableRow>
+        ))}
+    </Fragment>
+  );
+}
+
+function MobileMeCard({ member, rank, delta, onHistory }: RowProps) {
+  return (
+    <button
+      type="button"
+      onClick={onHistory}
+      className="flex items-center gap-3 rounded-xl border border-highlight/30 bg-card p-3 text-left"
+    >
+      <ClassIcon cls={member.class} src={member.icon} size={40} />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-1.5">
+          <CharacterName cls={member.class} className="truncate font-semibold">
+            {member.main}
+          </CharacterName>
+          <span className="text-xs font-medium text-highlight">· Tú</span>
+        </div>
+        <span className="text-xs text-muted-foreground">
+          #{rank} · {delta ? `${formatSigned(delta)} esta semana` : "sin cambios esta semana"}
+        </span>
+      </div>
+      <span className="font-mono text-xl font-semibold tabular">{formatPoints(member.amount)}</span>
+    </button>
+  );
+}
+
+function MobileRow({ member, rank, max, delta, onHistory }: RowProps) {
+  const meta = getClassMeta(member.class);
+  return (
+    <button
+      type="button"
+      onClick={onHistory}
+      className="flex min-h-14 w-full items-center gap-3 border-b text-left last:border-b-0"
+    >
+      <span
+        className={cn(
+          "w-6 font-mono text-xs tabular",
+          rank <= 3 ? "text-highlight" : "text-muted-foreground",
+        )}
+      >
+        {rank}
+      </span>
+      <ClassIcon cls={member.class} src={member.icon} size={32} />
+      <div className="min-w-0 flex-1">
+        <CharacterName cls={member.class} className="block truncate font-semibold">
+          {member.main}
+        </CharacterName>
+        <div className="mt-1 h-1 overflow-hidden rounded-full bg-muted">
+          <div
+            className="h-full rounded-full"
+            style={{ width: `${(member.amount / max) * 100}%`, background: meta?.hex }}
+          />
+        </div>
+      </div>
+      <div className="flex flex-col items-end">
+        <span className="font-mono text-sm font-semibold tabular">
+          {formatPoints(member.amount)}
+        </span>
+        <span className={cn("font-mono text-[11px] tabular", deltaClass(delta))}>
+          {delta ? formatSigned(delta) : "0"}
+        </span>
+      </div>
+    </button>
   );
 }

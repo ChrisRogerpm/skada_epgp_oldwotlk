@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmDialog } from "@/components/confirm-dialog";
 import { useEffect, useState } from "react";
 import { supabase } from "@/src/infrastructure/config/supabase";
 import { AdminStatus, EpgpSearchResult, LootItemOption, LootWinForm } from "../types";
@@ -64,7 +65,9 @@ export function useLootAdmin(search: string, onStatus: (status: AdminStatus) => 
   const fetchWins = async () => {
     setIsLoading(true);
     try {
-      const res = await authedFetch(`/api/loot?page=${currentPage}&limit=${limit}&search=${encodeURIComponent(search)}`);
+      const res = await authedFetch(
+        `/api/loot?page=${currentPage}&limit=${limit}&search=${encodeURIComponent(search)}`,
+      );
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || "Error al obtener registros de loot");
       setWins(result.data || []);
@@ -72,7 +75,10 @@ export function useLootAdmin(search: string, onStatus: (status: AdminStatus) => 
       setTotalPages(result.totalPages || 1);
     } catch (error) {
       console.error("Error fetching loot wins:", error);
-      onStatus({ type: "error", message: error instanceof Error ? error.message : "Error al cargar registros" });
+      onStatus({
+        type: "error",
+        message: error instanceof Error ? error.message : "Error al cargar registros",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -141,8 +147,8 @@ export function useLootAdmin(search: string, onStatus: (status: AdminStatus) => 
     setIsSaving(true);
     try {
       const method = winForm.id ? "PUT" : "POST";
-      // El form ya no ofrece elegir sesión de raid; se preserva la que ya
-      // tenía el registro (si se está editando uno del sync), o queda null.
+      // La sesión de raid es opcional: un registro manual puede vincularse a
+      // una raid sincronizada o quedar suelto (loot histórico).
       const sharedFields = {
         personaje: winForm.personaje,
         class: winForm.class,
@@ -163,22 +169,63 @@ export function useLootAdmin(search: string, onStatus: (status: AdminStatus) => 
       if (!res.ok) throw new Error(result.error || "Error al guardar");
 
       const count = winForm.id_items.length;
+      const created: { id: number }[] = !winForm.id && Array.isArray(result) ? result : [];
+      const itemNames = winForm.id_items
+        .map((id) => itemOptions.find((i) => i.id_item === id)?.name)
+        .filter(Boolean)
+        .join(", ");
       onStatus({
         type: "success",
-        message: winForm.id ? "Registro actualizado correctamente" : `${count} ítem${count > 1 ? "s" : ""} registrado${count > 1 ? "s" : ""} correctamente`,
+        message: winForm.id
+          ? "Registro actualizado"
+          : count > 1
+            ? `${count} ítems registrados`
+            : "Botín registrado",
+        description: winForm.id ? undefined : `${itemNames} → ${winForm.personaje}`,
+        action: created.length
+          ? { label: "Deshacer", onClick: () => undoWins(created.map((w) => w.id)) }
+          : undefined,
       });
       resetForm();
       setCurrentPage(1);
       fetchWins();
     } catch (error) {
-      onStatus({ type: "error", message: error instanceof Error ? error.message : "Error al guardar" });
+      onStatus({
+        type: "error",
+        message: error instanceof Error ? error.message : "Error al guardar",
+      });
     } finally {
       setIsSaving(false);
     }
   };
 
+  // Revierte un registro recién hecho desde el aviso "Deshacer" (sin pedir confirmación).
+  const undoWins = async (ids: number[]) => {
+    try {
+      for (const id of ids) {
+        const res = await authedFetch(`/api/loot?id=${id}`, { method: "DELETE" });
+        if (!res.ok) throw new Error((await res.json()).error || "Error al deshacer");
+      }
+      onStatus({ type: "success", message: "Registro deshecho" });
+      fetchWins();
+    } catch (error) {
+      onStatus({
+        type: "error",
+        message: error instanceof Error ? error.message : "Error al deshacer",
+      });
+    }
+  };
+
   const deleteWin = async (id: number) => {
-    if (!confirm("¿Seguro que deseas eliminar este registro de loot?")) return;
+    if (
+      !(await confirmDialog({
+        title: "¿Eliminar este registro de loot?",
+        description: "El ítem dejará de figurar como ganado por este personaje.",
+        confirmLabel: "Eliminar",
+        destructive: true,
+      }))
+    )
+      return;
 
     setIsSaving(true);
     try {
@@ -188,7 +235,10 @@ export function useLootAdmin(search: string, onStatus: (status: AdminStatus) => 
       onStatus({ type: "success", message: "Registro eliminado" });
       fetchWins();
     } catch (error) {
-      onStatus({ type: "error", message: error instanceof Error ? error.message : "Error al eliminar" });
+      onStatus({
+        type: "error",
+        message: error instanceof Error ? error.message : "Error al eliminar",
+      });
     } finally {
       setIsSaving(false);
     }

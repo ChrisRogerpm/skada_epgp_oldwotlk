@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmDialog } from "@/components/confirm-dialog";
 import { useEffect, useState } from "react";
 import { supabase } from "@/src/infrastructure/config/supabase";
 import { AdminStatus, AdminUserListItem, UserRegistrationForm } from "../types";
@@ -49,7 +50,10 @@ export function useUsersAdmin(search: string, onStatus: (status: AdminStatus) =>
       setTotalPages(result.totalPages || 1);
     } catch (error) {
       console.error("Error fetching users:", error);
-      onStatus({ type: "error", message: error instanceof Error ? error.message : "Error al cargar usuarios" });
+      onStatus({
+        type: "error",
+        message: error instanceof Error ? error.message : "Error al cargar usuarios",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -80,7 +84,10 @@ export function useUsersAdmin(search: string, onStatus: (status: AdminStatus) =>
       setCurrentPage(1);
       fetchUsers();
     } catch (error) {
-      onStatus({ type: "error", message: error instanceof Error ? error.message : "Error al registrar usuario" });
+      onStatus({
+        type: "error",
+        message: error instanceof Error ? error.message : "Error al registrar usuario",
+      });
     } finally {
       setIsSaving(false);
     }
@@ -88,7 +95,13 @@ export function useUsersAdmin(search: string, onStatus: (status: AdminStatus) =>
 
   const changeRole = async (id: string, newRole: "admin" | "user") => {
     const action = newRole === "admin" ? "promover a admin" : "quitar el rol de admin";
-    if (!confirm(`¿Seguro que deseas ${action} a este usuario?`)) return;
+    if (
+      !(await confirmDialog({
+        title: `¿Seguro que deseas ${action} a este usuario?`,
+        confirmLabel: "Confirmar",
+      }))
+    )
+      return;
 
     setIsSaving(true);
     try {
@@ -104,7 +117,10 @@ export function useUsersAdmin(search: string, onStatus: (status: AdminStatus) =>
       onStatus({ type: "success", message: "Rol actualizado correctamente" });
       fetchUsers();
     } catch (error) {
-      onStatus({ type: "error", message: error instanceof Error ? error.message : "Error al actualizar el rol" });
+      onStatus({
+        type: "error",
+        message: error instanceof Error ? error.message : "Error al actualizar el rol",
+      });
     } finally {
       setIsSaving(false);
     }

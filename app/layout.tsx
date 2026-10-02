@@ -1,32 +1,28 @@
 import type { Metadata } from "next";
-import { Inter, Outfit, JetBrains_Mono } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Navbar from "./components/Navbar";
 import Providers from "./providers";
 import Script from "next/script";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
+import { AppHeader } from "@/components/app-header";
+import { MobileNav } from "@/components/mobile-nav";
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  display: "swap",
-  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
-});
-
-const outfit = Outfit({
-  variable: "--font-outfit",
+const geist = Geist({
+  variable: "--font-geist",
   subsets: ["latin"],
   display: "swap",
 });
 
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-jetbrains-mono",
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
   subsets: ["latin"],
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Old Legends",
-  description: "Logs",
+  title: { default: "Old Legends", template: "%s · Old Legends" },
+  description: "EPGP, botín, reglas y logs de raid de la hermandad Old Legends (WotLK).",
 };
 
 export default function RootLayout({
@@ -35,7 +31,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning className={`${geist.variable} ${geistMono.variable}`}>
       <head>
         <Script id="ultimowow-config" strategy="beforeInteractive">
           {`const whTooltips = { colorLinks: true, iconizeLinks: true, renameLinks: true };
@@ -47,12 +43,16 @@ export default function RootLayout({
           strategy="afterInteractive"
         />
       </head>
-      <body
-        className={`${inter.variable} ${outfit.variable} ${jetbrainsMono.variable} antialiased`}
-      >
+      <body className="antialiased">
         <Providers>
-          <Navbar />
-          {children}
+          <SidebarProvider>
+            <AppSidebar />
+            <SidebarInset>
+              <AppHeader />
+              {children}
+            </SidebarInset>
+            <MobileNav />
+          </SidebarProvider>
         </Providers>
       </body>
     </html>

@@ -1,15 +1,15 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
-import clsx from "clsx";
-import { ChevronDown, ChevronUp, Plus, Trash2, TrendingDown, TrendingUp, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, Trash2, X } from "lucide-react";
 import { PuntoUIItem } from "@/app/types/Reglas";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 type BenePenType = "benefits" | "penalties";
 
@@ -26,50 +26,33 @@ interface BenePenEditorProps {
   onRenameCategory: (oldName: string, newName: string) => void;
   onAddItem: (category: string) => void;
   onRemoveItem: (id: string) => void;
-  onUpdateItemLocal: (id: string, field: "descripcion" | "icon" | "valor", value: string | number) => void;
+  onUpdateItemLocal: (
+    id: string,
+    field: "descripcion" | "icon" | "valor",
+    value: string | number,
+  ) => void;
   onPersistItem: (id: string) => void;
   onMoveItem: (id: string, direction: "up" | "down") => void;
 }
 
-// Tailwind necesita ver las clases completas de forma literal en el código fuente
-// para poder generarlas; por eso no se arma el color dinámicamente con template strings.
 const THEME = {
   benefits: {
-    title: "Bonificaciones",
-    subtitle: "Incrementos de EP",
-    icon: TrendingUp,
-    itemPlaceholder: "Descripción del bono...",
-    addLabel: "+ Añadir Bonificación",
+    itemPlaceholder: "Descripción del bono…",
+    addLabel: "Añadir bonificación",
     fallbackIcon: "https://wow.zamimg.com/images/wow/icons/large/inv_misc_coin_02.jpg",
-    iconWrap: "bg-emerald-500/10 border-emerald-500/20",
-    iconColor: "text-emerald-400",
-    addCategoryButton: "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-400 border-emerald-500/30",
-    categoryFocus: "focus-visible:border-emerald-500/50",
-    iconHoverBorder: "hover:border-emerald-500",
-    valueText: "text-emerald-400",
-    valueFocus: "focus-visible:border-emerald-500/50",
-    addItemButton: "hover:text-emerald-400 hover:bg-emerald-500/5",
-    badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+    ring: "var(--positive)",
+    value: "text-positive",
   },
   penalties: {
-    title: "Sanciones",
-    subtitle: "Descuentos de EP",
-    icon: TrendingDown,
-    itemPlaceholder: "Descripción de la sanción...",
-    addLabel: "+ Añadir Sanción",
+    itemPlaceholder: "Descripción de la sanción…",
+    addLabel: "Añadir sanción",
     fallbackIcon: "https://wow.zamimg.com/images/wow/icons/large/inv_misc_head_orc_01.jpg",
-    iconWrap: "bg-red-500/10 border-red-500/20",
-    iconColor: "text-red-400",
-    addCategoryButton: "bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-400 border-red-500/30",
-    categoryFocus: "focus-visible:border-red-500/50",
-    iconHoverBorder: "hover:border-red-500",
-    valueText: "text-red-400",
-    valueFocus: "focus-visible:border-red-500/50",
-    addItemButton: "hover:text-red-400 hover:bg-red-500/5",
-    badge: "bg-red-500/10 text-red-400 border-red-500/20",
+    ring: "var(--negative)",
+    value: "text-negative",
   },
 } as const;
 
+/** Editor en línea de bonificaciones/sanciones: los cambios se guardan al salir de cada campo. */
 export default function BenePenEditor({
   type,
   categorized,
@@ -83,193 +66,144 @@ export default function BenePenEditor({
   onMoveItem,
 }: BenePenEditorProps) {
   const theme = THEME[type];
-  const Icon = theme.icon;
-  const [openIconId, setOpenIconId] = useState<string | null>(null);
 
   return (
-    <section className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center shadow-lg ${theme.iconWrap}`}>
-            <Icon className={theme.iconColor} size={24} />
-          </div>
-          <div>
-            <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">{theme.title}</h3>
-            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{theme.subtitle}</p>
-          </div>
-        </div>
-        <Button
-          variant="ghost"
-          onClick={onAddCategory}
-          className={`h-auto gap-3 px-6 py-3 rounded-2xl text-[10px] font-black border uppercase tracking-[0.15em] active:scale-95 ${theme.addCategoryButton}`}
-        >
-          <Plus size={18} /> Nueva Categoría
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm text-muted-foreground">
+          Los cambios se guardan automáticamente al salir de cada campo.
+        </p>
+        <Button variant="outline" onClick={onAddCategory}>
+          <Plus /> Nueva categoría
         </Button>
       </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+      <div className="grid gap-4 xl:grid-cols-2">
         {categorized.map((cat) => (
-          <Card
-            key={cat.category}
-            className="gap-0 p-0 bg-white dark:bg-slate-900/40 rounded-[2rem] border border-white/5 overflow-hidden shadow-xl hover:border-black/10 dark:hover:border-white/10 transition-colors"
-          >
-            <div className="flex items-center gap-3 p-5 border-b border-white/5">
+          <Card key={cat.category} className="gap-0 overflow-hidden py-0">
+            <div className="flex items-center gap-2 border-b p-3">
               <Input
                 key={cat.category}
                 defaultValue={cat.category}
                 onBlur={(e) => onRenameCategory(cat.category, e.target.value)}
-                className={`h-auto bg-slate-50 dark:bg-slate-950/60 border-white/5 rounded-xl px-4 py-2.5 text-sm font-black text-slate-900 dark:text-white flex-1 uppercase tracking-wider ${theme.categoryFocus}`}
+                aria-label="Nombre de la categoría"
+                className="h-9 border-transparent bg-transparent font-medium shadow-none hover:border-input focus-visible:border-ring dark:bg-transparent"
               />
-              <Badge className={clsx("rounded-full uppercase tracking-widest shrink-0", theme.badge)}>{cat.items.length}</Badge>
-              <Button variant="ghost" size="icon-sm" onClick={() => onRemoveCategory(cat.category)} className="text-slate-700 hover:text-red-400 shrink-0">
-                <Trash2 size={18} />
-              </Button>
-            </div>
-
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-slate-50 dark:bg-slate-950/40">
-                  <TableHead className="px-5 py-2.5 text-[9px] font-black text-slate-500 uppercase tracking-widest">Ítem</TableHead>
-                  <TableHead className="px-3 py-2.5 text-[9px] font-black text-slate-500 uppercase tracking-widest text-right">Valor</TableHead>
-                  <TableHead className="px-3 py-2.5 w-16"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody className="divide-y divide-white/5">
-                {cat.items.map((item, index) => (
-                  <TableRow key={item.id} className="group/item">
-                    <TableCell className="px-5 py-2.5">
-                      <div className="flex items-center gap-3">
-                        <div className="relative shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => setOpenIconId(openIconId === item.id ? null : item.id)}
-                            className={clsx(
-                              "block w-9 h-9 rounded-lg border border-black/10 dark:border-white/10 overflow-hidden bg-slate-50 dark:bg-slate-900 shadow transition-all",
-                              theme.iconHoverBorder,
-                            )}
-                            title="Cambiar ícono"
-                          >
-                            <Image
-                              src={item.icon || theme.fallbackIcon}
-                              alt={item.descripcion || theme.title}
-                              width={36}
-                              height={36}
-                              unoptimized
-                              className="w-full h-full object-cover"
-                            />
-                          </button>
-
-                          {openIconId === item.id && (
-                            <div className="absolute z-50 top-full left-0 mt-2 w-60 bg-white dark:bg-slate-900 border border-black/10 dark:border-white/10 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.4)] p-4 space-y-3 animate-in fade-in slide-in-from-top-1">
-                              <div className="relative w-16 h-16 mx-auto rounded-xl border border-black/10 dark:border-white/10 overflow-hidden bg-slate-50 dark:bg-slate-950">
-                                <Image src={item.icon || theme.fallbackIcon} alt="" fill unoptimized sizes="64px" className="object-cover" />
-                              </div>
-                              <div className="space-y-1.5">
-                                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">URL del ícono</label>
-                                <input
-                                  autoFocus
-                                  value={item.icon}
-                                  onChange={(e) => onUpdateItemLocal(item.id, "icon", e.target.value)}
-                                  onBlur={() => onPersistItem(item.id)}
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter") {
-                                      e.preventDefault();
-                                      (e.target as HTMLInputElement).blur();
-                                      setOpenIconId(null);
-                                    }
-                                  }}
-                                  placeholder="https://..."
-                                  className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-lg px-2.5 py-2 text-[10px] font-mono text-slate-700 dark:text-slate-300 focus:outline-none focus-visible:border-slate-400"
-                                />
-                              </div>
-                              <Button
-                                type="button"
-                                variant="secondary"
-                                onClick={() => setOpenIconId(null)}
-                                className="h-auto w-full py-2 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-black rounded-lg uppercase tracking-widest text-[9px]"
-                              >
-                                Listo
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-
-                        <input
-                          value={item.descripcion}
-                          onChange={(e) => onUpdateItemLocal(item.id, "descripcion", e.target.value)}
-                          onBlur={() => onPersistItem(item.id)}
-                          placeholder={theme.itemPlaceholder}
-                          className="flex-1 min-w-0 bg-transparent border-none text-xs text-slate-900 dark:text-white focus:ring-0 outline-none font-bold p-0"
-                        />
-                      </div>
-                    </TableCell>
-                    <TableCell className="px-3 py-2.5 text-right">
-                      <input
-                        type="number"
-                        value={item.valor}
-                        onChange={(e) => onUpdateItemLocal(item.id, "valor", parseInt(e.target.value) || 0)}
-                        onBlur={() => onPersistItem(item.id)}
-                        className={`h-auto w-16 bg-transparent border-none text-sm font-black text-right focus:ring-0 outline-none ${theme.valueText}`}
-                      />
-                    </TableCell>
-                    <TableCell className="px-3 py-2.5">
-                      <div className="flex items-center gap-0.5 opacity-0 group-hover/item:opacity-100">
-                        <div className="flex flex-col">
-                          <Button
-                            variant="ghost"
-                            size="icon-xs"
-                            disabled={index === 0}
-                            onClick={() => onMoveItem(item.id, "up")}
-                            title="Subir"
-                            className="h-4 text-slate-500 hover:text-slate-900 dark:hover:text-white disabled:opacity-20 active:scale-90"
-                          >
-                            <ChevronUp size={12} />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon-xs"
-                            disabled={index === cat.items.length - 1}
-                            onClick={() => onMoveItem(item.id, "down")}
-                            title="Bajar"
-                            className="h-4 text-slate-500 hover:text-slate-900 dark:hover:text-white disabled:opacity-20 active:scale-90"
-                          >
-                            <ChevronDown size={12} />
-                          </Button>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon-xs"
-                          onClick={() => onRemoveItem(item.id)}
-                          className="text-slate-500 hover:text-red-400 active:scale-90"
-                        >
-                          <X size={14} />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {cat.items.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={3} className="px-5 py-8 text-center">
-                      <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Sin ítems todavía</p>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-
-            <div className="p-4">
+              <Badge variant="secondary">{cat.items.length}</Badge>
               <Button
                 variant="ghost"
-                onClick={() => onAddItem(cat.category)}
-                className={`h-auto w-full py-3 border border-dashed border-white/5 rounded-xl text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] ${theme.addItemButton}`}
+                size="icon-sm"
+                onClick={() => onRemoveCategory(cat.category)}
+                aria-label={`Eliminar la categoría ${cat.category}`}
+                className="text-muted-foreground hover:text-destructive"
               >
-                {theme.addLabel}
+                <Trash2 />
+              </Button>
+            </div>
+            <ul className="divide-y">
+              {cat.items.map((item, index) => (
+                <li key={item.id} className="group flex items-center gap-2 px-3 py-2">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className="relative size-9 shrink-0 overflow-hidden rounded-md bg-muted"
+                        style={{ boxShadow: `0 0 0 1.5px ${theme.ring}` }}
+                        aria-label="Cambiar ícono"
+                      >
+                        <Image
+                          src={item.icon || theme.fallbackIcon}
+                          alt=""
+                          fill
+                          unoptimized
+                          sizes="36px"
+                          className="object-cover"
+                        />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent align="start" className="flex w-72 flex-col gap-2">
+                      <Label htmlFor={`icon-${item.id}`}>URL del ícono</Label>
+                      <Input
+                        id={`icon-${item.id}`}
+                        value={item.icon}
+                        onChange={(e) => onUpdateItemLocal(item.id, "icon", e.target.value)}
+                        onBlur={() => onPersistItem(item.id)}
+                        placeholder="https://wow.zamimg.com/images/wow/icons/large/…"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Pega el enlace de un ícono de wowhead/zamimg.
+                      </p>
+                    </PopoverContent>
+                  </Popover>
+                  <Input
+                    value={item.descripcion}
+                    onChange={(e) => onUpdateItemLocal(item.id, "descripcion", e.target.value)}
+                    onBlur={() => onPersistItem(item.id)}
+                    placeholder={theme.itemPlaceholder}
+                    aria-label="Descripción"
+                    className="h-9 flex-1 border-transparent bg-transparent shadow-none hover:border-input focus-visible:border-ring dark:bg-transparent"
+                  />
+                  <Input
+                    type="number"
+                    value={item.valor}
+                    onChange={(e) =>
+                      onUpdateItemLocal(item.id, "valor", parseInt(e.target.value) || 0)
+                    }
+                    onBlur={() => onPersistItem(item.id)}
+                    aria-label="Valor"
+                    className={cn("h-9 w-20 text-right font-mono font-semibold", theme.value)}
+                  />
+                  <div className="flex items-center opacity-60 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+                    <div className="flex flex-col">
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
+                        disabled={index === 0}
+                        onClick={() => onMoveItem(item.id, "up")}
+                        aria-label="Subir"
+                      >
+                        <ChevronUp />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
+                        disabled={index === cat.items.length - 1}
+                        onClick={() => onMoveItem(item.id, "down")}
+                        aria-label="Bajar"
+                      >
+                        <ChevronDown />
+                      </Button>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={() => onRemoveItem(item.id)}
+                      aria-label="Eliminar"
+                      className="text-muted-foreground hover:text-destructive"
+                    >
+                      <X />
+                    </Button>
+                  </div>
+                </li>
+              ))}
+              {cat.items.length === 0 && (
+                <li className="px-3 py-6 text-center text-sm text-muted-foreground">
+                  Sin reglas todavía
+                </li>
+              )}
+            </ul>
+            <div className="border-t p-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full"
+                onClick={() => onAddItem(cat.category)}
+              >
+                <Plus /> {theme.addLabel}
               </Button>
             </div>
           </Card>
         ))}
       </div>
-    </section>
+    </div>
   );
 }

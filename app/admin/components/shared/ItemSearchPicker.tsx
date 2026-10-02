@@ -1,10 +1,21 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import Image from "next/image";
-import clsx from "clsx";
-import { CheckCircle2, ChevronDown, Search, X } from "lucide-react";
+import { useState } from "react";
+import { Check, ChevronsUpDown, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { ItemIcon } from "@/components/wow/item-icon";
+import { cn } from "@/lib/utils";
+import { itemQuality } from "@/lib/wow";
 
 export interface ItemSearchOption {
   id: number | string;
@@ -28,6 +39,7 @@ interface ItemSearchPickerProps {
    */
   fallbackLabel?: string;
   fallbackIcon?: string;
+  id?: string;
 }
 
 /**
@@ -44,129 +56,105 @@ export default function ItemSearchPicker({
   emptyLabel = "Sin ítems disponibles",
   fallbackLabel,
   fallbackIcon,
+  id,
 }: ItemSearchPickerProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [search, setSearch] = useState("");
-
-  const selectedItems = items.filter((item) => selectedIds.includes(item.id_item));
-
-  const filteredItems = useMemo(() => {
-    if (!search) return items;
-    const lower = search.toLowerCase();
-    return items.filter((item) => item.name.toLowerCase().includes(lower));
-  }, [items, search]);
-
-  const close = () => {
-    setIsOpen(false);
-    setSearch("");
-  };
-
-  const handlePick = (idItem: number) => {
-    onToggle(idItem);
-    if (!multiple) close();
-  };
+  const [open, setOpen] = useState(false);
+  const selected = items.filter((item) => selectedIds.includes(item.id_item));
 
   return (
-    <div className="space-y-2 relative">
-      <button
-        type="button"
-        onClick={() => setIsOpen((v) => !v)}
-        aria-expanded={isOpen}
-        className="h-auto w-full flex items-center gap-3 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-2xl py-3 px-4 text-sm text-slate-900 dark:text-white font-bold focus:outline-none focus-visible:border-purple-500/50 text-left"
-      >
-        {selectedItems.length === 0 && fallbackLabel ? (
-          <>
-            <div className="relative w-8 h-8 rounded-lg border border-amber-500/30 overflow-hidden shrink-0">
-              {fallbackIcon && <Image src={fallbackIcon} alt={fallbackLabel} fill unoptimized sizes="32px" className="object-cover" />}
-            </div>
-            <span className="truncate">{fallbackLabel}</span>
-            <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest shrink-0">sin vincular</span>
-          </>
-        ) : selectedItems.length === 0 ? (
-          <span className="text-slate-500 font-medium">{triggerLabel}</span>
-        ) : !multiple || selectedItems.length === 1 ? (
-          <>
-            <div className="relative w-8 h-8 rounded-lg border border-purple-500/30 overflow-hidden shrink-0">
-              <Image src={selectedItems[0].icon} alt={selectedItems[0].name} fill unoptimized sizes="32px" className="object-cover" />
-            </div>
-            <span className="truncate">{selectedItems[0].name}</span>
-          </>
-        ) : (
-          <span>
-            {selectedItems.length} ítem{selectedItems.length > 1 ? "s" : ""} seleccionado{selectedItems.length > 1 ? "s" : ""}
-          </span>
-        )}
-        <ChevronDown className={clsx("ml-auto text-slate-500 shrink-0 transition-transform", isOpen && "rotate-180")} size={16} />
-      </button>
-
-      {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-900 border border-black/10 dark:border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.7)] overflow-hidden animate-in fade-in slide-in-from-top-1 flex flex-col">
-          <div className="p-2 border-b border-white/5 relative shrink-0">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={14} />
-            <input
-              type="text"
-              autoFocus
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar ítem..."
-              className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800 rounded-lg py-2 pl-8 pr-3 text-xs text-slate-900 dark:text-white focus:outline-none focus-visible:border-purple-500/50"
-            />
-          </div>
-
-          <div className="max-h-[240px] overflow-y-auto">
-            {filteredItems.map((item) => {
-              const isSelected = selectedIds.includes(item.id_item);
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => handlePick(item.id_item)}
-                  className={clsx(
-                    "w-full flex items-center gap-3 p-2.5 hover:bg-white/5 transition-colors border-b border-white/5 last:border-none text-left",
-                    isSelected && "bg-purple-500/5",
-                  )}
+    <div className="flex flex-col gap-2">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            id={id}
+            type="button"
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="h-10 w-full justify-start px-2.5 font-normal"
+          >
+            {selected.length === 0 && fallbackLabel ? (
+              <>
+                <ItemIcon src={fallbackIcon} name={fallbackLabel} size={24} />
+                <span className="truncate">{fallbackLabel}</span>
+                <Badge
+                  variant="outline"
+                  className="border-amber-500/40 text-amber-600 dark:text-amber-400"
                 >
-                  <div className="relative w-8 h-8 rounded-lg border border-purple-500/30 overflow-hidden shrink-0">
-                    <Image src={item.icon} alt={item.name} fill unoptimized sizes="32px" className="object-cover" />
-                  </div>
-                  <span className="text-xs font-bold text-slate-900 dark:text-white truncate flex-1">{item.name}</span>
-                  {isSelected && <CheckCircle2 className="text-purple-400 shrink-0" size={16} />}
-                </button>
-              );
-            })}
-            {filteredItems.length === 0 && <p className="p-3 text-xs text-slate-500 font-bold uppercase">{emptyLabel}</p>}
-          </div>
-
-          {multiple && (
-            <div className="p-2 border-t border-white/5 shrink-0">
-              <Button
+                  sin vincular
+                </Badge>
+              </>
+            ) : selected.length === 0 ? (
+              <span className="text-muted-foreground">{triggerLabel}</span>
+            ) : !multiple || selected.length === 1 ? (
+              <>
+                <ItemIcon
+                  src={selected[0].icon}
+                  name={selected[0].name}
+                  quality={itemQuality(selected[0].id_item)}
+                  size={24}
+                />
+                <span className="truncate">{selected[0].name}</span>
+              </>
+            ) : (
+              <span>{selected.length} ítems seleccionados</span>
+            )}
+            <ChevronsUpDown className="ml-auto text-muted-foreground" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-(--radix-popover-trigger-width) min-w-72 p-0" align="start">
+          <Command>
+            <CommandInput placeholder="Buscar ítem…" />
+            <CommandList>
+              <CommandEmpty>{emptyLabel}</CommandEmpty>
+              <CommandGroup>
+                {items.map((item) => {
+                  const on = selectedIds.includes(item.id_item);
+                  return (
+                    <CommandItem
+                      key={item.id}
+                      value={`${item.name} ${item.id_item}`}
+                      onSelect={() => {
+                        onToggle(item.id_item);
+                        if (!multiple) setOpen(false);
+                      }}
+                    >
+                      <ItemIcon
+                        src={item.icon}
+                        name={item.name}
+                        quality={itemQuality(item.id_item)}
+                        size={24}
+                      />
+                      <span className="flex-1 truncate">{item.name}</span>
+                      <Check className={cn("size-4", on ? "opacity-100" : "opacity-0")} />
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+      {multiple && selected.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {selected.map((item) => (
+            <Badge key={item.id_item} variant="secondary" className="h-7 gap-1.5 pr-1 pl-1">
+              <ItemIcon
+                src={item.icon}
+                name={item.name}
+                quality={itemQuality(item.id_item)}
+                size={18}
+              />
+              <span className="max-w-40 truncate">{item.name}</span>
+              <button
                 type="button"
-                variant="secondary"
-                onClick={close}
-                className="h-auto w-full py-2 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-black rounded-lg uppercase tracking-widest text-[10px]"
+                onClick={() => onToggle(item.id_item)}
+                className="rounded-sm p-0.5 text-muted-foreground hover:text-foreground"
+                aria-label={`Quitar ${item.name}`}
               >
-                Listo
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {multiple && selectedItems.length > 0 && (
-        <div className="flex flex-wrap gap-2 pt-1">
-          {selectedItems.map((item) => (
-            <span
-              key={item.id_item}
-              className="flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-[10px] font-bold text-purple-400"
-            >
-              <div className="relative w-4.5 h-4.5 rounded overflow-hidden shrink-0">
-                <Image src={item.icon} alt={item.name} fill unoptimized sizes="18px" className="object-cover" />
-              </div>
-              <span className="truncate max-w-[110px]">{item.name}</span>
-              <button type="button" onClick={() => onToggle(item.id_item)} className="hover:text-red-400 shrink-0">
-                <X size={12} />
+                <X className="size-3" />
               </button>
-            </span>
+            </Badge>
           ))}
         </div>
       )}

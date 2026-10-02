@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmDialog } from "@/components/confirm-dialog";
 import { useEffect, useState } from "react";
 import { FullGearedCharacter } from "@/src/domain/entities/FullGeared";
 import { AdminStatus, EpgpSearchResult, FullGearedForm } from "../types";
@@ -112,14 +113,25 @@ export function useFullGearedAdmin(search: string, onStatus: (status: AdminStatu
       resetForm();
       fetchCharacters();
     } catch (error) {
-      onStatus({ type: "error", message: error instanceof Error ? error.message : "Error al guardar" });
+      onStatus({
+        type: "error",
+        message: error instanceof Error ? error.message : "Error al guardar",
+      });
     } finally {
       setIsSaving(false);
     }
   };
 
   const deleteCharacter = async (id: number) => {
-    if (!confirm("¿Seguro que deseas eliminar este personaje?")) return;
+    if (
+      !(await confirmDialog({
+        title: "¿Eliminar este personaje?",
+        description: "Se quitará de la lista de Full Gear.",
+        confirmLabel: "Eliminar",
+        destructive: true,
+      }))
+    )
+      return;
 
     setIsSaving(true);
     try {
@@ -128,7 +140,10 @@ export function useFullGearedAdmin(search: string, onStatus: (status: AdminStatu
       onStatus({ type: "success", message: "Personaje eliminado" });
       fetchCharacters();
     } catch (error) {
-      onStatus({ type: "error", message: error instanceof Error ? error.message : "Error al eliminar" });
+      onStatus({
+        type: "error",
+        message: error instanceof Error ? error.message : "Error al eliminar",
+      });
     } finally {
       setIsSaving(false);
     }

@@ -60,7 +60,8 @@ export interface PaginatedLootWinsResult {
   totalPages: number;
 }
 
-export const LOOT_RAID_TABS: { value: string; label: string }[] = [
-  { value: "RS", label: "Ruby Sanctum" },
-  { value: "TOGC", label: "Trial of the Grand Crusader" },
+export const LOOT_RAID_TABS: { value: string; label: string; short: string }[] = [
+  { value: "ICC", label: "Icecrown Citadel", short: "ICC" },
+  { value: "RS", label: "Ruby Sanctum", short: "RS" },
+  { value: "TOGC", label: "Trial of the Grand Crusader", short: "ToGC" },
 ];

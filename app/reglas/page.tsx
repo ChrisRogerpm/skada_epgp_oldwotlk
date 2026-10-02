@@ -1,633 +1,454 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Image from "next/image";
-import {
-  ScrollText,
-  Shield,
-  TrendingUp,
-  TrendingDown,
-  Search,
-  Loader2,
-  Filter,
-  ChevronDown,
-  ChevronUp,
-  Info,
-  Trophy,
-  AlertTriangle,
-  Coins,
-  ExternalLink,
-  CheckCircle2,
-  XCircle,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useSearchParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { CircleCheck, CircleX, ScrollText, Search, TrendingDown, TrendingUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import { Table, TableBody, TableRow, TableCell } from "@/components/ui/table";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { PageBody, PageHeader } from "@/components/page-header";
+import { ClientOnly } from "@/components/client-only";
+import { ItemIcon, itemNameClass } from "@/components/wow/item-icon";
+import { CharacterName } from "@/components/wow/character-name";
+import { useMyCharacter } from "@/hooks/use-my-character";
+import { useRoster } from "@/hooks/use-roster";
+import { cn } from "@/lib/utils";
+import { formatPoints, itemUrl, refreshWowheadLinks } from "@/lib/wow";
 
-interface LootItem {
+interface LootRule {
   category: string;
   item: string;
   requirement: string[];
   valueMin: number;
   icon: string;
+  idItem?: number | null;
 }
 
 interface RaidRule {
   raid: string;
-  items: LootItem[];
+  items: LootRule[];
 }
 
-interface BenefitItem {
+interface PointRule {
   descripcion: string;
   valor: number;
   icon?: string;
 }
 
-interface BenefitCategory {
+interface PointCategory {
   category: string;
-  items: BenefitItem[];
+  items: PointRule[];
 }
 
-interface PenaltyItem {
-  descripcion: string;
-  valor: number;
-  icon?: string;
-}
+type RulesData = Record<string, unknown>[];
 
-interface PenaltyCategory {
-  category: string;
-  items: PenaltyItem[];
-}
+const ALL = "__all__";
 
-type RulesData = [
-  { "Reglas de Loteo": RaidRule[] },
-  { Beneficios: BenefitCategory[] },
-  { Perjuicios: PenaltyCategory[] },
-];
+const isHighlight = (category: string) => /BIS|ARMAS LK|MONTURA|LEGEND/i.test(category);
 
-export default function RulesPage() {
-  const [activeTab, setActiveTab] = useState<"loot" | "benefits" | "penalties">(
-    "loot",
+export default function ReglasPage() {
+  return (
+    <Suspense>
+      <ClientOnly>
+        <ReglasView />
+      </ClientOnly>
+    </Suspense>
   );
-  const [data, setData] = useState<RulesData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [expandedRaids, setExpandedRaids] = useState<Set<string>>(new Set());
+}
 
-  // New Filter States
-  const [selectedCategory, setSelectedCategory] = useState<string>("TODOS");
-  const [myEP, setMyEP] = useState<number | null>(null);
-  const [myCharacterName, setMyCharacterName] = useState<string | null>(null);
+function ReglasView() {
+  const params = useSearchParams();
+  const [search, setSearch] = useState(params.get("q") ?? "");
+  const [raid, setRaid] = useState<string | null>(null);
+  const [category, setCategory] = useState(ALL);
+  const { myCharacter } = useMyCharacter();
+  const { memberByName } = useRoster();
+  const me = myCharacter ? memberByName.get(myCharacter.toLowerCase()) : undefined;
+
+  const { data, isLoading } = useQuery<RulesData>({
+    queryKey: ["reglas"],
+    queryFn: async () => {
+      const res = await fetch("/api/reglas");
+      if (!res.ok) throw new Error("Error al obtener las reglas");
+      return res.json();
+    },
+  });
+
+  const section = <T,>(name: string): T[] =>
+    Array.isArray(data) ? ((data.find((s) => s[name])?.[name] as T[]) ?? []) : [];
+  const lootRules = section<RaidRule>("Reglas de Loteo");
+  const benefits = section<PointCategory>("Beneficios");
+  const penalties = section<PointCategory>("Perjuicios");
+
+  const q = search.trim().toLowerCase();
+  const hasItem = (r: RaidRule) => r.items.some((i) => i.item.toLowerCase().includes(q));
+  // Si la búsqueda (p. ej. desde Ctrl K) apunta a un ítem de otra raid, se muestra esa raid.
+  const chosen = lootRules.find((r) => r.raid === raid);
+  const activeRaid =
+    (chosen && (!q || hasItem(chosen)) ? chosen.raid : null) ??
+    (q ? lootRules.find(hasItem)?.raid : null) ??
+    chosen?.raid ??
+    lootRules[0]?.raid ??
+    null;
+  const raidRule = lootRules.find((r) => r.raid === activeRaid);
+
+  const categories = [...new Set((raidRule?.items ?? []).map((i) => i.category))];
+
+  const loot = (raidRule?.items ?? []).filter(
+    (i) =>
+      (category === ALL || i.category === category) &&
+      (!q ||
+        i.item.toLowerCase().includes(q) ||
+        i.requirement?.some((r) => r.toLowerCase().includes(q))),
+  );
+
+  const filterPoints = (cats: PointCategory[]) =>
+    cats
+      .map((c) => ({
+        ...c,
+        items: c.items.filter((i) => !q || i.descripcion.toLowerCase().includes(q)),
+      }))
+      .filter((c) => c.items.length);
+
+  const affordable = me ? (raidRule?.items ?? []).filter((i) => me.amount >= i.valueMin).length : 0;
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        const res = await fetch("/api/reglas");
-        const json = await res.json();
-        setData(json);
-
-        // Find the "Reglas de Loteo" section in the array
-        const lootSection = Array.isArray(json)
-          ? json.find((section: any) => section["Reglas de Loteo"])?.[
-              "Reglas de Loteo"
-            ]
-          : null;
-
-        // Default expand first raid in loot rules
-        if (lootSection && lootSection.length > 0) {
-          setExpandedRaids(new Set([lootSection[0].raid]));
-        }
-
-        // Fetch My Character EP if available
-        const savedChar = localStorage.getItem("my_character");
-        if (savedChar) {
-          setMyCharacterName(savedChar);
-          const epgpRes = await fetch("/api/epgp");
-          const epgpData = await epgpRes.json();
-          const me = epgpData.roster?.find((r: any) => r.main === savedChar);
-          if (me) setMyEP(me.amount);
-        }
-      } catch (error) {
-        console.error("Error fetching rules:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
-
-  const toggleRaid = (raid: string) => {
-    const newSet = new Set(expandedRaids);
-    if (newSet.has(raid)) newSet.delete(raid);
-    else newSet.add(raid);
-    setExpandedRaids(newSet);
-  };
-
-  const categories = useMemo(() => {
-    if (!data || !Array.isArray(data)) return ["TODOS"];
-    const cats = new Set<string>(["TODOS"]);
-
-    // Safety search for the correct array item
-    const lootSection = (data as any[]).find(
-      (section: any) => section["Reglas de Loteo"],
-    )?.["Reglas de Loteo"];
-
-    lootSection?.forEach((raid: any) => {
-      raid.items?.forEach((item: any) => cats.add(item.category));
-    });
-    return Array.from(cats);
-  }, [data]);
-
-  const filteredLoot = useMemo(() => {
-    if (!data || !Array.isArray(data)) return [];
-
-    // Safety search for the correct array item
-    const lootRules =
-      (data as any[]).find((section: any) => section["Reglas de Loteo"])?.[
-        "Reglas de Loteo"
-      ] || [];
-
-    return lootRules
-      .map((raid: any) => ({
-        ...raid,
-        items: (raid.items || []).filter((item: any) => {
-          const matchesSearch =
-            !searchTerm ||
-            item.item.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (item.requirement || []).some((req: any) =>
-              req.toLowerCase().includes(searchTerm.toLowerCase()),
-            );
-
-          const matchesCategory =
-            selectedCategory === "TODOS" || item.category === selectedCategory;
-
-          return matchesSearch && matchesCategory;
-        }),
-      }))
-      .filter((raid: any) => raid.items.length > 0);
-  }, [data, searchTerm, selectedCategory]);
-
-  const filteredBenefits = useMemo(() => {
-    if (!data || !Array.isArray(data)) return [];
-
-    // Safety search for the correct array item
-    const benefits =
-      (data as any[]).find((section: any) => section["Beneficios"])?.[
-        "Beneficios"
-      ] || [];
-    if (!searchTerm) return benefits;
-
-    const term = searchTerm.toLowerCase();
-    return benefits
-      .map((cat: any) => ({
-        ...cat,
-        items: (cat.items || []).filter((item: any) =>
-          item.descripcion.toLowerCase().includes(term),
-        ),
-      }))
-      .filter((cat: any) => cat.items.length > 0);
-  }, [data, searchTerm]);
-
-  const filteredPenalties = useMemo(() => {
-    if (!data || !Array.isArray(data)) return [];
-
-    // Safety search for the correct array item
-    const penalties =
-      (data as any[]).find((section: any) => section["Perjuicios"])?.[
-        "Perjuicios"
-      ] || [];
-
-    if (!searchTerm) return penalties;
-
-    const term = searchTerm.toLowerCase();
-    return penalties
-      .map((cat: any) => ({
-        ...cat,
-        items: (cat.items || []).filter((item: any) =>
-          item.descripcion.toLowerCase().includes(term),
-        ),
-      }))
-      .filter((cat: any) => cat.items.length > 0);
-  }, [data, searchTerm]);
-
-  useEffect(() => {
-    // Wowhead Tooltips Refresh
-    if (typeof window !== "undefined" && (window as any).$WowheadPower) {
-      setTimeout(() => (window as any).$WowheadPower.refreshLinks(), 100);
-    }
-  }, [activeTab, data, selectedCategory, searchTerm]);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center gap-4">
-        <Loader2 className="w-12 h-12 text-emerald-500 animate-spin" />
-        <p className="text-slate-600 dark:text-slate-400 font-medium animate-pulse">
-          Cargando normativas...
-        </p>
-      </div>
-    );
-  }
+    refreshWowheadLinks();
+  }, [activeRaid, category, q, data]);
 
   return (
-    <main className="min-h-screen bg-white dark:bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-100 via-white to-white dark:from-slate-900 dark:via-slate-950 dark:to-black text-slate-800 dark:text-slate-200 p-4 md:p-8 lg:p-12 font-sans selection:bg-emerald-500/30">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header Section */}
-        <header className="flex flex-col xl:flex-row xl:items-end justify-between gap-6 pb-6 border-b border-slate-200 dark:border-slate-800/60">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
-                <ScrollText className="text-emerald-400" size={28} />
-              </div>
-              <div>
-                <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 drop-shadow-sm leading-tight">
-                  Reglas y Normativas
-                </h1>
-                {myCharacterName && myEP !== null && (
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded border border-blue-500/30 font-bold uppercase tracking-wider">
-                      {myCharacterName}: {myEP.toLocaleString()} EP
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-            <p className="text-slate-600 dark:text-slate-400 text-sm md:text-base max-w-2xl">
-              Consulta las reglas de loteo, requisitos de items BIS y el sistema
-              de bonificaciones y penalizaciones.
-            </p>
+    <PageBody>
+      <PageHeader
+        title="Reglas de la hermandad"
+        description="Cómo se ganan y se pierden puntos, y qué se necesita para lotear cada ítem."
+        actions={
+          <div className="relative w-full sm:w-80">
+            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar regla, ítem o requisito…"
+              aria-label="Buscar en las reglas"
+              className="h-9 pl-8"
+            />
           </div>
+        }
+      />
 
-          <div className="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto">
-            {/* Tabs */}
-            <div className="flex bg-white dark:bg-slate-900/80 p-1.5 rounded-xl border border-slate-300 dark:border-slate-700/60 shadow-inner w-full sm:w-auto">
-              <Button
-                variant="ghost"
-                aria-pressed={activeTab === "loot"}
-                onClick={() => {
-                  setActiveTab("loot");
-                  setSearchTerm("");
-                }}
-                className={`h-auto flex-1 sm:flex-none gap-2 px-4 py-2 rounded-lg text-sm font-semibold ${
-                  activeTab === "loot"
-                    ? "bg-slate-100 dark:bg-slate-800 text-emerald-400 shadow-md border border-slate-300 dark:border-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-400"
-                    : "text-slate-500 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50"
-                }`}
-              >
-                <Trophy size={16} /> Loteo
-              </Button>
-              <Button
-                variant="ghost"
-                aria-pressed={activeTab === "benefits"}
-                onClick={() => {
-                  setActiveTab("benefits");
-                  setSearchTerm("");
-                }}
-                className={`h-auto flex-1 sm:flex-none gap-2 px-4 py-2 rounded-lg text-sm font-semibold ${
-                  activeTab === "benefits"
-                    ? "bg-slate-100 dark:bg-slate-800 text-emerald-400 shadow-md border border-slate-300 dark:border-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-400"
-                    : "text-slate-500 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50"
-                }`}
-              >
-                <TrendingUp size={16} /> Beneficios
-              </Button>
-              <Button
-                variant="ghost"
-                aria-pressed={activeTab === "penalties"}
-                onClick={() => {
-                  setActiveTab("penalties");
-                  setSearchTerm("");
-                }}
-                className={`h-auto flex-1 sm:flex-none gap-2 px-4 py-2 rounded-lg text-sm font-semibold ${
-                  activeTab === "penalties"
-                    ? "bg-slate-100 dark:bg-slate-800 text-emerald-400 shadow-md border border-slate-300 dark:border-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-emerald-400"
-                    : "text-slate-500 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/50"
-                }`}
-              >
-                <TrendingDown size={16} /> Perjuicios
-              </Button>
-            </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <PointsCard
+          title="Beneficios"
+          tone="positive"
+          categories={filterPoints(benefits)}
+          loading={isLoading}
+        />
+        <PointsCard
+          title="Perjuicios"
+          tone="negative"
+          categories={filterPoints(penalties)}
+          loading={isLoading}
+        />
+      </div>
 
-            <div className="relative group w-full sm:w-64">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
-                <Search className="h-4 w-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
-              </div>
-              <Input
-                type="text"
-                placeholder="Buscar..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-auto bg-white dark:bg-slate-900/80 border-slate-300 dark:border-slate-700/60 rounded-xl py-2 pl-9 pr-4 text-sm placeholder-slate-500 focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500/50 shadow-inner"
-              />
-            </div>
+      <section className="flex flex-col gap-3">
+        <Card className="gap-0 overflow-hidden p-0">
+          <div className="flex flex-wrap items-center gap-2 border-b px-4 py-3">
+            <h2 className="mr-1 font-semibold">Reglas de loteo</h2>
+            {lootRules.length > 0 && (
+              <Tabs
+                value={activeRaid ?? undefined}
+                onValueChange={(v) => {
+                  setRaid(v);
+                  setCategory(ALL);
+                }}
+              >
+                <TabsList>
+                  {lootRules.map((r) => (
+                    <TabsTrigger key={r.raid} value={r.raid}>
+                      {r.raid}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+            )}
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger className="h-8! w-48" aria-label="Categoría">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL}>Todas las categorías</SelectItem>
+                {categories.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {me && raidRule && (
+              <span className="ml-auto flex h-8 items-center gap-2 rounded-md border border-positive/30 bg-positive/10 px-3 text-sm">
+                <CircleCheck className="size-4 text-positive" />
+                <CharacterName cls={me.class} className="font-semibold">
+                  {me.main}
+                </CharacterName>
+                <span className="text-muted-foreground">
+                  ({formatPoints(me.amount)} pts) puede lotear {affordable} de{" "}
+                  {raidRule.items.length}
+                </span>
+              </span>
+            )}
           </div>
-        </header>
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/40 hover:bg-muted/40">
+                <TableHead className="min-w-56">Ítem</TableHead>
+                <TableHead className="hidden md:table-cell">Categoría</TableHead>
+                <TableHead className="hidden w-[45%] lg:table-cell">Requisitos</TableHead>
+                <TableHead className="text-right">Mínimo</TableHead>
+                {me && <TableHead className="text-right">Tu estado</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading &&
+                Array.from({ length: 8 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell colSpan={5}>
+                      <Skeleton className="h-9 w-full" />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              {!isLoading && loot.length === 0 && (
+                <TableRow className="hover:bg-transparent">
+                  <TableCell colSpan={5}>
+                    <Empty className="py-12">
+                      <EmptyHeader>
+                        <EmptyMedia variant="icon">
+                          <ScrollText />
+                        </EmptyMedia>
+                        <EmptyTitle>Sin reglas que coincidan</EmptyTitle>
+                        <EmptyDescription>
+                          Cambia la búsqueda, la raid o la categoría.
+                        </EmptyDescription>
+                      </EmptyHeader>
+                    </Empty>
+                  </TableCell>
+                </TableRow>
+              )}
+              {loot.map((rule, idx) => {
+                const quality = isHighlight(rule.category) ? "legendary" : "epic";
+                const missing = me ? rule.valueMin - me.amount : 0;
+                return (
+                  <TableRow key={`${rule.item}-${idx}`}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <ItemIcon src={rule.icon} name={rule.item} quality={quality} size={36} />
+                        <div className="min-w-0">
+                          <a
+                            href={itemUrl(rule.idItem, rule.item)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={cn(
+                              "font-medium whitespace-normal hover:underline",
+                              itemNameClass(quality),
+                            )}
+                          >
+                            {rule.item}
+                          </a>
+                          <div className="flex flex-wrap gap-1 pt-1 lg:hidden">
+                            <Badge variant="outline" className="md:hidden">
+                              {rule.category}
+                            </Badge>
+                            {rule.requirement?.map((r) => (
+                              <Badge
+                                key={r}
+                                variant="secondary"
+                                className="h-auto py-0.5 text-left whitespace-normal"
+                              >
+                                {r}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          isHighlight(rule.category) &&
+                            "border-orange-500/40 text-orange-600 dark:text-orange-400",
+                        )}
+                      >
+                        {rule.category}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="hidden whitespace-normal lg:table-cell">
+                      <div className="flex flex-wrap gap-1">
+                        {rule.requirement?.length ? (
+                          rule.requirement.map((r) => (
+                            <Badge
+                              key={r}
+                              variant="secondary"
+                              className="h-auto py-0.5 text-left whitespace-normal"
+                            >
+                              {r}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Sin requisitos</span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right font-mono font-semibold tabular">
+                      {formatPoints(rule.valueMin)}
+                    </TableCell>
+                    {me && (
+                      <TableCell className="text-right">
+                        {missing <= 0 ? (
+                          <Badge className="bg-positive/15 text-positive hover:bg-positive/15">
+                            <CircleCheck /> Alcanza
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-negative/15 text-negative hover:bg-negative/15">
+                            <CircleX /> Faltan {formatPoints(missing)}
+                          </Badge>
+                        )}
+                      </TableCell>
+                    )}
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </Card>
+        {me && (
+          <p className="text-xs text-muted-foreground">
+            «Alcanza» solo compara tus puntos con el mínimo; los requisitos (clase, rol, full gear…)
+            los revisan los oficiales.
+          </p>
+        )}
+      </section>
+    </PageBody>
+  );
+}
 
-        {/* Categories / Filter Bar */}
-        {activeTab === "loot" && (
-          <div className="flex flex-wrap items-center gap-2 pb-2">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mr-2">
-              Filtrar Categoría:
-            </span>
-            {categories.map((cat: any) => (
-              <Button
-                key={cat}
-                variant="ghost"
-                size="xs"
-                aria-pressed={selectedCategory === cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`rounded-full font-bold uppercase tracking-wider border ${
-                  selectedCategory === cat
-                    ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-[0_0_10px_rgba(16,185,129,0.1)] hover:bg-emerald-500/20 hover:text-emerald-400"
-                    : "bg-white dark:bg-slate-900/50 text-slate-500 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:text-slate-700 dark:hover:text-slate-300"
-                }`}
-              >
-                {cat}
-              </Button>
+function PointsCard({
+  title,
+  tone,
+  categories,
+  loading,
+}: {
+  title: string;
+  tone: "positive" | "negative";
+  categories: PointCategory[];
+  loading: boolean;
+}) {
+  const Icon = tone === "positive" ? TrendingUp : TrendingDown;
+  const count = categories.reduce((s, c) => s + c.items.length, 0);
+  return (
+    <Card className="gap-0 pb-0">
+      <CardHeader className="border-b pb-4">
+        <CardTitle className="flex items-center gap-2">
+          <span
+            className={cn(
+              "flex size-7 items-center justify-center rounded-md",
+              tone === "positive" ? "bg-positive/15 text-positive" : "bg-negative/15 text-negative",
+            )}
+          >
+            <Icon className="size-4" />
+          </span>
+          {title}
+        </CardTitle>
+        <CardDescription>{count} reglas</CardDescription>
+      </CardHeader>
+      <CardContent className="max-h-[380px] overflow-y-auto px-0">
+        {loading ? (
+          <div className="space-y-2 p-6">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton key={i} className="h-9 w-full" />
             ))}
           </div>
-        )}
-
-        {/* Content Area */}
-        <div className="space-y-6">
-          {activeTab === "loot" && (
-            <div className="space-y-6 animate-in fade-in duration-300">
-              {filteredLoot.map((raidRule: any) => (
-                <Card
-                  key={raidRule.raid}
-                  className="gap-0 p-0 bg-white dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800/60 overflow-hidden shadow-xl backdrop-blur-sm"
-                >
-                  <Button
-                    variant="ghost"
-                    aria-expanded={expandedRaids.has(raidRule.raid)}
-                    onClick={() => toggleRaid(raidRule.raid)}
-                    className="h-auto w-full justify-between rounded-none p-4 md:p-6 bg-slate-50 dark:bg-slate-950/40 hover:bg-white dark:hover:bg-slate-900/60 text-left"
+        ) : categories.length === 0 ? (
+          <p className="p-6 text-sm text-muted-foreground">Sin reglas que coincidan.</p>
+        ) : (
+          categories.map((cat) => (
+            <section key={cat.category}>
+              <h3 className="px-6 pt-4 pb-1 text-xs font-medium text-muted-foreground">
+                {cat.category}
+              </h3>
+              <ul>
+                {cat.items.map((rule, i) => (
+                  <li
+                    key={`${rule.descripcion}-${i}`}
+                    className="flex items-center gap-3 px-6 py-2"
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="p-2 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
-                        <Shield className="text-emerald-400" size={20} />
-                      </div>
-                      <div>
-                        <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
-                          {raidRule.raid}
-                        </h2>
-                        <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">
-                          Reglas de Loteo Heroico
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <Badge className="hidden sm:inline-flex font-bold bg-white dark:bg-slate-900/80 text-slate-500 border border-slate-200 dark:border-slate-800">
-                        {raidRule.items.length} ÍTEMS
-                      </Badge>
-                      {expandedRaids.has(raidRule.raid) ? (
-                        <ChevronUp className="text-slate-500" />
-                      ) : (
-                        <ChevronDown className="text-slate-500" />
+                    <span
+                      className={cn(
+                        "relative flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted",
+                        tone === "positive" ? "text-positive" : "text-negative",
                       )}
-                    </div>
-                  </Button>
-
-                  {expandedRaids.has(raidRule.raid) && (
-                    <div className="p-4 md:p-6 space-y-4 animate-in slide-in-from-top-2 duration-200">
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        {raidRule.items.map((item: any, idx: number) => {
-                          const isBIS =
-                            item.category.includes("BIS") ||
-                            item.category.includes("ARMAS LK") ||
-                            item.category.includes("MONTURA");
-                          const canAfford =
-                            myEP !== null ? myEP >= item.valueMin : null;
-
-                          return (
-                            <div
-                              key={idx}
-                              className={`relative bg-slate-50 dark:bg-slate-950/60 rounded-xl border p-4 transition-all group shadow-sm overflow-hidden ${
-                                isBIS
-                                  ? "border-orange-500/30 hover:border-orange-500/50"
-                                  : "border-slate-200 dark:border-slate-800/80 hover:border-emerald-500/30"
-                              }`}
-                            >
-                              {isBIS && (
-                                <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/5 blur-2xl rounded-full -mr-10 -mt-10 pointer-events-none" />
-                              )}
-
-                              <div className="flex gap-4 relative z-10">
-                                <a
-                                  href={
-                                    item.idItem
-                                      ? `https://wotlk.ultimowow.com/es/?item=${item.idItem}`
-                                      : `https://wotlk.ultimowow.com/es/?search=${encodeURIComponent(item.item)}`
-                                  }
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="w-14 h-14 rounded-lg overflow-hidden border-2 border-slate-200 dark:border-slate-800 group-hover:border-emerald-500/40 transition-colors bg-white dark:bg-slate-900 shrink-0 relative"
-                                >
-                                  <Image
-                                    src={item.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"}
-                                    alt={item.item}
-                                    width={56}
-                                    height={56}
-                                    unoptimized
-                                    className="w-full h-full object-cover"
-                                  />
-                                  <div className="absolute inset-0 bg-emerald-500/10 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity backdrop-blur-[1px]">
-                                    <ExternalLink
-                                      size={14}
-                                      className="text-emerald-600 dark:text-emerald-400"
-                                    />
-                                  </div>
-                                </a>
-
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex justify-between items-start mb-1">
-                                    <h3
-                                      className={`font-bold text-base truncate pr-2 ${isBIS ? "text-orange-400" : "text-emerald-400"}`}
-                                    >
-                                      {item.item}
-                                    </h3>
-                                    <Badge
-                                      className={`gap-1.5 rounded border ${
-                                        canAfford === true
-                                          ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
-                                          : canAfford === false
-                                            ? "bg-red-500/10 border-red-500/20 text-red-600 dark:text-red-400"
-                                            : "bg-emerald-500/5 border-emerald-500/20 text-emerald-700 dark:text-emerald-300"
-                                      }`}
-                                    >
-                                      <Coins size={12} />
-                                      <span className="text-xs font-bold">
-                                        {item.valueMin}
-                                      </span>
-                                      {canAfford === true && (
-                                        <CheckCircle2 size={10} />
-                                      )}
-                                      {canAfford === false && (
-                                        <XCircle size={10} />
-                                      )}
-                                    </Badge>
-                                  </div>
-
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <Badge
-                                      className={`rounded font-bold uppercase tracking-wider ${
-                                        isBIS
-                                          ? "bg-orange-500/20 text-orange-400 border border-orange-500/30"
-                                          : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
-                                      }`}
-                                    >
-                                      {item.category}
-                                    </Badge>
-                                  </div>
-
-                                  {item.requirement.length > 0 ? (
-                                    <div className="space-y-1.5">
-                                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-tight">
-                                        <Info size={10} /> Requisitos de Loteo:
-                                      </div>
-                                      <ul className="space-y-1">
-                                        {item.requirement.map(
-                                          (req: any, rIdx: number) => (
-                                            <li
-                                              key={rIdx}
-                                              className="text-xs text-slate-700 dark:text-slate-300 flex items-start gap-2 leading-tight"
-                                            >
-                                              <div
-                                                className={`w-1 h-1 rounded-full mt-1.5 shrink-0 ${isBIS ? "bg-orange-500" : "bg-emerald-500"}`}
-                                              />
-                                              {req}
-                                            </li>
-                                          ),
-                                        )}
-                                      </ul>
-                                    </div>
-                                  ) : (
-                                    <p className="text-[10px] text-slate-500">
-                                      Sin requisitos específicos para lootear.
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </Card>
-              ))}
-            </div>
-          )}
-
-          {activeTab === "benefits" && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-300">
-              {filteredBenefits.map((cat: any, idx: number) => (
-                <Card
-                  key={idx}
-                  className="gap-0 p-0 bg-white dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800/60 overflow-hidden shadow-xl backdrop-blur-sm flex flex-col"
-                >
-                  <div className="p-4 bg-emerald-500/10 border-b border-slate-200 dark:border-slate-800/60 flex items-center gap-3">
-                    <TrendingUp className="text-emerald-500 dark:text-emerald-400" size={18} />
-                    <h2 className="font-bold text-slate-900 dark:text-slate-100">{cat.category}</h2>
-                  </div>
-                  <div className="p-2 flex-1">
-                    <Table>
-                      <TableBody className="divide-y divide-slate-800/40">
-                        {cat.items.map((item: any, iIdx: number) => (
-                          <TableRow
-                            key={iIdx}
-                            className="hover:bg-emerald-500/5"
-                          >
-                            <TableCell className="px-3 py-3">
-                              <div className="flex items-center gap-3">
-                                {item.icon && (
-                                  <div className="w-8 h-8 rounded border border-slate-300 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-900 shrink-0 relative">
-                                    <Image
-                                      src={item.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"}
-                                      alt={item.descripcion}
-                                      width={32}
-                                      height={32}
-                                      unoptimized
-                                      className="w-full h-full object-cover"
-                                    />
-                                  </div>
-                                )}
-                                <span className="text-sm text-slate-700 dark:text-slate-300 leading-tight">
-                                  {item.descripcion}
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="px-3 py-3 text-right">
-                              <span className="font-mono font-bold text-emerald-400">
-                                +{item.valor}
-                              </span>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )}
-
-          {activeTab === "penalties" && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-300">
-              {filteredPenalties.map((cat: any, idx: number) => (
-                <Card
-                  key={idx}
-                  className="gap-0 p-0 bg-white dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800/60 overflow-hidden shadow-xl backdrop-blur-sm flex flex-col"
-                >
-                  <div className="p-4 bg-red-500/10 border-b border-slate-200 dark:border-slate-800/60 flex items-center gap-3">
-                    <AlertTriangle className="text-red-500 dark:text-red-400" size={18} />
-                    <h2 className="font-bold text-slate-900 dark:text-slate-100">{cat.category}</h2>
-                  </div>
-                  <div className="p-2 flex-1">
-                    <Table>
-                      <TableBody className="divide-y divide-slate-800/40">
-                        {cat.items.map((item: any, iIdx: number) => (
-                          <TableRow
-                            key={iIdx}
-                            className="hover:bg-red-500/5"
-                          >
-                            <TableCell className="px-3 py-3">
-                              <div className="flex items-center gap-3">
-                                {item.icon && (
-                                  <div className="w-8 h-8 rounded border border-slate-300 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-900 shrink-0 relative">
-                                    <Image
-                                      src={item.icon || "https://wow.zamimg.com/images/wow/icons/large/inv_misc_questionmark.jpg"}
-                                      alt={item.descripcion}
-                                      width={32}
-                                      height={32}
-                                      unoptimized
-                                      className="w-full h-full object-cover"
-                                    />
-                                  </div>
-                                )}
-                                <span className="text-sm text-slate-700 dark:text-slate-300 leading-tight">
-                                  {item.descripcion}
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="px-3 py-3 text-right">
-                              <span className="font-mono font-bold text-red-400">
-                                {item.valor}
-                              </span>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </main>
+                      style={{
+                        boxShadow: `0 0 0 1.5px ${tone === "positive" ? "var(--positive)" : "var(--negative)"}`,
+                      }}
+                    >
+                      {rule.icon ? (
+                        <Image
+                          src={rule.icon}
+                          alt=""
+                          fill
+                          unoptimized
+                          sizes="32px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <Icon className="size-4" />
+                      )}
+                    </span>
+                    <span className="flex-1 text-sm">{rule.descripcion}</span>
+                    <span
+                      className={cn(
+                        "min-w-14 rounded-md px-2 py-0.5 text-center font-mono text-sm font-semibold tabular",
+                        tone === "positive"
+                          ? "bg-positive/10 text-positive"
+                          : "bg-negative/10 text-negative",
+                      )}
+                    >
+                      {tone === "positive" ? "+" : "−"}
+                      {formatPoints(Math.abs(rule.valor))}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))
+        )}
+      </CardContent>
+    </Card>
   );
 }

@@ -1,12 +1,24 @@
 "use client";
 
-import { useState } from "react";
-import { Gem, Search, Settings, Shield, Trophy, UserCog } from "lucide-react";
+import { useCallback, useState } from "react";
+import {
+  Coins,
+  Gem,
+  Loader2,
+  LogOut,
+  Search,
+  ShieldCheck,
+  ScrollText,
+  UserCog,
+} from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { PageBody } from "@/components/page-header";
+import { cn } from "@/lib/utils";
 import { useAdminAuth } from "./hooks/useAdminAuth";
 import AdminLoginScreen from "./components/AdminLoginScreen";
-import AdminSidebar, { AdminSectionId } from "./components/AdminSidebar";
-import AdminStatusToast from "./components/AdminStatusToast";
 import FullGearedSection from "./components/FullGearedSection";
 import LootSection from "./components/LootSection";
 import ReglasSection from "./components/ReglasSection";
@@ -14,23 +26,38 @@ import UsersSection from "./components/UsersSection";
 import { AdminStatus } from "./types";
 
 // La sección de Usuarios solo la ve este correo; el resto de admins ni la
-// ven en el sidebar ni pueden entrar a ella (los permisos reales de
-// escritura los sigue validando /api/admin/users con requireAdmin).
+// ven ni pueden entrar a ella (los permisos reales de escritura los sigue
+// validando /api/admin/users con requireAdmin).
 const USERS_SECTION_EMAIL = "christianrogerpm@gmail.com";
 
+type SectionId = "loot" | "puntos" | "loteo" | "fullgeared" | "usuarios";
+
 const BASE_SECTIONS = [
-  { id: "reglas" as const, label: "Reglas & Loot", icon: Trophy, color: "text-orange-400" },
-  { id: "fullgeared" as const, label: "Full ICC/RS", icon: Shield, color: "text-purple-400" },
-  { id: "loot" as const, label: "Registro de Loot", icon: Gem, color: "text-purple-400" },
+  { id: "loot" as const, label: "Botín", icon: Gem, searchPlaceholder: "Filtrar por jugador…" },
+  {
+    id: "puntos" as const,
+    label: "Reglas de puntos",
+    icon: Coins,
+    searchPlaceholder: "Filtrar reglas…",
+  },
+  {
+    id: "loteo" as const,
+    label: "Reglas de loteo",
+    icon: ScrollText,
+    searchPlaceholder: "Filtrar ítems…",
+  },
+  {
+    id: "fullgeared" as const,
+    label: "Full Gear",
+    icon: ShieldCheck,
+    searchPlaceholder: "Filtrar personajes…",
+  },
 ];
-
-const USERS_SECTION = { id: "usuarios" as const, label: "Usuarios", icon: UserCog, color: "text-cyan-400" };
-
-const SECTION_TITLES: Record<AdminSectionId, string> = {
-  reglas: "Editor de Reglas",
-  fullgeared: "Full ICC & RS",
-  loot: "Registro de Loot",
-  usuarios: "Gestión de Usuarios",
+const USERS_SECTION = {
+  id: "usuarios" as const,
+  label: "Usuarios",
+  icon: UserCog,
+  searchPlaceholder: "Filtrar por email…",
 };
 
 export default function AdminPage() {
@@ -46,30 +73,25 @@ export default function AdminPage() {
     handleLogin,
     handleLogout,
   } = useAdminAuth();
+  const [section, setSection] = useState<SectionId>("loot");
+  const [search, setSearch] = useState("");
 
-  const [activeSection, setActiveSection] = useState<AdminSectionId>("reglas");
-  const [adminSearch, setAdminSearch] = useState("");
-  const [status, setStatus] = useState<AdminStatus | null>(null);
-
-  const canSeeUsers = user?.email === USERS_SECTION_EMAIL;
-  const sections = canSeeUsers ? [...BASE_SECTIONS, USERS_SECTION] : BASE_SECTIONS;
-
-  const handleSectionChange = (id: AdminSectionId) => {
-    setActiveSection(id);
-    setAdminSearch("");
-  };
+  const onStatus = useCallback((status: AdminStatus) => {
+    const options = {
+      description: status.description,
+      action: status.action
+        ? { label: status.action.label, onClick: status.action.onClick }
+        : undefined,
+      duration: status.action ? 8000 : undefined,
+    };
+    if (status.type === "success") toast.success(status.message, options);
+    else toast.error(status.message, options);
+  }, []);
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center space-y-6">
-        <div className="relative">
-          <div className="w-16 h-16 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
-          <Settings className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-emerald-500 w-6 h-6" />
-        </div>
-        <div className="text-center space-y-2">
-          <p className="text-slate-900 dark:text-white font-black tracking-widest text-sm uppercase">Cargando Sistema</p>
-          <p className="text-slate-500 text-xs font-medium animate-pulse">Verificando credenciales de acceso...</p>
-        </div>
+      <div className="flex min-h-[calc(100svh-3.5rem)] items-center justify-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="size-4 animate-spin" /> Verificando sesión…
       </div>
     );
   }
@@ -88,70 +110,73 @@ export default function AdminPage() {
     );
   }
 
+  const canSeeUsers = user.email === USERS_SECTION_EMAIL;
+  const sections = canSeeUsers ? [...BASE_SECTIONS, USERS_SECTION] : BASE_SECTIONS;
+  const current = sections.find((s) => s.id === section) ?? sections[0];
+
   return (
-    <main className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 font-sans selection:bg-emerald-500/30">
-      <AdminStatusToast status={status} onClose={() => setStatus(null)} />
-
-      {/* Background Decor */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none opacity-40">
-        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-emerald-500/5 rounded-full blur-[120px]" />
-        <div className="absolute top-[20%] -right-[5%] w-[30%] h-[30%] bg-blue-500/5 rounded-full blur-[100px]" />
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[50%] h-[20%] bg-purple-500/5 rounded-full blur-[120px]" />
-      </div>
-
-      <div className="max-w-[1600px] mx-auto flex flex-col lg:flex-row min-h-screen relative">
-        <AdminSidebar
-          sections={sections}
-          activeSection={activeSection}
-          onSectionChange={handleSectionChange}
-          user={user}
-          onLogout={handleLogout}
-        />
-
-        {/* Main Content */}
-        <div className="flex-1 p-6 md:p-10 lg:p-12 space-y-10 overflow-x-hidden">
-          {/* Top Bar */}
-          <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-white/5">
-            <div>
-              <div className="flex items-center gap-3 mb-1">
-                <span className="px-2 py-0.5 rounded text-[9px] md:text-[10px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-widest">Live System</span>
-                <span className="text-slate-600">/</span>
-                <span className="text-slate-600 dark:text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-widest truncate max-w-[150px] md:max-w-none">
-                  {sections.find((s) => s.id === activeSection)?.label}
-                </span>
-              </div>
-              <h2 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">
-                {SECTION_TITLES[activeSection]}
-              </h2>
-            </div>
-
-            <div className="flex items-center gap-4 w-full md:w-auto">
-              <div className="relative group w-full md:w-auto">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-emerald-400 transition-colors z-10" size={18} />
-                <Input
-                  type="text"
-                  placeholder="Filtrar..."
-                  value={adminSearch}
-                  onChange={(e) => setAdminSearch(e.target.value)}
-                  className="h-auto w-full md:w-64 lg:w-80 bg-white dark:bg-slate-900/50 border-white/5 rounded-2xl py-3 pl-12 pr-4 text-sm focus-visible:ring-emerald-500/20 focus-visible:border-emerald-500/40 placeholder:text-slate-700 font-medium"
-                />
-              </div>
-            </div>
-          </header>
-
-          <div className="animate-in fade-in slide-in-from-bottom-2 duration-700">
-            {activeSection === "reglas" ? (
-              <ReglasSection search={adminSearch} onStatus={setStatus} />
-            ) : activeSection === "fullgeared" ? (
-              <FullGearedSection search={adminSearch} onStatus={setStatus} />
-            ) : activeSection === "loot" ? (
-              <LootSection search={adminSearch} onStatus={setStatus} />
-            ) : activeSection === "usuarios" && canSeeUsers ? (
-              <UsersSection search={adminSearch} onStatus={setStatus} />
-            ) : null}
-          </div>
+    <PageBody className="max-w-[1600px]">
+      <div className="flex flex-wrap items-center gap-3">
+        <h1 className="text-2xl font-semibold tracking-tight">Administración</h1>
+        <div className="ml-auto flex items-center gap-2 text-sm text-muted-foreground">
+          <Badge className="bg-blue-500/15 text-blue-600 hover:bg-blue-500/15 dark:text-blue-300">
+            Rol: Oficial
+          </Badge>
+          <span className="hidden sm:inline">{user.email}</span>
+          <Button variant="ghost" size="sm" onClick={handleLogout}>
+            <LogOut /> Salir
+          </Button>
         </div>
       </div>
-    </main>
+
+      <div className="flex flex-col gap-3 border-b md:flex-row md:items-end">
+        <nav aria-label="Secciones de administración" className="-mb-px flex gap-1 overflow-x-auto">
+          {sections.map((s) => {
+            const active = s.id === current.id;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                aria-current={active ? "page" : undefined}
+                onClick={() => {
+                  setSection(s.id);
+                  setSearch("");
+                }}
+                className={cn(
+                  "flex h-11 shrink-0 items-center gap-2 border-b-2 px-3 text-sm font-medium transition-colors",
+                  active
+                    ? "border-primary text-foreground"
+                    : "border-transparent text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <s.icon className="size-4" />
+                {s.label}
+              </button>
+            );
+          })}
+        </nav>
+        <div className="relative mb-2 w-full md:ml-auto md:w-64">
+          <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={current.searchPlaceholder}
+            aria-label="Filtrar"
+            className="h-9 pl-8"
+          />
+        </div>
+      </div>
+
+      {current.id === "loot" && <LootSection search={search} onStatus={onStatus} />}
+      {current.id === "puntos" && (
+        <ReglasSection view="puntos" search={search} onStatus={onStatus} />
+      )}
+      {current.id === "loteo" && <ReglasSection view="loteo" search={search} onStatus={onStatus} />}
+      {current.id === "fullgeared" && <FullGearedSection search={search} onStatus={onStatus} />}
+      {current.id === "usuarios" && canSeeUsers && (
+        <UsersSection search={search} onStatus={onStatus} />
+      )}
+    </PageBody>
   );
 }

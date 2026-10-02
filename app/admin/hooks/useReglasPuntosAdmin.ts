@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmDialog } from "@/components/confirm-dialog";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/src/infrastructure/config/supabase";
 import { PuntoUIItem } from "@/app/types/Reglas";
@@ -26,7 +27,11 @@ const DEFAULT_ICON: Record<PuntoTipo, string> = {
   perjuicio: "https://wow.zamimg.com/images/wow/icons/large/inv_misc_head_orc_01.jpg",
 };
 
-export function useReglasPuntosAdmin(tipo: PuntoTipo, search: string, onStatus: (status: AdminStatus) => void) {
+export function useReglasPuntosAdmin(
+  tipo: PuntoTipo,
+  search: string,
+  onStatus: (status: AdminStatus) => void,
+) {
   const [items, setItems] = useState<PuntoUIItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   // Categorías "en blanco" agregadas en esta sesión que todavía no tienen
@@ -87,7 +92,10 @@ export function useReglasPuntosAdmin(tipo: PuntoTipo, search: string, onStatus: 
     if (search) {
       const lower = search.toLowerCase();
       entries = entries
-        .map((cat) => ({ ...cat, items: cat.items.filter((i) => i.descripcion.toLowerCase().includes(lower)) }))
+        .map((cat) => ({
+          ...cat,
+          items: cat.items.filter((i) => i.descripcion.toLowerCase().includes(lower)),
+        }))
         .filter((cat) => cat.items.length > 0 || cat.category.toLowerCase().includes(lower));
     }
     return entries;
@@ -104,14 +112,29 @@ export function useReglasPuntosAdmin(tipo: PuntoTipo, search: string, onStatus: 
       setDraftCategories((prev) => prev.filter((c) => c !== category));
       return;
     }
-    if (!confirm(`¿Eliminar la categoría "${category}" y sus ${categoryItems.length} ítems?`)) return;
+    if (
+      !(await confirmDialog({
+        title: `¿Eliminar la categoría "${category}"?`,
+        description: `También se eliminarán sus ${categoryItems.length} reglas.`,
+        confirmLabel: "Eliminar",
+        destructive: true,
+      }))
+    )
+      return;
 
     try {
-      await Promise.all(categoryItems.map((i) => authedFetch(`/api/reglas/puntos?id=${i.id}`, { method: "DELETE" })));
+      await Promise.all(
+        categoryItems.map((i) =>
+          authedFetch(`/api/reglas/puntos?id=${i.id}`, { method: "DELETE" }),
+        ),
+      );
       onStatus({ type: "success", message: "Categoría eliminada" });
       fetchItems();
     } catch (error) {
-      onStatus({ type: "error", message: error instanceof Error ? error.message : "Error al eliminar la categoría" });
+      onStatus({
+        type: "error",
+        message: error instanceof Error ? error.message : "Error al eliminar la categoría",
+      });
     }
   };
 
@@ -122,19 +145,31 @@ export function useReglasPuntosAdmin(tipo: PuntoTipo, search: string, onStatus: 
       return;
     }
     const categoryItems = items.filter((i) => i.categoria === oldName);
-    setItems((prev) => prev.map((i) => (i.categoria === oldName ? { ...i, categoria: newName } : i)));
+    setItems((prev) =>
+      prev.map((i) => (i.categoria === oldName ? { ...i, categoria: newName } : i)),
+    );
     try {
       await Promise.all(
         categoryItems.map((i) =>
           authedFetch("/api/reglas/puntos", {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: i.id, tipo, categoria: newName, descripcion: i.descripcion, valor: i.valor, iconUrl: i.icon }),
+            body: JSON.stringify({
+              id: i.id,
+              tipo,
+              categoria: newName,
+              descripcion: i.descripcion,
+              valor: i.valor,
+              iconUrl: i.icon,
+            }),
           }),
         ),
       );
     } catch (error) {
-      onStatus({ type: "error", message: error instanceof Error ? error.message : "Error al renombrar la categoría" });
+      onStatus({
+        type: "error",
+        message: error instanceof Error ? error.message : "Error al renombrar la categoría",
+      });
       fetchItems();
     }
   };
@@ -168,11 +203,18 @@ export function useReglasPuntosAdmin(tipo: PuntoTipo, search: string, onStatus: 
         },
       ]);
     } catch (error) {
-      onStatus({ type: "error", message: error instanceof Error ? error.message : "Error al agregar el ítem" });
+      onStatus({
+        type: "error",
+        message: error instanceof Error ? error.message : "Error al agregar el ítem",
+      });
     }
   };
 
-  const updateItemLocal = (id: string, field: "descripcion" | "icon" | "valor", value: string | number) => {
+  const updateItemLocal = (
+    id: string,
+    field: "descripcion" | "icon" | "valor",
+    value: string | number,
+  ) => {
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, [field]: value } : i)));
   };
 
@@ -183,12 +225,22 @@ export function useReglasPuntosAdmin(tipo: PuntoTipo, search: string, onStatus: 
       const res = await authedFetch("/api/reglas/puntos", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: item.id, tipo, categoria: item.categoria, descripcion: item.descripcion, valor: item.valor, iconUrl: item.icon }),
+        body: JSON.stringify({
+          id: item.id,
+          tipo,
+          categoria: item.categoria,
+          descripcion: item.descripcion,
+          valor: item.valor,
+          iconUrl: item.icon,
+        }),
       });
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || "Error al guardar");
     } catch (error) {
-      onStatus({ type: "error", message: error instanceof Error ? error.message : "Error al guardar el ítem" });
+      onStatus({
+        type: "error",
+        message: error instanceof Error ? error.message : "Error al guardar el ítem",
+      });
     }
   };
 
@@ -213,7 +265,10 @@ export function useReglasPuntosAdmin(tipo: PuntoTipo, search: string, onStatus: 
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || "Error al guardar el orden");
     } catch (error) {
-      onStatus({ type: "error", message: error instanceof Error ? error.message : "Error al guardar el orden" });
+      onStatus({
+        type: "error",
+        message: error instanceof Error ? error.message : "Error al guardar el orden",
+      });
       fetchItems();
     }
   };
@@ -254,7 +309,10 @@ export function useReglasPuntosAdmin(tipo: PuntoTipo, search: string, onStatus: 
       if (!res.ok) throw new Error(result.error || "Error al eliminar");
     } catch (error) {
       setItems(previous);
-      onStatus({ type: "error", message: error instanceof Error ? error.message : "Error al eliminar el ítem" });
+      onStatus({
+        type: "error",
+        message: error instanceof Error ? error.message : "Error al eliminar el ítem",
+      });
     }
   };
 

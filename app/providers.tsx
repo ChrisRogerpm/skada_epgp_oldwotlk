@@ -3,6 +3,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
 import { useState } from "react";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/sonner";
+import { CommandMenuProvider } from "@/components/command-menu";
+import { ConfirmDialogHost } from "@/components/confirm-dialog";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -18,9 +22,13 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
       <QueryClientProvider client={queryClient}>
-        {children}
+        <TooltipProvider delayDuration={200}>
+          <CommandMenuProvider>{children}</CommandMenuProvider>
+          <Toaster position="bottom-right" richColors closeButton />
+          <ConfirmDialogHost />
+        </TooltipProvider>
       </QueryClientProvider>
     </ThemeProvider>
   );
