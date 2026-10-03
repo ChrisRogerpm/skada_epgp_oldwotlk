@@ -1,26 +1,13 @@
 "use client";
 
 import { confirmDialog } from "@/components/confirm-dialog";
-import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/src/infrastructure/config/supabase";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { authedFetch } from "../lib/api";
 import { PuntoUIItem } from "@/app/types/Reglas";
 import { AdminStatus } from "../types";
 
 type PuntoTipo = "beneficio" | "perjuicio";
 
-async function authedFetch(url: string, init: RequestInit = {}) {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  return fetch(url, {
-    ...init,
-    headers: {
-      ...init.headers,
-      Authorization: `Bearer ${session?.access_token ?? ""}`,
-    },
-  });
-}
 
 const DEFAULT_ICON: Record<PuntoTipo, string> = {
   beneficio: "https://wow.zamimg.com/images/wow/icons/large/inv_misc_coin_02.jpg",
@@ -37,6 +24,11 @@ export function useReglasPuntosAdmin(
   // Categorías "en blanco" agregadas en esta sesión que todavía no tienen
   // ningún ítem (y por lo tanto no existen como fila real en la base).
   const [draftCategories, setDraftCategories] = useState<string[]>([]);
+  // Hora del último guardado correcto (para el indicador «Guardado hace…»).
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+  // Último valor guardado de cada regla: salir de un campo sin cambios no escribe nada.
+  const persisted = useRef(new Map<string, string>());
+  const snapshot = (i: PuntoUIItem) => JSON.stringify([i.categoria, i.descripcion, i.valor, i.icon]);
 
   const fetchItems = async () => {
     setIsLoading(true);
@@ -60,6 +52,7 @@ export function useReglasPuntosAdmin(
           });
         });
       });
+      persisted.current = new Map(flat.map((i) => [i.id, snapshot(i)]));
       setItems(flat);
     } catch (error) {
       console.error(`Error fetching ${tipo}:`, error);
@@ -191,17 +184,17 @@ export function useReglasPuntosAdmin(
       if (!res.ok) throw new Error(result.error || "Error al crear");
 
       setDraftCategories((prev) => prev.filter((c) => c !== category));
-      setItems((prev) => [
-        ...prev,
-        {
-          id: result.id,
-          categoria: category,
-          descripcion: result.descripcion,
-          valor: result.valor,
-          icon: result.iconUrl,
-          sortOrder: result.sortOrder ?? 0,
-        },
-      ]);
+      const created: PuntoUIItem = {
+        id: result.id,
+        categoria: category,
+        descripcion: result.descripcion,
+        valor: result.valor,
+        icon: result.iconUrl,
+        sortOrder: result.sortOrder ?? 0,
+      };
+      persisted.current.set(created.id, snapshot(created));
+      setItems((prev) => [...prev, created]);
+      setSavedAt(Date.now());
     } catch (error) {
       onStatus({
         type: "error",
@@ -220,7 +213,7 @@ export function useReglasPuntosAdmin(
 
   const persistItem = async (id: string) => {
     const item = items.find((i) => i.id === id);
-    if (!item) return;
+    if (!item || persisted.current.get(id) === snapshot(item)) return;
     try {
       const res = await authedFetch("/api/reglas/puntos", {
         method: "PUT",
@@ -236,6 +229,8 @@ export function useReglasPuntosAdmin(
       });
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || "Error al guardar");
+      persisted.current.set(id, snapshot(item));
+      setSavedAt(Date.now());
     } catch (error) {
       onStatus({
         type: "error",
@@ -264,6 +259,7 @@ export function useReglasPuntosAdmin(
       });
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || "Error al guardar el orden");
+      setSavedAt(Date.now());
     } catch (error) {
       onStatus({
         type: "error",
@@ -300,6 +296,31 @@ export function useReglasPuntosAdmin(
     persistOrder(swappedNeighbor);
   };
 
+  // Arrastrar y soltar: mueve `id` al lugar de `targetId` y renumera la categoría
+  // (de 10 en 10) guardando solo las reglas cuyo orden cambió.
+  const reorderItem = (id: string, targetId: string) => {
+    const current = items.find((i) => i.id === id);
+    const target = items.find((i) => i.id === targetId);
+    if (!current || !target || id === targetId || current.categoria !== target.categoria) return;
+
+    const siblings = items
+      .filter((i) => i.categoria === current.categoria)
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .filter((i) => i.id !== id);
+    siblings.splice(
+      siblings.findIndex((i) => i.id === targetId) +
+        (current.sortOrder < target.sortOrder ? 1 : 0),
+      0,
+      current,
+    );
+    const renumbered = siblings.map((i, index) => ({ ...i, sortOrder: (index + 1) * 10 }));
+    const changed = renumbered.filter(
+      (i) => items.find((x) => x.id === i.id)?.sortOrder !== i.sortOrder,
+    );
+    setItems((prev) => prev.map((i) => renumbered.find((r) => r.id === i.id) ?? i));
+    changed.forEach(persistOrder);
+  };
+
   const removeItem = async (id: string) => {
     const previous = items;
     setItems((prev) => prev.filter((i) => i.id !== id));
@@ -307,6 +328,8 @@ export function useReglasPuntosAdmin(
       const res = await authedFetch(`/api/reglas/puntos?id=${id}`, { method: "DELETE" });
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || "Error al eliminar");
+      persisted.current.delete(id);
+      setSavedAt(Date.now());
     } catch (error) {
       setItems(previous);
       onStatus({
@@ -318,6 +341,8 @@ export function useReglasPuntosAdmin(
 
   return {
     isLoading,
+    savedAt,
+    reorderItem,
     categorized,
     addCategory,
     removeCategory,

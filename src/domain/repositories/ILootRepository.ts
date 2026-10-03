@@ -2,6 +2,7 @@ import {
   LootMatrix,
   LootWin,
   LootWinDetailed,
+  LootWinsFilters,
   PaginatedLootWinsResult,
   RaidOption,
   RegisterLootWinInput,
@@ -11,7 +12,12 @@ import {
 export interface ILootRepository {
   getLootMatrix(raid: string): Promise<LootMatrix>;
   getRaidOptions(limit: number, search: string): Promise<RaidOption[]>;
-  getRecentWins(page: number, limit: number, search: string): Promise<PaginatedLootWinsResult>;
+  getRecentWins(
+    page: number,
+    limit: number,
+    search: string,
+    filters?: LootWinsFilters,
+  ): Promise<PaginatedLootWinsResult>;
   getHistoryByCharacters(names: string[]): Promise<LootWinDetailed[]>;
   registerWin(input: RegisterLootWinInput, createdBy: string | null): Promise<LootWin>;
   registerWins(inputs: RegisterLootWinInput[], createdBy: string | null): Promise<LootWin[]>;

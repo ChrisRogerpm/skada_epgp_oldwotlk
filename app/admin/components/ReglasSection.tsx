@@ -1,62 +1,124 @@
 "use client";
 
 import { useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Check, Search } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { timeAgo, useNow } from "@/hooks/use-now";
+import { formatSigned } from "@/lib/wow";
 import { useReglasPuntosAdmin } from "../hooks/useReglasPuntosAdmin";
 import { AdminStatus } from "../types";
+import AdminSectionHeader from "./AdminSectionHeader";
 import ReglasLoteoSection from "./ReglasLoteoSection";
-import BenePenEditor from "./BenePenEditor";
+import BenePenEditor, { type CategoryGroup } from "./BenePenEditor";
 
 interface ReglasSectionProps {
-  search: string;
   onStatus: (status: AdminStatus) => void;
   view: "puntos" | "loteo";
 }
 
-export default function ReglasSection({ search, onStatus, view }: ReglasSectionProps) {
-  if (view === "loteo") return <ReglasLoteoSection search={search} onStatus={onStatus} />;
-  return <PuntosSection search={search} onStatus={onStatus} />;
+export default function ReglasSection({ onStatus, view }: ReglasSectionProps) {
+  if (view === "loteo") return <ReglasLoteoSection onStatus={onStatus} />;
+  return <PuntosSection onStatus={onStatus} />;
 }
 
-function PuntosSection({ search, onStatus }: Omit<ReglasSectionProps, "view">) {
-  const [tab, setTab] = useState("beneficios");
+/** Vista previa de la lista que descarga ScriptSkada. */
+function AddonPreview({ groups }: { groups: { title: string; categories: CategoryGroup[] }[] }) {
+  return (
+    <Card className="gap-3 p-4">
+      <div className="flex flex-col gap-1">
+        <h2 className="font-semibold">Así lo verá el addon</h2>
+        <p className="text-sm text-muted-foreground">
+          Lo que descarga ScriptSkada en el próximo sync.
+        </p>
+      </div>
+      <div className="max-h-[32rem] overflow-y-auto rounded-lg border bg-muted/40 p-3 font-mono text-xs leading-relaxed">
+        {groups.map((g) =>
+          g.categories
+            .filter((c) => c.items.length > 0)
+            .map((c) => (
+              <div key={`${g.title}-${c.category}`} className="mb-2 last:mb-0">
+                <div className="text-muted-foreground">
+                  -- {g.title} · {c.category}
+                </div>
+                {c.items.map((i) => (
+                  <div key={i.id} className="flex justify-between gap-3">
+                    <span className="truncate">{i.descripcion || "(sin descripción)"}</span>
+                    <span className={i.valor >= 0 ? "text-positive" : "text-negative"}>
+                      {formatSigned(i.valor)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )),
+        )}
+      </div>
+      <p className="text-sm text-muted-foreground">
+        Arrastra el asa para reordenar; los cambios se guardan al salir de cada campo.
+      </p>
+    </Card>
+  );
+}
+
+function PuntosSection({ onStatus }: Omit<ReglasSectionProps, "view">) {
+  const [search, setSearch] = useState("");
   const benefits = useReglasPuntosAdmin("beneficio", search, onStatus);
   const penalties = useReglasPuntosAdmin("perjuicio", search, onStatus);
+  const now = useNow(5_000);
+  const savedAt = Math.max(benefits.savedAt ?? 0, penalties.savedAt ?? 0);
+
+  const editorProps = (hook: typeof benefits) => ({
+    categorized: hook.categorized,
+    onAddCategory: hook.addCategory,
+    onRemoveCategory: hook.removeCategory,
+    onRenameCategory: hook.renameCategory,
+    onAddItem: hook.addItem,
+    onRemoveItem: hook.removeItem,
+    onUpdateItemLocal: hook.updateItemLocal,
+    onPersistItem: hook.persistItem,
+    onMoveItem: hook.moveItem,
+    onReorderItem: hook.reorderItem,
+  });
 
   return (
-    <Tabs value={tab} onValueChange={setTab} className="gap-4">
-      <TabsList>
-        <TabsTrigger value="beneficios">Bonificaciones</TabsTrigger>
-        <TabsTrigger value="sanciones">Sanciones</TabsTrigger>
-      </TabsList>
-      <TabsContent value="beneficios">
-        <BenePenEditor
-          type="benefits"
-          categorized={benefits.categorized}
-          onAddCategory={benefits.addCategory}
-          onRemoveCategory={benefits.removeCategory}
-          onRenameCategory={benefits.renameCategory}
-          onAddItem={benefits.addItem}
-          onRemoveItem={benefits.removeItem}
-          onUpdateItemLocal={benefits.updateItemLocal}
-          onPersistItem={benefits.persistItem}
-          onMoveItem={benefits.moveItem}
-        />
-      </TabsContent>
-      <TabsContent value="sanciones">
-        <BenePenEditor
-          type="penalties"
-          categorized={penalties.categorized}
-          onAddCategory={penalties.addCategory}
-          onRemoveCategory={penalties.removeCategory}
-          onRenameCategory={penalties.renameCategory}
-          onAddItem={penalties.addItem}
-          onRemoveItem={penalties.removeItem}
-          onUpdateItemLocal={penalties.updateItemLocal}
-          onPersistItem={penalties.persistItem}
-          onMoveItem={penalties.moveItem}
-        />
-      </TabsContent>
-    </Tabs>
+    <>
+      <AdminSectionHeader
+        group="Reglas"
+        title="Reglas de puntos"
+        description="Bonificaciones y sanciones que el addon ofrece al asignar puntos."
+        actions={
+          <>
+            {savedAt > 0 && (
+              <span className="flex items-center gap-1.5 text-sm text-positive" aria-live="polite">
+                <Check className="size-4" /> Guardado · {timeAgo(savedAt, now)}
+              </span>
+            )}
+            <div className="relative w-full sm:w-56">
+              <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Filtrar reglas…"
+                aria-label="Filtrar reglas"
+                className="h-9 pl-8"
+              />
+            </div>
+          </>
+        }
+      />
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_320px]">
+        <BenePenEditor type="benefits" {...editorProps(benefits)} />
+        <BenePenEditor type="penalties" {...editorProps(penalties)} />
+        <div className="md:col-span-2 xl:sticky xl:top-20 xl:col-span-1">
+          <AddonPreview
+            groups={[
+              { title: "Bonificaciones", categories: benefits.categorized },
+              { title: "Sanciones", categories: penalties.categorized },
+            ]}
+          />
+        </div>
+      </div>
+    </>
   );
 }

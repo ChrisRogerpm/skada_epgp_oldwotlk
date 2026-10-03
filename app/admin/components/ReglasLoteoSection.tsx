@@ -1,366 +1,325 @@
 "use client";
 
-import { useState } from "react";
-import { ExternalLink, Loader2, Pencil, Plus, ScrollText, Trash2, X } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Plus, ScrollText, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
-import { ItemIcon } from "@/components/wow/item-icon";
-import { REGLAS_RAID_TABS } from "@/app/types/Reglas";
+import { ItemIcon, itemNameClass } from "@/components/wow/item-icon";
+import type { LootMatrix } from "@/app/types/Loot";
+import { REGLAS_RAID_TABS, type RaidCode } from "@/app/types/Reglas";
+import { useRoster } from "@/hooks/use-roster";
 import { cn } from "@/lib/utils";
-import { formatPoints, itemUrl } from "@/lib/wow";
-import { useReglasLoteoAdmin } from "../hooks/useReglasLoteoAdmin";
+import { formatPoints, itemQuality } from "@/lib/wow";
+import {
+  EMPTY_RULE_FORM,
+  ruleToForm,
+  useReglasLoteoAdmin,
+  type LootRuleForm,
+} from "../hooks/useReglasLoteoAdmin";
 import { AdminStatus } from "../types";
-import ItemSearchPicker from "./shared/ItemSearchPicker";
+import AdminSectionHeader from "./AdminSectionHeader";
+import RuleEditor from "./reglas/RuleEditor";
 
-interface ReglasLoteoSectionProps {
-  search: string;
-  onStatus: (status: AdminStatus) => void;
-}
+const SHORT: Record<RaidCode, string> = { ICC: "ICC", RS: "RS", TOGC: "ToGC" };
 
-const NEW_CATEGORY = "__new__";
+export default function ReglasLoteoSection({ onStatus }: { onStatus: (s: AdminStatus) => void }) {
+  const { rules, isLoading, isSaving, categories, requirementOptions, saveRule, deleteRule } =
+    useReglasLoteoAdmin(onStatus);
+  const { ranked } = useRoster();
+  const [raid, setRaid] = useState<RaidCode>("ICC");
+  const [search, setSearch] = useState("");
+  const [showMissing, setShowMissing] = useState(false);
+  // Clave del formulario abierto (cambiarla reinicia el editor) y sus valores iniciales.
+  const [editor, setEditor] = useState<{ key: string; form: LootRuleForm } | null>(null);
 
-export default function ReglasLoteoSection({ search, onStatus }: ReglasLoteoSectionProps) {
-  const {
-    rulesForActiveRaid,
-    isLoading,
-    isSaving,
-    activeRaid,
-    setActiveRaid,
-    isDrawerOpen,
-    form,
-    setForm,
-    itemOptions,
-    categories,
-    openCreate,
-    openEdit,
-    closeDrawer,
-    pickItem,
-    addRequirement,
-    removeRequirement,
-    saveItem,
-    deleteItem,
-  } = useReglasLoteoAdmin(search, onStatus);
-  const [isNewCategory, setIsNewCategory] = useState(false);
-  const [reqDraft, setReqDraft] = useState("");
+  const { data: matrix } = useQuery<LootMatrix>({
+    queryKey: ["lootMatrix", raid],
+    queryFn: async () => {
+      const res = await fetch(`/api/loot/matrix?raid=${raid}`);
+      if (!res.ok) throw new Error("Error al obtener los ítems");
+      return res.json();
+    },
+  });
 
-  const submitRequirement = () => {
-    addRequirement(reqDraft);
-    setReqDraft("");
-  };
+  const raidRules = useMemo(() => rules.filter((r) => r.raidCode === raid), [rules, raid]);
+  const covered = useMemo(() => new Set(raidRules.map((r) => r.idItem)), [raidRules]);
+  const catalog = useMemo(() => matrix?.items ?? [], [matrix]);
+  const missing = catalog.filter((i) => !covered.has(i.id_item));
+  const coveredCount = catalog.length - missing.length;
 
-  const categoryKnown = !form.categoria || categories.includes(form.categoria);
+  const term = search.trim().toLowerCase();
+  const groups = useMemo(() => {
+    const visible = raidRules.filter(
+      (r) =>
+        !term || r.name.toLowerCase().includes(term) || r.category.toLowerCase().includes(term),
+    );
+    const map = new Map<string, typeof visible>();
+    visible.forEach((r) => map.set(r.category, [...(map.get(r.category) ?? []), r]));
+    return [...map.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([category, list]) => ({
+        category,
+        list: [...list].sort((a, b) => b.valueMin - a.valueMin),
+      }));
+  }, [raidRules, term]);
+  const missingVisible = missing.filter((i) => !term || i.name.toLowerCase().includes(term));
+
+  const reach = (min: number) => ranked.filter((m) => m.amount >= min).length;
+
+  const openNew = (item?: { id_item: number; name: string; icon: string }) =>
+    setEditor({
+      key: `new-${item?.id_item ?? Date.now()}`,
+      form: {
+        ...EMPTY_RULE_FORM,
+        raidCode: raid,
+        categoria: categories[0] ?? "",
+        ...(item ? { idItem: item.id_item, nombreItem: item.name, iconUrl: item.icon } : {}),
+      },
+    });
+
+  const editing = editor?.form.id ?? null;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <Tabs value={activeRaid} onValueChange={(v) => setActiveRaid(v as typeof activeRaid)}>
-          <TabsList>
-            {REGLAS_RAID_TABS.map((t) => (
-              <TabsTrigger key={t.value} value={t.value}>
-                {t.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
-        <Button className="ml-auto" onClick={openCreate}>
-          <Plus /> Agregar regla
-        </Button>
-      </div>
-
-      <Card className="gap-0 overflow-hidden py-0">
-        <Table>
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead>Ítem</TableHead>
-              <TableHead>Categoría</TableHead>
-              <TableHead className="text-right">Mínimo</TableHead>
-              <TableHead className="hidden md:table-cell">Requisitos</TableHead>
-              <TableHead className="w-20">
-                <span className="sr-only">Acciones</span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody className={cn(isLoading && "opacity-60")}>
-            {rulesForActiveRaid.map((rule) => (
-              <TableRow key={rule.id}>
-                <TableCell>
-                  <div className="flex items-center gap-2.5">
-                    <ItemIcon src={rule.icon} name={rule.name} size={30} />
-                    <span className="max-w-64 truncate font-medium">{rule.name}</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline">{rule.category}</Badge>
-                </TableCell>
-                <TableCell className="text-right font-mono font-semibold tabular">
-                  {formatPoints(rule.valueMin)}
-                </TableCell>
-                <TableCell className="hidden whitespace-normal md:table-cell">
-                  <div className="flex flex-wrap gap-1">
-                    {rule.requirement.length ? (
-                      rule.requirement.map((r, i) => (
-                        <Badge
-                          key={i}
-                          variant="secondary"
-                          className="h-auto py-0.5 text-left whitespace-normal"
-                        >
-                          {r}
-                        </Badge>
-                      ))
-                    ) : (
-                      <span className="text-xs text-muted-foreground">—</span>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex justify-end gap-0.5">
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => openEdit(rule)}
-                      aria-label="Editar regla"
-                    >
-                      <Pencil />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => deleteItem(rule.id)}
-                      aria-label="Eliminar regla"
-                      className="text-muted-foreground hover:text-destructive"
-                    >
-                      <Trash2 />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-            {rulesForActiveRaid.length === 0 && !isLoading && (
-              <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={5}>
-                  <Empty className="py-12">
-                    <EmptyHeader>
-                      <EmptyMedia variant="icon">
-                        <ScrollText />
-                      </EmptyMedia>
-                      <EmptyTitle>Sin reglas para esta raid</EmptyTitle>
-                    </EmptyHeader>
-                  </Empty>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </Card>
-
-      <Sheet open={isDrawerOpen} onOpenChange={(open) => !open && closeDrawer()}>
-        <SheetContent className="flex w-full flex-col gap-0 sm:max-w-md">
-          <SheetHeader className="border-b">
-            <SheetTitle>{form.id ? "Editar regla de loteo" : "Nueva regla de loteo"}</SheetTitle>
-            <SheetDescription>Ítem, categoría, puntos mínimos y requisitos.</SheetDescription>
-          </SheetHeader>
-          <form
-            id="loteo-form"
-            onSubmit={saveItem}
-            className="flex flex-1 flex-col gap-5 overflow-y-auto p-4"
-          >
-            <div className="flex flex-col gap-2">
-              <Label>Raid</Label>
-              <Tabs
-                value={form.raidCode}
-                onValueChange={(v) =>
-                  setForm({ ...form, raidCode: v as typeof form.raidCode, idItem: null })
-                }
-              >
-                <TabsList className="w-full">
-                  {REGLAS_RAID_TABS.map((t) => (
-                    <TabsTrigger key={t.value} value={t.value} className="flex-1">
-                      {t.value}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </Tabs>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="loteo-item">Ítem</Label>
-              <ItemSearchPicker
-                id="loteo-item"
-                items={itemOptions}
-                selectedIds={form.idItem !== null ? [form.idItem] : []}
-                onToggle={pickItem}
-                triggerLabel={`Elige un ítem de ${form.raidCode}…`}
-                emptyLabel={`Sin ítems para ${form.raidCode}`}
-                fallbackLabel={form.idItem === null ? form.nombreItem || undefined : undefined}
-                fallbackIcon={form.iconUrl}
-              />
-              {form.nombreItem && (
-                <a
-                  href={itemUrl(form.idItem, form.nombreItem)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-                >
-                  <ExternalLink className="size-3" /> Ver en la base de datos
-                </a>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="loteo-cat">Categoría</Label>
-              {isNewCategory || !categoryKnown ? (
-                <div className="flex gap-2">
-                  <Input
-                    id="loteo-cat"
-                    value={form.categoria}
-                    onChange={(e) => setForm({ ...form, categoria: e.target.value })}
-                    placeholder="Nombre de la nueva categoría"
-                    className="h-10"
-                    autoFocus
-                  />
-                  {categories.length > 0 && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="h-10"
-                      onClick={() => {
-                        setIsNewCategory(false);
-                        setForm({ ...form, categoria: "" });
-                      }}
-                    >
-                      Elegir existente
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                <Select
-                  value={form.categoria || undefined}
-                  onValueChange={(v) => {
-                    if (v === NEW_CATEGORY) {
-                      setIsNewCategory(true);
-                      setForm({ ...form, categoria: "" });
-                    } else setForm({ ...form, categoria: v });
-                  }}
-                >
-                  <SelectTrigger id="loteo-cat" className="h-10! w-full">
-                    <SelectValue placeholder="Elige una categoría" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {c}
-                      </SelectItem>
-                    ))}
-                    <SelectItem value={NEW_CATEGORY}>+ Nueva categoría…</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="loteo-min">Puntos mínimos</Label>
-              <Input
-                id="loteo-min"
-                type="number"
-                inputMode="numeric"
-                value={form.valorMinimo}
-                onChange={(e) => setForm({ ...form, valorMinimo: parseInt(e.target.value) || 0 })}
-                className="h-10 font-mono"
-              />
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="loteo-req">Requisitos</Label>
-              {form.requisitos.length > 0 && (
-                <ul className="flex flex-col gap-1.5">
-                  {form.requisitos.map((req, idx) => (
-                    <li
-                      key={idx}
-                      className="flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-sm"
-                    >
-                      <span className="flex-1">{req}</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-xs"
-                        onClick={() => removeRequirement(idx)}
-                        aria-label={`Quitar requisito ${req}`}
-                      >
-                        <X />
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              <div className="flex gap-2">
-                <Input
-                  id="loteo-req"
-                  value={reqDraft}
-                  onChange={(e) => setReqDraft(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      submitRequirement();
-                    }
-                  }}
-                  placeholder="Ej.: Main, Full Gear ICC…"
-                  className="h-10"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-10"
-                  onClick={submitRequirement}
-                  disabled={!reqDraft.trim()}
-                >
-                  <Plus /> Añadir
-                </Button>
-              </div>
-            </div>
-          </form>
-          <SheetFooter className="flex-row justify-end border-t">
-            <Button type="button" variant="outline" onClick={closeDrawer}>
-              Cancelar
+    <>
+      <AdminSectionHeader
+        group="Reglas"
+        title="Reglas de loteo"
+        description="Puntos mínimos y requisitos para lotear cada ítem. El addon las recibe en el próximo sync."
+        actions={
+          <>
+            <Tabs value={raid} onValueChange={(v) => setRaid(v as RaidCode)}>
+              <TabsList>
+                {REGLAS_RAID_TABS.map((t) => (
+                  <TabsTrigger key={t.value} value={t.value} title={t.label} className="gap-1.5">
+                    {SHORT[t.value]}
+                    <span className="font-mono text-xs text-muted-foreground">
+                      {rules.filter((r) => r.raidCode === t.value).length}
+                    </span>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+            <Button onClick={() => openNew()}>
+              <Plus /> Nueva regla
             </Button>
-            <Button
-              type="submit"
-              form="loteo-form"
-              disabled={isSaving || !form.categoria || !form.nombreItem}
+          </>
+        }
+      />
+
+      {catalog.length > 0 && (
+        <Card
+          className={cn(
+            "flex-row flex-wrap items-center gap-3 px-4 py-3",
+            missing.length > 0 && "border-highlight/35 bg-highlight/5 dark:bg-highlight/5",
+          )}
+        >
+          <div className="flex min-w-60 flex-1 flex-col gap-2">
+            <span className="text-sm">
+              <b className="font-semibold">
+                {coveredCount} de {catalog.length}
+              </b>{" "}
+              ítems de {SHORT[raid]} tienen regla
+              {missing.length > 0 && (
+                <span className="text-highlight"> · {missing.length} sin regla</span>
+              )}
+            </span>
+            <div
+              role="img"
+              aria-label={`${Math.round((coveredCount / catalog.length) * 100)} % de los ítems con regla`}
+              className="h-1.5 overflow-hidden rounded-full bg-muted"
             >
-              {isSaving && <Loader2 className="animate-spin" />}
-              {form.id ? "Guardar cambios" : "Agregar regla"}
+              <div
+                className="h-full bg-primary"
+                style={{ width: `${(coveredCount / catalog.length) * 100}%` }}
+              />
+            </div>
+          </div>
+          {missing.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowMissing((v) => !v)}
+              className="border-highlight/40 text-highlight hover:text-highlight"
+            >
+              {showMissing ? "Ocultar los ítems sin regla" : `Mostrar los ${missing.length} sin regla`}
             </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
-    </div>
+          )}
+        </Card>
+      )}
+
+      <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <Card className="order-2 gap-0 overflow-hidden py-0 xl:order-1">
+          <div className="p-3">
+            <div className="relative w-full sm:w-64">
+              <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar ítem o categoría…"
+                aria-label="Buscar regla"
+                className="h-9 pl-8"
+              />
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className={cn("w-full min-w-[640px] text-sm", isLoading && "opacity-60")}>
+              <thead>
+                <tr className="text-left text-muted-foreground">
+                  <th className="px-4 py-2 font-medium">Ítem</th>
+                  <th className="px-2 py-2 text-right font-medium">Mínimo</th>
+                  <th className="px-2 py-2 font-medium">Requisitos</th>
+                  <th className="px-4 py-2 text-right font-medium">Alcanzan</th>
+                </tr>
+              </thead>
+              {showMissing && missingVisible.length > 0 && (
+                <tbody>
+                  <tr>
+                    <td
+                      colSpan={4}
+                      className="border-t bg-highlight/10 px-4 py-2 text-xs font-medium tracking-wide text-highlight uppercase"
+                    >
+                      Sin regla · {missingVisible.length}
+                    </td>
+                  </tr>
+                  {missingVisible.map((item) => (
+                    <tr key={item.id_item} className="border-t">
+                      <td className="px-4 py-2">
+                        <div className="flex items-center gap-2.5">
+                          <ItemIcon
+                            src={item.icon}
+                            name={item.name}
+                            quality={itemQuality(item.id_item)}
+                            size={30}
+                          />
+                          <span className={cn("font-medium", itemNameClass(itemQuality(item.id_item)))}>
+                            {item.name}
+                          </span>
+                        </div>
+                      </td>
+                      <td colSpan={3} className="px-4 py-2 text-right">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-dashed border-highlight/50 text-highlight hover:text-highlight"
+                          onClick={() => openNew(item)}
+                        >
+                          <Plus /> Añadir regla
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              )}
+              {groups.map((group) => (
+                <tbody key={group.category}>
+                  <tr>
+                    <td
+                      colSpan={4}
+                      className="border-t bg-muted/40 px-4 py-2 text-xs font-medium tracking-wide text-muted-foreground uppercase"
+                    >
+                      {group.category} · {group.list.length}
+                    </td>
+                  </tr>
+                  {group.list.map((rule) => {
+                    const q = itemQuality(rule.idItem);
+                    return (
+                      <tr
+                        key={rule.id}
+                        onClick={() => setEditor({ key: rule.id, form: ruleToForm(rule, raid) })}
+                        className={cn(
+                          "cursor-pointer border-t transition-colors hover:bg-muted/30",
+                          editing === rule.id && "bg-primary/10 hover:bg-primary/10",
+                        )}
+                      >
+                        <td className="px-4 py-2">
+                          <button
+                            type="button"
+                            className="flex items-center gap-2.5 text-left"
+                            aria-label={`Editar la regla de ${rule.name}`}
+                          >
+                            <ItemIcon src={rule.icon} name={rule.name} quality={q} size={30} />
+                            <span className={cn("max-w-72 truncate font-medium", itemNameClass(q))}>
+                              {rule.name}
+                            </span>
+                          </button>
+                        </td>
+                        <td className="px-2 py-2 text-right font-mono font-semibold tabular">
+                          {formatPoints(rule.valueMin)}
+                        </td>
+                        <td className="px-2 py-2">
+                          <div className="flex flex-wrap gap-1">
+                            {rule.requirement.length ? (
+                              rule.requirement.map((r) => (
+                                <span
+                                  key={r}
+                                  className="rounded-full bg-secondary px-2 py-0.5 text-xs"
+                                >
+                                  {r}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-xs text-muted-foreground">Sin requisitos</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-2 text-right font-mono tabular">
+                          {ranked.length ? reach(rule.valueMin) : "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              ))}
+            </table>
+          </div>
+          {groups.length === 0 && !isLoading && (
+            <Empty className="border-t py-12">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <ScrollText />
+                </EmptyMedia>
+                <EmptyTitle>
+                  {term ? "Ninguna regla coincide con la búsqueda" : "Sin reglas para esta raid"}
+                </EmptyTitle>
+              </EmptyHeader>
+            </Empty>
+          )}
+        </Card>
+
+        <div className="order-1 xl:sticky xl:top-20 xl:order-2">
+          {editor ? (
+            <RuleEditor
+              key={editor.key}
+              initial={editor.form}
+              categories={categories}
+              requirementOptions={requirementOptions}
+              saving={isSaving}
+              onCancel={() => setEditor(null)}
+              onSave={async (form) => {
+                if (await saveRule(form)) setEditor(null);
+              }}
+              onDelete={
+                editor.form.id
+                  ? async () => {
+                      if (await deleteRule({ id: editor.form.id!, name: editor.form.nombreItem }))
+                        setEditor(null);
+                    }
+                  : undefined
+              }
+            />
+          ) : (
+            <Card className="hidden items-center gap-2 border-dashed p-6 text-center text-sm text-muted-foreground xl:flex">
+              <ScrollText className="size-5" />
+              Elige una regla para editarla o crea una nueva.
+            </Card>
+          )}
+        </div>
+      </div>
+    </>
   );
 }

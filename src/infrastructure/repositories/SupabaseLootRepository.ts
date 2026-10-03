@@ -5,6 +5,7 @@ import {
   LootMatrix,
   LootWin,
   LootWinDetailed,
+  LootWinsFilters,
   PaginatedLootWinsResult,
   RaidOption,
   RegisterLootWinInput,
@@ -25,6 +26,7 @@ function mapWinDetailed(row: any): LootWinDetailed {
     item_icon: row.items?.icon ?? "",
     item_raid: row.items?.raid ?? "",
     raid_date: row.raids?.raid_date ?? "",
+    raid_time: row.raids?.raid_time ?? "",
     boss_name: row.raids?.boss_name ?? "",
   };
 }
@@ -93,14 +95,26 @@ export class SupabaseLootRepository implements ILootRepository {
     return (data || []) as RaidOption[];
   }
 
-  async getRecentWins(page: number, limit: number, search: string): Promise<PaginatedLootWinsResult> {
+  async getRecentWins(
+    page: number,
+    limit: number,
+    search: string,
+    filters: LootWinsFilters = {},
+  ): Promise<PaginatedLootWinsResult> {
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
-    let query = this.adminClient.from("raid_items").select("*, items(*), raids(*)", { count: "exact" });
+    // Filtrar por la raid del ítem exige un join interno con items.
+    const select = filters.raid ? "*, items!inner(*), raids(*)" : "*, items(*), raids(*)";
+    let query = this.adminClient.from("raid_items").select(select, { count: "exact" });
 
     if (search) {
       query = query.ilike("personaje", `%${search}%`);
+    }
+    if (filters.raid) query = query.eq("items.raid", filters.raid.toUpperCase());
+    if (filters.source) query = query.eq("source", filters.source);
+    if (filters.days) {
+      query = query.gte("created_at", new Date(Date.now() - filters.days * 86400000).toISOString());
     }
 
     const { data, error, count } = await query.order("created_at", { ascending: false, nullsFirst: false }).range(from, to);

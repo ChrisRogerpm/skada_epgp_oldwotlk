@@ -3,7 +3,9 @@ import { NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/src/infrastructure/config/supabaseAdmin';
 import { getOrSetCache } from '@/src/infrastructure/cache/cache';
 
-type RequireAdminResult = { userId: string; error?: undefined } | { userId?: undefined; error: NextResponse };
+type RequireAdminResult =
+  | { userId: string; email: string | null; error?: undefined }
+  | { userId?: undefined; email?: undefined; error: NextResponse };
 
 class RequireAdminError extends Error {
   constructor(public code: 'CONFIG_MISSING' | 'INVALID_TOKEN' | 'FORBIDDEN') {
@@ -18,7 +20,7 @@ class RequireAdminError extends Error {
 // ítems de loot seguidos) no repita esa verificación en cada click.
 const ADMIN_CHECK_TTL_MS = 30 * 1000;
 
-async function verifyAdmin(token: string): Promise<string> {
+async function verifyAdmin(token: string): Promise<{ id: string; email: string | null }> {
   let supabaseAdmin;
   try {
     supabaseAdmin = getSupabaseAdmin();
@@ -42,7 +44,7 @@ async function verifyAdmin(token: string): Promise<string> {
     throw new RequireAdminError('FORBIDDEN');
   }
 
-  return userData.user.id;
+  return { id: userData.user.id, email: userData.user.email ?? null };
 }
 
 export async function requireAdmin(request: Request): Promise<RequireAdminResult> {
@@ -56,8 +58,8 @@ export async function requireAdmin(request: Request): Promise<RequireAdminResult
   const cacheKey = `admin_auth_${createHash('sha256').update(token).digest('hex')}`;
 
   try {
-    const userId = await getOrSetCache(cacheKey, () => verifyAdmin(token), ADMIN_CHECK_TTL_MS);
-    return { userId };
+    const admin = await getOrSetCache(cacheKey, () => verifyAdmin(token), ADMIN_CHECK_TTL_MS);
+    return { userId: admin.id, email: admin.email };
   } catch (err) {
     const code = err instanceof RequireAdminError ? err.code : 'INVALID_TOKEN';
     if (code === 'CONFIG_MISSING') {

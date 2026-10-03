@@ -49,7 +49,16 @@ export interface LootWinDetailed extends LootWin {
   item_icon: string;
   item_raid: string;
   raid_date: string;
+  raid_time?: string;
   boss_name: string;
+}
+
+export interface LootWinsFilters {
+  /** Código de raid del ítem (ICC, RS, TOGC). */
+  raid?: string;
+  source?: "sync" | "manual";
+  /** Solo entregas registradas en los últimos N días. */
+  days?: number;
 }
 
 export interface PaginatedLootWinsResult {

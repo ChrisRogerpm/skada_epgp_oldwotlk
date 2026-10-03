@@ -1,4 +1,5 @@
 import { supabase } from "@/src/infrastructure/config/supabase";
+import { getSupabaseAdmin } from "@/src/infrastructure/config/supabaseAdmin";
 import { IFullGearedRepository } from "@/src/domain/repositories/IFullGearedRepository";
 import { FullGearedCharacter, PaginatedFullGearedResult } from "@/src/domain/entities/FullGeared";
 
@@ -40,7 +41,7 @@ export class SupabaseFullGearedRepository implements IFullGearedRepository {
       icc: character.icc ? 1 : 0,
       rs: character.rs ? 1 : 0
     };
-    const { data, error } = await supabase
+    const { data, error } = await getSupabaseAdmin()
       .from('full_geared_characters')
       .insert([formattedCharacter])
       .select();
@@ -57,7 +58,7 @@ export class SupabaseFullGearedRepository implements IFullGearedRepository {
       rs: updateData.rs ? 1 : 0,
       updated_at: new Date().toISOString()
     };
-    const { data, error } = await supabase
+    const { data, error } = await getSupabaseAdmin()
       .from('full_geared_characters')
       .update(formattedData)
       .eq('id', id)
@@ -68,7 +69,7 @@ export class SupabaseFullGearedRepository implements IFullGearedRepository {
   }
 
   async deleteCharacter(id: string | number): Promise<void> {
-    const { error } = await supabase
+    const { error } = await getSupabaseAdmin()
       .from('full_geared_characters')
       .delete()
       .eq('id', id);

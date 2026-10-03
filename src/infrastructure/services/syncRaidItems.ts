@@ -5,6 +5,7 @@ import {
   type AttributionLog,
   type AttributionRaid,
 } from "./raidItemsAttribution";
+import { logAdminActivity, type LogActivityInput } from "./adminActivity";
 
 export interface SyncRaidItemsOptions {
   /** Días hacia atrás a revisar (incluye hoy). */
@@ -16,6 +17,10 @@ export interface SyncRaidItemsOptions {
    * nunca se tocan.
    */
   prune?: boolean;
+  /** Solo calcula qué cambiaría, sin escribir nada (la «simulación» del admin). */
+  dryRun?: boolean;
+  /** Oficial que lanzó la limpieza desde el admin; sin él se registra como «Sync». */
+  actor?: LogActivityInput["auth"];
 }
 
 export interface SyncRaidItemsResult {
@@ -60,6 +65,8 @@ async function fetchAll<T>(
 export async function syncRaidItemsTask({
   lookbackDays = 7,
   prune = true,
+  dryRun = false,
+  actor,
 }: SyncRaidItemsOptions = {}): Promise<SyncRaidItemsResult> {
   console.log(`🚀 Starting Background Sync: Raid Items (${lookbackDays} días)...`);
   const summary: SyncRaidItemsResult = { inserted: 0, deleted: 0, skipped: 0 };
@@ -176,6 +183,14 @@ export async function syncRaidItemsTask({
     }
     const existingKeys = new Set(existing.map(keyOf));
 
+    const toInsert = desired.filter((w) => !existingKeys.has(keyOf(w)));
+
+    if (dryRun) {
+      summary.deleted = prune ? rowsToPrune(existing, desired, raids, logs).length : 0;
+      summary.inserted = toInsert.length;
+      return summary;
+    }
+
     // 1) Primero se limpian las filas del sync que no corresponden, para que
     //    mover un ítem de un jefe a otro no choque con el índice único.
     if (prune) {
@@ -191,7 +206,6 @@ export async function syncRaidItemsTask({
     }
 
     // 2) Se insertan las que faltan.
-    const toInsert = desired.filter((w) => !existingKeys.has(keyOf(w)));
     for (const batch of chunks(toInsert, 500)) {
       const { error } = await supabase.from("raid_items").insert(batch);
       if (!error) {
@@ -209,6 +223,15 @@ export async function syncRaidItemsTask({
           }
         }
       }
+    }
+
+    if (summary.inserted || summary.deleted || actor) {
+      await logAdminActivity({
+        auth: actor ?? null,
+        action: actor ? "loot.cleanup" : "sync.raid-items",
+        summary: `${summary.inserted} insertados · ${summary.deleted} eliminados · ${summary.skipped} omitidos`,
+        details: { days: lookbackDays, ...summary },
+      });
     }
 
     console.log(

@@ -1,6 +1,7 @@
 "use client";
 
-import { Loader2, ShieldMinus, ShieldPlus, Users } from "lucide-react";
+import { useState } from "react";
+import { Loader2, Search, ShieldMinus, ShieldPlus, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -13,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
@@ -28,13 +30,51 @@ import { cn } from "@/lib/utils";
 import { useUsersAdmin } from "../hooks/useUsersAdmin";
 import { AdminStatus } from "../types";
 import AdminPagination from "./shared/AdminPagination";
+import AdminSectionHeader from "./AdminSectionHeader";
+import SyncTokensPanel from "./users/SyncTokensPanel";
+import ActivityLogPanel from "./users/ActivityLogPanel";
 
 interface UsersSectionProps {
-  search: string;
   onStatus: (status: AdminStatus) => void;
 }
 
-export default function UsersSection({ search, onStatus }: UsersSectionProps) {
+export default function UsersSection({ onStatus }: UsersSectionProps) {
+  const [tab, setTab] = useState("usuarios");
+  return (
+    <>
+      <AdminSectionHeader
+        group="Hermandad"
+        title="Usuarios y accesos"
+        description="Quién entra al panel, los tokens de ScriptSkada y el historial de cambios."
+      />
+      <Tabs value={tab} onValueChange={setTab} className="gap-4">
+        <TabsList variant="line" className="w-full justify-start border-b">
+          <TabsTrigger value="usuarios" className="flex-none px-3">
+            Usuarios
+          </TabsTrigger>
+          <TabsTrigger value="tokens" className="flex-none px-3">
+            Tokens de sync
+          </TabsTrigger>
+          <TabsTrigger value="actividad" className="flex-none px-3">
+            Registro de actividad
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="usuarios">
+          <UsersPanel onStatus={onStatus} />
+        </TabsContent>
+        <TabsContent value="tokens">
+          <SyncTokensPanel onStatus={onStatus} />
+        </TabsContent>
+        <TabsContent value="actividad">
+          <ActivityLogPanel />
+        </TabsContent>
+      </Tabs>
+    </>
+  );
+}
+
+function UsersPanel({ onStatus }: UsersSectionProps) {
+  const [search, setSearch] = useState("");
   const {
     users,
     totalItems,
@@ -121,9 +161,19 @@ export default function UsersSection({ search, onStatus }: UsersSectionProps) {
       <Card className="gap-0 overflow-hidden py-0">
         <CardHeader className="border-b py-4">
           <CardTitle>Usuarios</CardTitle>
-          <CardDescription>Cuentas con acceso al panel</CardDescription>
+          <CardDescription>{totalItems} cuentas con acceso al panel</CardDescription>
           <CardAction>
-            <Badge variant="secondary">{totalItems} usuarios</Badge>
+            <div className="relative w-48">
+              <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Filtrar por email…"
+                aria-label="Filtrar por email"
+                className="h-8 pl-8"
+              />
+            </div>
           </CardAction>
         </CardHeader>
         <Table>

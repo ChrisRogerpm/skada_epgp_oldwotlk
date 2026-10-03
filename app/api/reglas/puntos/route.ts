@@ -5,6 +5,8 @@ import { CreateReglaPuntoUseCase } from "@/src/application/useCases/CreateReglaP
 import { UpdateReglaPuntoUseCase } from "@/src/application/useCases/UpdateReglaPuntoUseCase";
 import { DeleteReglaPuntoUseCase } from "@/src/application/useCases/DeleteReglaPuntoUseCase";
 import { invalidateCache } from "@/src/infrastructure/cache/cache";
+import { getSupabaseAdmin } from "@/src/infrastructure/config/supabaseAdmin";
+import { logAdminActivity } from "@/src/infrastructure/services/adminActivity";
 
 // Alta/edición/baja por fila de un bono o sanción (reglas_puntos). Mismo
 // reemplazo del "Guardar Todo" que en /api/reglas/loteo.
@@ -28,6 +30,12 @@ export async function POST(request: Request) {
     });
 
     await invalidateCache("reglas");
+    await logAdminActivity({
+      auth,
+      action: "rule.puntos.create",
+      summary: `Creó ${tipo === "perjuicio" ? "la sanción" : "la bonificación"} «${descripcion || ""}» (${Number(valor) || 0})`,
+      details: { tipo, categoria },
+    });
     return NextResponse.json(result);
   } catch (error: any) {
     console.error("Error creating regla de puntos:", error);
@@ -55,6 +63,15 @@ export async function PUT(request: Request) {
     });
 
     await invalidateCache("reglas");
+    // Reordenar envía sortOrder: no se registra para no llenar el historial.
+    if (sortOrder === undefined) {
+      await logAdminActivity({
+        auth,
+        action: "rule.puntos.update",
+        summary: `Editó ${tipo === "perjuicio" ? "la sanción" : "la bonificación"} «${descripcion || ""}» (${Number(valor) || 0})`,
+        details: { id, tipo, categoria },
+      });
+    }
     return NextResponse.json(result);
   } catch (error: any) {
     console.error("Error updating regla de puntos:", error);
@@ -71,11 +88,23 @@ export async function DELETE(request: Request) {
     const id = searchParams.get("id");
     if (!id) return NextResponse.json({ error: "ID required" }, { status: 400 });
 
+    const { data: before } = await getSupabaseAdmin()
+      .from("reglas_puntos")
+      .select("tipo, descripcion, valor")
+      .eq("id", id)
+      .maybeSingle();
+
     const repository = new SupabaseReglasRepository();
     const useCase = new DeleteReglaPuntoUseCase(repository);
     await useCase.execute(id);
 
     await invalidateCache("reglas");
+    await logAdminActivity({
+      auth,
+      action: "rule.puntos.delete",
+      summary: `Eliminó la regla «${before?.descripcion ?? ""}»`,
+      details: { id, ...(before ?? {}) },
+    });
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error("Error deleting regla de puntos:", error);

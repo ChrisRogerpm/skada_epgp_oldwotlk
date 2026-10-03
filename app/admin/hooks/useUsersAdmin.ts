@@ -2,7 +2,7 @@
 
 import { confirmDialog } from "@/components/confirm-dialog";
 import { useEffect, useState } from "react";
-import { supabase } from "@/src/infrastructure/config/supabase";
+import { authedFetch } from "../lib/api";
 import { AdminStatus, AdminUserListItem, UserRegistrationForm } from "../types";
 
 const EMPTY_FORM: UserRegistrationForm = {
@@ -11,19 +11,6 @@ const EMPTY_FORM: UserRegistrationForm = {
   role: "user",
 };
 
-async function authedFetch(url: string, init: RequestInit = {}) {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  return fetch(url, {
-    ...init,
-    headers: {
-      ...init.headers,
-      Authorization: `Bearer ${session?.access_token ?? ""}`,
-    },
-  });
-}
 
 export function useUsersAdmin(search: string, onStatus: (status: AdminStatus) => void) {
   const [users, setUsers] = useState<AdminUserListItem[]>([]);

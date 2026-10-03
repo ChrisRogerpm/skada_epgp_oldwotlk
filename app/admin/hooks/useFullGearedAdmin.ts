@@ -1,11 +1,13 @@
 "use client";
 
 import { confirmDialog } from "@/components/confirm-dialog";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FullGearedCharacter } from "@/src/domain/entities/FullGeared";
-import { AdminStatus, EpgpSearchResult, FullGearedForm } from "../types";
+import { adminJson } from "../lib/api";
+import { AdminStatus, FullGearedForm } from "../types";
 
-const EMPTY_FORM: FullGearedForm = {
+export const EMPTY_FULL_GEAR_FORM: FullGearedForm = {
   id: null,
   name: "",
   class: "",
@@ -15,158 +17,106 @@ const EMPTY_FORM: FullGearedForm = {
   main: "",
 };
 
-export function useFullGearedAdmin(search: string, onStatus: (status: AdminStatus) => void) {
-  const [characters, setCharacters] = useState<FullGearedCharacter[]>([]);
-  const [totalItems, setTotalItems] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
+interface FullGearedPage {
+  data: FullGearedCharacter[];
+  total: number;
+}
+
+/** Lista completa de Full Gear (son pocos) y sus altas, cambios y bajas. */
+export function useFullGearedAdmin(onStatus: (status: AdminStatus) => void) {
+  const queryClient = useQueryClient();
   const [isSaving, setIsSaving] = useState(false);
 
-  const [isSearchingChar, setIsSearchingChar] = useState(false);
-  const [charSearchResults, setCharSearchResults] = useState<EpgpSearchResult[]>([]);
-  const [charForm, setCharForm] = useState<FullGearedForm>(EMPTY_FORM);
-
-  const limit = 10;
-
-  const fetchCharacters = async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch(
-        `/api/full-geared?page=${currentPage}&limit=${limit}&search=${encodeURIComponent(search)}`,
-      );
+  const query = useQuery({
+    queryKey: ["adminFullGear"],
+    queryFn: async () => {
+      const res = await fetch("/api/full-geared?page=1&limit=500&fresh=1");
       if (!res.ok) throw new Error("Error al obtener personajes");
-      const result = await res.json();
-      setCharacters(result.data || []);
-      setTotalItems(result.total || 0);
-      setTotalPages(result.totalPages || 1);
-    } catch (error) {
-      console.error("Error fetching full geared:", error);
-      onStatus({ type: "error", message: "Error al cargar personajes" });
-    } finally {
-      setIsLoading(false);
-    }
+      return (await res.json()) as FullGearedPage;
+    },
+  });
+
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ["adminFullGear"] });
+    queryClient.invalidateQueries({ queryKey: ["adminActivity"] });
+    queryClient.invalidateQueries({ queryKey: ["adminOverview"] });
   };
 
-  useEffect(() => {
-    fetchCharacters();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, search]);
+  const fail = (error: unknown, fallback: string) =>
+    onStatus({ type: "error", message: error instanceof Error ? error.message : fallback });
 
-  const searchCharacters = async (q: string) => {
-    if (!q || q.length < 2) {
-      setCharSearchResults([]);
-      return;
-    }
-    setIsSearchingChar(true);
+  const saveCharacter = async (form: FullGearedForm, message?: string) => {
+    setIsSaving(true);
     try {
-      const res = await fetch(`/api/epgp/search?q=${encodeURIComponent(q)}`);
-      if (res.ok) {
-        const data = await res.json();
-        setCharSearchResults(data.slice(0, 5));
-      }
-    } catch (err) {
-      console.error(err);
+      await adminJson("/api/full-geared", {
+        method: form.id ? "PUT" : "POST",
+        body: JSON.stringify(form),
+      });
+      onStatus({ type: "success", message: message ?? `${form.name} guardado` });
+      await adminJson("/api/admin/overview?fresh=1").catch(() => null);
+      refresh();
+      return true;
+    } catch (error) {
+      fail(error, "Error al guardar");
+      return false;
     } finally {
-      setIsSearchingChar(false);
+      setIsSaving(false);
     }
   };
 
-  const selectSearchResult = (char: EpgpSearchResult) => {
-    setCharForm((prev) => ({
-      ...prev,
-      name: char.nombre_alter,
-      class: char.clase,
-      main: char.main,
-    }));
-    setCharSearchResults([]);
+  const toggleRaid = (char: FullGearedCharacter, raid: "icc" | "rs") => {
+    const next = !char[raid];
+    // Actualización optimista: el interruptor responde al momento.
+    queryClient.setQueryData<FullGearedPage>(["adminFullGear"], (prev) =>
+      prev
+        ? {
+            ...prev,
+            data: prev.data.map((c) =>
+              c.id === char.id
+                ? { ...c, [raid]: next, updated_at: new Date().toISOString() }
+                : c,
+            ),
+          }
+        : prev,
+    );
+    return saveCharacter(
+      {
+        id: char.id ?? null,
+        name: char.name,
+        class: char.class,
+        main: char.main,
+        gs: char.gs,
+        icc: raid === "icc" ? next : !!char.icc,
+        rs: raid === "rs" ? next : !!char.rs,
+      },
+      `${char.name}: ${raid.toUpperCase()} ${next ? "marcada" : "desmarcada"}`,
+    );
   };
 
-  const editCharacter = (char: FullGearedCharacter) => {
-    setCharForm({
-      id: char.id ?? null,
-      name: char.name,
-      class: char.class,
-      icc: char.icc,
-      rs: char.rs,
-      gs: char.gs,
-      main: char.main,
+  const deleteCharacter = async (char: FullGearedCharacter) => {
+    const ok = await confirmDialog({
+      title: `¿Quitar a ${char.name} de Full Gear?`,
+      description: "Volverá a competir por el botín de todas las raids.",
+      confirmLabel: "Quitar",
+      destructive: true,
     });
-  };
-
-  const resetForm = () => setCharForm(EMPTY_FORM);
-
-  const saveCharacter = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSaving(true);
+    if (!ok || !char.id) return;
     try {
-      const method = charForm.id ? "PUT" : "POST";
-      const res = await fetch("/api/full-geared", {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(charForm),
-      });
-
-      if (!res.ok) throw new Error("Error al guardar");
-
-      onStatus({ type: "success", message: "Personaje guardado correctamente" });
-      resetForm();
-      fetchCharacters();
+      await adminJson(`/api/full-geared?id=${char.id}`, { method: "DELETE" });
+      onStatus({ type: "success", message: `${char.name} quitado de Full Gear` });
+      await adminJson("/api/admin/overview?fresh=1").catch(() => null);
+      refresh();
     } catch (error) {
-      onStatus({
-        type: "error",
-        message: error instanceof Error ? error.message : "Error al guardar",
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const deleteCharacter = async (id: number) => {
-    if (
-      !(await confirmDialog({
-        title: "¿Eliminar este personaje?",
-        description: "Se quitará de la lista de Full Gear.",
-        confirmLabel: "Eliminar",
-        destructive: true,
-      }))
-    )
-      return;
-
-    setIsSaving(true);
-    try {
-      const res = await fetch(`/api/full-geared?id=${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Error al eliminar");
-      onStatus({ type: "success", message: "Personaje eliminado" });
-      fetchCharacters();
-    } catch (error) {
-      onStatus({
-        type: "error",
-        message: error instanceof Error ? error.message : "Error al eliminar",
-      });
-    } finally {
-      setIsSaving(false);
+      fail(error, "Error al eliminar");
     }
   };
 
   return {
-    characters,
-    totalItems,
-    currentPage,
-    setCurrentPage,
-    totalPages,
-    isLoading,
+    characters: query.data?.data ?? [],
+    isLoading: query.isLoading,
     isSaving,
-    isSearchingChar,
-    charSearchResults,
-    charForm,
-    setCharForm,
-    searchCharacters,
-    selectSearchResult,
-    editCharacter,
-    resetForm,
     saveCharacter,
+    toggleRaid,
     deleteCharacter,
-    limit,
   };
 }

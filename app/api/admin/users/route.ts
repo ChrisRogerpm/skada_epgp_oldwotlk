@@ -4,6 +4,7 @@ import { SupabaseUsersRepository } from "@/src/infrastructure/repositories/Supab
 import { ListUsersUseCase } from "@/src/application/useCases/ListUsersUseCase";
 import { CreateAdminUserUseCase } from "@/src/application/useCases/CreateAdminUserUseCase";
 import { UpdateUserRoleUseCase } from "@/src/application/useCases/UpdateUserRoleUseCase";
+import { logAdminActivity } from "@/src/infrastructure/services/adminActivity";
 
 function statusForError(message: string): number {
   if (message === "Ya existe un usuario con este email") return 409;
@@ -51,6 +52,11 @@ export async function POST(request: Request) {
     const repository = new SupabaseUsersRepository();
     const useCase = new CreateAdminUserUseCase(repository);
     const result = await useCase.execute({ email, password, role });
+    await logAdminActivity({
+      auth,
+      action: "user.create",
+      summary: `Registró a ${email} como ${role === "admin" ? "admin" : "usuario"}`,
+    });
 
     return NextResponse.json(result);
   } catch (error: any) {
@@ -71,6 +77,12 @@ export async function PATCH(request: Request) {
     const repository = new SupabaseUsersRepository();
     const useCase = new UpdateUserRoleUseCase(repository);
     const result = await useCase.execute(id, role);
+    await logAdminActivity({
+      auth,
+      action: "user.role",
+      summary: `Cambió el rol de ${(result as { email?: string })?.email ?? "un usuario"} a ${role}`,
+      details: { id, role },
+    });
 
     return NextResponse.json(result);
   } catch (error: any) {
